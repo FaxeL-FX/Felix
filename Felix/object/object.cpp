@@ -10,6 +10,10 @@ std::vector<Object> parse_expr(std::string expr) {
 		if (token != " ") tokens.push_back(token);
 		expr = expr.substr(token.length());
 	}
+	for (int i = 1; i < tokens.size(); i++)
+		if (need_mul(tokens[i - 1], tokens[i]))
+			tokens.insert(tokens.begin() + i, "*");
+
 	std::vector<Object> objects;
 	std::vector<Object>* objs = &objects;
 	parse_obj(objs, tokens, 0, tokens.size() - 1);
@@ -111,6 +115,8 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 				"floor",
 				"exp",
 				"ln",
+				"sqrt",
+				"inv_sqrt",
 				"cosh",
 				"sinh",
 				"coth", "ctgh",
@@ -127,8 +133,6 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 				"arcsin",
 				"arccot", "arcctg",
 				"arctan", "arctg",
-				"sqrt",
-				"inv_sqrt",
 			}, 
 			fnc_2 = {
 				"root",
@@ -209,13 +213,14 @@ char antibr(char b) {
 	case(')'): return '(';
 	case(']'): return '[';
 	case('}'): return '{';
-	default: return '\0';
+	default: return b;
 	}
 }
 int priority(std::string token) {
-	if (token == "+" || token == "-") return 4;
-	else if (token == "*" || token == "/" || token == "%") return 3;
-	else if (token == "^" || token == "!") return 2;
+	if (token == "+" || token == "-") return 5;
+	else if (token == "*" || token == "/" || token == "%") return 4;
+	else if (token == "^") return 3;
+	else if (token == "!") return 2;
 	else if (token == "(" || token == "[" || token == "{" || token == ")" || token == "]" || token == "}") return 0;
 	return 1;
 }
@@ -237,6 +242,18 @@ int find_token(std::vector<std::string> tokens, int token_index, bool forward) {
 		}
 	}
 	return 0;
+}
+bool need_mul(std::string token1, std::string token2) {
+	//	+ - * / ^
+	if (priority(token1) > 2 || priority(token2) > 2) return false;
+	//	[...] | {...}
+	if (token1 == "[" || token1 == "]" || token1 == "{" || token1 == "}" || token2 == "[" || token2 == "]" || token2 == "{" || token2 == "}") return false;
+	//	(...) | ...!
+	if (token1 == "(" || token2 == ")" || token2 == "!") return false;
+	//	fnc()
+	if (('a' <= token1[0] && token1[0] <= 'z' || token1[0] == '_') && token2 == "(") return false;
+
+	return true;
 }
 
 math::complex Object::return_value(std::vector<Object>* objects, std::vector<Variable>* args) {
