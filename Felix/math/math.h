@@ -93,6 +93,10 @@ namespace math {
 	complex operator>>(complex, int);
 
 	//	functions
+	number rand(int, std::vector<number>);
+	number rand(int, complex);
+	number rand(int);
+	
 	//	for number
 	number floor(number);
 	number sign(number);

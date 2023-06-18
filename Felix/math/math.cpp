@@ -51,8 +51,27 @@ namespace math {
 	complex operator>>(complex x, int n) { return x << -n; }
 
 	//	functions
+	number rand(int seed, std::vector<number> v) {
+		number res = cos(seed);
+		for (int i = 1; i <= 4; i++)
+			for (auto n : v)
+				res = res + sin(n) + res - 16 * floor(res * 0.0625);
+		res = cos(res);
+		return res * res;
+	}
+	number rand(int seed, complex z) {
+		std::vector<number> v = { z.R, z.i };
+		return rand(seed, v);
+	}
+	number rand(int n) {
+		std::vector<number> v = { (number)n };
+		return rand(n, v);
+	}
+
 	//	for number
-	number floor(number x) { return number(); }
+	number floor(number x) {
+		return (long long)x;
+	}																						//	need to change for "flex_float" instead "long double"
 	number sign(number x) {
 		if (x < 0) return -1;
 		return 1;
@@ -78,8 +97,13 @@ namespace math {
 	number sqrt(number x) { return exp(0.5 * ln(x)); }
 	number inv_sqrt(number x) { return exp(-0.5 * ln(x)); }
 
-	number cos(number x) { return number(); }												//	need to change for "flex_float" instead "long double"
-	number sin(number x) { return number(); }												//	need to change for "flex_float" instead "long double"
+	number cos(number x) {
+		number res = x / ((unsigned long long)1 << 16);
+		res = 2 - res * res;
+		for (int i = 0; i < 16; i++) res = res * res - 2;
+		return res * 0.5;
+	}												//	need to change for "flex_float" instead "long double"
+	number sin(number x) { return cos(x - 1.57079632679); }												//	need to change for "flex_float" instead "long double"
 	number arccos(number x) {
 		if (x == 1) return 0;
 		if (x < 0) return pi - arccos(-x);

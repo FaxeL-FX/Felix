@@ -1,4 +1,5 @@
 #include "object.h"
+#include <chrono>
 
 std::vector<Function> functions_list;
 
@@ -109,6 +110,9 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 		(*objects)[objIndex].name = "_Const";
 		(*objects)[objIndex].value = math::i;
 	}
+	else if (token == "rand") {
+		(*objects)[objIndex].name = "_Rand";
+	}
 	else {
 		std::vector<std::string>
 			fnc_1 = {
@@ -133,6 +137,7 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 				"arcsin",
 				"arccot", "arcctg",
 				"arctan", "arctg",
+				"rand",
 			}, 
 			fnc_2 = {
 				"root",
@@ -260,44 +265,50 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 	std::vector<math::complex> args_results;
 	for (auto i : this->arg_indexes) args_results.push_back((*objects)[i].return_value(objects, args));
 
-	if (this->name == "_Const") return this->value;
+	switch (args_results.size()) {
+	case(0): {
+		if (this->name == "_Const") return this->value;
+		if (this->name == "_Rand") return math::rand(std::chrono::steady_clock::now().time_since_epoch().count() % 4096);
+	}
+	case(1): {
+		if (this->name == "-") return -args_results[0];
+		if (this->name == "!") return math::fct(args_results[0]);
 
-	if (this->name == "+") return args_results[0] + args_results[1];
-	if (this->name == "-")
-		if (this->arg_indexes.size() == 2)	return  args_results[0] - args_results[1];
-		else								return -args_results[0];
-	if (this->name == "*") return args_results[0] * args_results[1];
-	if (this->name == "/") return args_results[0] / args_results[1];
-	if (this->name == "%") return args_results[0] % args_results[1];
-	if (this->name == "^") return math::pow(args_results[0], args_results[1]);
-	if (this->name == "!") return math::fct(args_results[0]);
+		if (this->name == "floor") return math::floor(args_results[0]);
 
-	if (this->name == "floor") return math::floor(args_results[0]);
+		if (this->name == "exp") return math::exp(args_results[0]);
+		if (this->name == "ln") return math::ln(args_results[0]);
+		if (this->name == "sqrt") return math::sqrt(args_results[0]);
+		if (this->name == "inv_sqrt") return math::inv_sqrt(args_results[0]);
 
-	if (this->name == "exp") return math::exp(args_results[0]);
-	if (this->name == "ln") return math::ln(args_results[0]);
-	if (this->name == "sqrt") return math::sqrt(args_results[0]);
-	if (this->name == "inv_sqrt") return math::inv_sqrt(args_results[0]);
-	if (this->name == "root") return math::pow(args_results[1], 1 / args_results[0]);
-	if (this->name == "log") return math::ln(args_results[1]) / math::ln(args_results[0]);
+		if (this->name == "cos") return math::cos(args_results[0]);
+		if (this->name == "cosh") return math::cosh(args_results[0]);
+		if (this->name == "arccos") return math::arccos(args_results[0]);
+		if (this->name == "arccosh") return math::arccosh(args_results[0]);
+		if (this->name == "sin") return math::sin(args_results[0]);
+		if (this->name == "sinh") return math::sinh(args_results[0]);
+		if (this->name == "arcsin") return math::arcsin(args_results[0]);
+		if (this->name == "arcsinh") return math::arcsinh(args_results[0]);
+		if (this->name == "cot" || this->name == "ctg") return math::cot(args_results[0]);
+		if (this->name == "coth" || this->name == "ctgh") return math::coth(args_results[0]);
+		if (this->name == "arccot" || this->name == "arcctg") return math::arccot(args_results[0]);
+		if (this->name == "arccoth" || this->name == "arcctgh") return math::arccoth(args_results[0]);
+		if (this->name == "tan" || this->name == "tg") return math::tan(args_results[0]);
+		if (this->name == "tanh" || this->name == "tgh") return math::tanh(args_results[0]);
+		if (this->name == "arctan" || this->name == "arctg") return math::arctan(args_results[0]);
+		if (this->name == "arctanh" || this->name == "arctgh") return math::arctanh(args_results[0]);
+	}
+	case(2): {
+		if (this->name == "+") return args_results[0] + args_results[1];
+		if (this->name == "-") return args_results[0] - args_results[1];
+		if (this->name == "*") return args_results[0] * args_results[1];
+		if (this->name == "/") return args_results[0] / args_results[1];
+		if (this->name == "%") return args_results[0] % args_results[1];
+		if (this->name == "^") return math::pow(args_results[0], args_results[1]);
 
-	if (this->name == "cos") return math::cos(args_results[0]);
-	if (this->name == "cosh") return math::cosh(args_results[0]);
-	if (this->name == "arccos") return math::arccos(args_results[0]);
-	if (this->name == "arccosh") return math::arccosh(args_results[0]);
-	if (this->name == "sin") return math::sin(args_results[0]);
-	if (this->name == "sinh") return math::sinh(args_results[0]);
-	if (this->name == "arcsin") return math::arcsin(args_results[0]);
-	if (this->name == "arcsinh") return math::arcsinh(args_results[0]);
-	if (this->name == "cot" || this->name == "ctg") return math::cot(args_results[0]);
-	if (this->name == "coth" || this->name == "ctgh") return math::coth(args_results[0]);
-	if (this->name == "arccot" || this->name == "arcctg") return math::arccot(args_results[0]);
-	if (this->name == "arccoth" || this->name == "arcctgh") return math::arccoth(args_results[0]);
-	if (this->name == "tan" || this->name == "tg") return math::tan(args_results[0]);
-	if (this->name == "tanh" || this->name == "tgh") return math::tanh(args_results[0]);
-	if (this->name == "arctan" || this->name == "arctg") return math::arctan(args_results[0]);
-	if (this->name == "arctanh" || this->name == "arctgh") return math::arctanh(args_results[0]);
-
-	//if (this->name == "") return 0;
-	return 0;
+		if (this->name == "root") return math::pow(args_results[1], 1 / args_results[0]);
+		if (this->name == "log") return math::ln(args_results[1]) / math::ln(args_results[0]);
+	}
+	default: return 0;
+	}
 }
