@@ -53,12 +53,12 @@ namespace math {
 	//	functions
 	number rand(int seed, std::vector<number> v) {
 		number res = cos(seed);
-		for (int i = 1; i <= 4; i++)
+		for (int i = 1; i <= 16; i++)
 			for (auto n : v)
 				res = res + sin(n) + res - 16 * floor(res * 0.0625);
-		res = cos(res);
-		return res * res;
-	}
+		res = fmod(res, 1.0);
+		return res;
+	}																						//	need to change for "flex_float" instead "long double"
 	number rand(int seed, complex z) {
 		std::vector<number> v = { z.R, z.i };
 		return rand(seed, v);
@@ -102,15 +102,15 @@ namespace math {
 		res = 2 - res * res;
 		for (int i = 0; i < 16; i++) res = res * res - 2;
 		return res * 0.5;
-	}												//	need to change for "flex_float" instead "long double"
-	number sin(number x) { return cos(x - 1.57079632679); }												//	need to change for "flex_float" instead "long double"
+	}																						//	need to change for "flex_float" instead "long double"
+	number sin(number x) { return cos(x - 1.57079632679); }
 	number arccos(number x) {
 		if (x == 1) return 0;
 		if (x < 0) return pi - arccos(-x);
 		number res = sqrt((x + 1) * 2);
 		for (int i = 1; i < 12; i++) res = sqrt(2 + res);
 		return sqrt(2 - res) * ((unsigned long long)1 << 12);
-	}											//	need to change for "flex_float" instead "long double"
+	}																						//	need to change for "flex_float" instead "long double"
 
 	//	for complex
 	complex floor(complex x) { return complex(floor(x.R), floor(x.i)); }
@@ -120,7 +120,15 @@ namespace math {
 		return sqrt(x.R * x.R + x.i * x.i);
 	}
 	number inv_abs(complex x) { return inv_sqrt(x.R * x.R + x.i * x.i); }
-	complex normalize(complex x) { return x * inv_sqrt(x.R * x.R + x.i * x.i); }
+	complex normalize(complex x) {
+		if (x.i == 0)
+			if (x.R < 0)	return -1;
+			else			return 1;
+		if (x.R == 0)
+			if (x.i < 0)	return -i;
+			else			return i;
+		return x * inv_sqrt(x.R * x.R + x.i * x.i);
+	}
 	complex mul_i(complex x) { return complex(-x.i, x.R); }
 
 	complex exp(complex x) {
@@ -138,7 +146,7 @@ namespace math {
 		else				cosine = x.R * inv_abs(x);
 		if (x.i < 0) return complex(ln(abs(x)), -arccos(cosine));
 		return complex(ln(abs(x)), arccos(cosine));
-	}												//	need to change for "flex_float" instead "long double"
+	}																						//	need to change for "flex_float" instead "long double"
 
 	complex pow(complex x, complex y) { return exp(y * ln(x)); }
 	complex sqrt(complex x) { return exp(0.5 * ln(x)); }

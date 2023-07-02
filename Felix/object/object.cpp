@@ -143,15 +143,24 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 				"root",
 				"log",
 			},
-			fnc_3 = {
+			fnc_4 = {
 				"S", "Sum",
 				"P", "Product",
 				"R", "Return",
 			};
 		int fnc = -1;
-		for (auto s : fnc_1) if (token == s) fnc = 1;
-		for (auto s : fnc_2) if (token == s) fnc = 2;
-		for (auto s : fnc_3) if (token == s) fnc = 3;
+		for (auto s : fnc_1) if (token == s) {
+			fnc = 1;
+			break;
+		}
+		for (auto s : fnc_2) if (token == s) {
+			fnc = 2;
+			break;
+		}
+		for (auto s : fnc_4) if (token == s) {
+			fnc = 4;
+			break;
+		}
 		switch (fnc) {
 		case(1):
 			if (tokens[index + 1] == "(") {
@@ -174,14 +183,24 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 			}
 			return;
 		case(3):
+			return;
+		case(4):
 			if (tokens[index + 1] == "{" && tokens[brackets(tokens, index + 1, true) + 1] == "(") {
-				return;
-
 				(*objects)[objIndex].name = token;
-				//(*objects)[objIndex].arg_indexes.push_back(objects->size());
-				//parse_obj(objects, tokens, index + 1, brackets(tokens, index + 1, true));
 
+				int cond_index = objects->size(), start_i = index + 2;
 				index = brackets(tokens, index + 1, true);
+				for (int i = start_i; i <= index; i++) {
+					if (tokens[i] == "}" || tokens[i] == ";") {
+						(*objects)[objIndex].arg_indexes.push_back(objects->size());
+						parse_obj(objects, tokens, start_i, i - 1);
+						start_i = i + 1;
+						continue;
+					}
+					if (tokens[i] == "(" || tokens[i] == "[" || tokens[i] == "{")
+						i = brackets(tokens, i, true);
+				}
+
 				(*objects)[objIndex].arg_indexes.push_back(objects->size());
 				parse_obj(objects, tokens, index + 1, brackets(tokens, index + 1, true));
 				return;
@@ -253,8 +272,8 @@ bool need_mul(std::string token1, std::string token2) {
 	if (priority(token1) > 2 || priority(token2) > 2) return false;
 	//	[...] | {...}
 	if (token1 == "[" || token1 == "]" || token1 == "{" || token1 == "}" || token2 == "[" || token2 == "]" || token2 == "{" || token2 == "}") return false;
-	//	(...) | ...!
-	if (token1 == "(" || token2 == ")" || token2 == "!") return false;
+	//	(...) | ...! | ...;...
+	if (token1 == "(" || token2 == ")" || token2 == "!" || token1 == ";" || token2 == ";") return false;
 	//	fnc()
 	if (('a' <= token1[0] && token1[0] <= 'z' || token1[0] == '_') && token2 == "(") return false;
 
@@ -269,6 +288,7 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 	case(0): {
 		if (this->name == "_Const") return this->value;
 		if (this->name == "_Rand") return math::rand(std::chrono::steady_clock::now().time_since_epoch().count() % 4096);
+		break;
 	}
 	case(1): {
 		if (this->name == "-") return -args_results[0];
@@ -297,6 +317,7 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 		if (this->name == "tanh" || this->name == "tgh") return math::tanh(args_results[0]);
 		if (this->name == "arctan" || this->name == "arctg") return math::arctan(args_results[0]);
 		if (this->name == "arctanh" || this->name == "arctgh") return math::arctanh(args_results[0]);
+		break;
 	}
 	case(2): {
 		if (this->name == "+") return args_results[0] + args_results[1];
@@ -308,7 +329,54 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 
 		if (this->name == "root") return math::pow(args_results[1], 1 / args_results[0]);
 		if (this->name == "log") return math::ln(args_results[1]) / math::ln(args_results[0]);
+		break;
 	}
-	default: return 0;
+	case(4):
+		if (this->name == "S" || this->name == "Sum") {
+			int var_index = args->size();
+			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+			math::complex
+				difference = args_results[2] - args_results[1],
+				step = math::normalize(difference),
+				res = 0;
+			int repeats = math::abs(difference) + 1;
+			for (int i = 0; i < repeats; i++) {
+				res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args);
+				(*args)[var_index].value = (*args)[var_index].value + step;
+			}
+			args->erase(args->begin() + var_index);
+			return res;
+		}
+		if (this->name == "P" || this->name == "Product") {
+			int var_index = args->size();
+			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+			math::complex
+				difference = args_results[2] - args_results[1],
+				step = math::normalize(difference),
+				res = 1;
+			int repeats = math::abs(difference) + 1;
+			for (int i = 0; i < repeats; i++) {
+				res = res * (*objects)[this->arg_indexes[3]].return_value(objects, args);
+				(*args)[var_index].value = (*args)[var_index].value + step;
+			}
+			args->erase(args->begin() + var_index);
+			return res;
+		}
+		if (this->name == "R" || this->name == "Return") {
+			int var_index = args->size();
+			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+			int repeats = args_results[2].R;
+			for (int i = 0; i < repeats; i++) {
+				(*args)[var_index].value = (*objects)[this->arg_indexes[3]].return_value(objects, args);
+			}
+			math::complex res = (*args)[var_index].value;
+			args->erase(args->begin() + var_index);
+			return res;
+		}
+		break;
 	}
+	for (auto a : (*args))
+		if (a.name == this->name)
+			return a.value;
+	return 0;
 }

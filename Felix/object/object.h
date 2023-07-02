@@ -23,6 +23,9 @@ struct Object {
 		this->arg_indexes = arg_indexes;
 		this->value = value;
 	}
+	Object(std::string name) {
+		this->name = name;
+	}
 	Object() {}
 };
 struct Function {
