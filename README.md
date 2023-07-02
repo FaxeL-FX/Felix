@@ -34,3 +34,8 @@ Trigonometry Functions
 - arctan(x) | arctg(x)
 - tanh(x) | tgh(x)
 - arctanh(x) | arctgh(x)
+---
+Other
+- S{k;a;b}(expr) | Sum{k;a;b}(expr) -> k - local variable; a - first value; b - last value; expr - expression
+- P{k;a;b}(expr) | Product{k;a;b}(expr) -> k - local variable; a - first value; b - last value; expr - expression
+- R{t;a;r}(expr) | Return{t;a;r}(expr) -> t - local variable; a - first value; r - number of repeats; expr - expression
