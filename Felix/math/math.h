@@ -112,6 +112,8 @@ namespace math {
 	number arccos(number);
 
 	//	for complex
+	std::string toString(complex);
+
 	complex floor(complex);
 	number abs(complex);
 	number inv_abs(complex);

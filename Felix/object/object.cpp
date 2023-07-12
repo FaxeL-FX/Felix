@@ -3,6 +3,15 @@
 
 std::vector<Function> functions_list;
 
+std::string toString(std::vector<Object> objects, int index) {
+	switch (objects[index].arg_indexes.size()) {
+	case(0): {
+		//if (this->name == "_Const")
+		return objects[index].name;
+	}
+	}
+}
+
 std::vector<Object> parse_expr(std::string expr) {
 	if (expr.length() == 0) return { Object("_Const", {}, 0) };
 	std::vector<std::string> tokens;
@@ -24,7 +33,7 @@ std::string parse_token(std::string expr) {
 	if (expr.length() == 0) return " ";
 	int type = 0;	//	types: 0->any , 1->number , 2->word
 	char c = std::tolower(expr[0]);
-	if ('0' <= expr[0] && expr[0] <= '9' || expr[0] == '.' || expr[0] == ',') type = 1;
+	if ('0' <= expr[0] && expr[0] <= '9' || expr[0] == '.') type = 1;
 	else if ('a' <= c && c <= 'z') type = 2;
 
 	if (type == 0) switch (expr[0]) {
@@ -37,7 +46,7 @@ std::string parse_token(std::string expr) {
 	int i = 1;
 	for (i; i < expr.length(); i++) {
 		c = std::tolower(expr[i]);
-		if (('0' <= c && c <= '9' || c == '.' || c == ',') && type == 1 ||
+		if (('0' <= c && c <= '9' || c == '.') && type == 1 ||
 			('a' <= c && c <= 'z' || c == '_') && type == 2) continue;
 		break;
 	}
@@ -92,7 +101,7 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 		parse_obj(objects, tokens, begin, index - 1);
 		return;
 	}
-	if ('0' <= token[0] && token[0] <= '9' || token[0] == '.' || token[0] == ',') {
+	if ('0' <= token[0] && token[0] <= '9' || token[0] == '.') {
 		(*objects)[objIndex].name = "_Const";
 		(*objects)[objIndex].value = std::strtold(token.c_str(), 0);	//	need to change for "flex_float" instead "long double"
 		return;
@@ -101,115 +110,132 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 	/**/ if (token == "pi") {
 		(*objects)[objIndex].name = "_Const";
 		(*objects)[objIndex].value = math::pi;
+		return;
 	}
 	else if (token == "e") {
 		(*objects)[objIndex].name = "_Const";
 		(*objects)[objIndex].value = math::exp(1);
+		return;
 	}
 	else if (token == "i") {
 		(*objects)[objIndex].name = "_Const";
 		(*objects)[objIndex].value = math::i;
+		return;
 	}
 	else if (token == "rand") {
 		(*objects)[objIndex].name = "_Rand";
 	}
-	else {
-		std::vector<std::string>
-			fnc_1 = {
-				"floor",
-				"exp",
-				"ln",
-				"sqrt",
-				"inv_sqrt",
-				"cosh",
-				"sinh",
-				"coth", "ctgh",
-				"tanh", "tgh",
-				"arccosh",
-				"arcsinh",
-				"arccoth", "arcctgh",
-				"arctanh", "arctgh",
-				"cos",
-				"sin",
-				"cot", "ctg",
-				"tan", "tg",
-				"arccos",
-				"arcsin",
-				"arccot", "arcctg",
-				"arctan", "arctg",
-				"rand",
-			}, 
-			fnc_2 = {
-				"root",
-				"log",
-			},
-			fnc_4 = {
-				"S", "Sum",
-				"P", "Product",
-				"R", "Return",
-			};
-		int fnc = -1;
-		for (auto s : fnc_1) if (token == s) {
-			fnc = 1;
-			break;
-		}
-		for (auto s : fnc_2) if (token == s) {
-			fnc = 2;
-			break;
-		}
-		for (auto s : fnc_4) if (token == s) {
-			fnc = 4;
-			break;
-		}
-		switch (fnc) {
-		case(1):
-			if (tokens[index + 1] == "(") {
-				(*objects)[objIndex].name = token;
-				(*objects)[objIndex].arg_indexes.push_back(objects->size());
-				parse_obj(objects, tokens, index + 1, brackets(tokens, index + 1, true));
-				return;
-			}
-			return;
-		case(2):
-			if (tokens[index + 1] == "[" && tokens[brackets(tokens, index + 1, true) + 1] == "(") {
-				(*objects)[objIndex].name = token;
-				(*objects)[objIndex].arg_indexes.push_back(objects->size());
-				parse_obj(objects, tokens, index + 1, brackets(tokens, index + 1, true));
-
-				index = brackets(tokens, index + 1, true);
-				(*objects)[objIndex].arg_indexes.push_back(objects->size());
-				parse_obj(objects, tokens, index + 1, brackets(tokens, index + 1, true));
-				return;
-			}
-			return;
-		case(3):
-			return;
-		case(4):
-			if (tokens[index + 1] == "{" && tokens[brackets(tokens, index + 1, true) + 1] == "(") {
-				(*objects)[objIndex].name = token;
-
-				int cond_index = objects->size(), start_i = index + 2;
-				index = brackets(tokens, index + 1, true);
-				for (int i = start_i; i <= index; i++) {
-					if (tokens[i] == "}" || tokens[i] == ";") {
-						(*objects)[objIndex].arg_indexes.push_back(objects->size());
-						parse_obj(objects, tokens, start_i, i - 1);
-						start_i = i + 1;
-						continue;
-					}
-					if (tokens[i] == "(" || tokens[i] == "[" || tokens[i] == "{")
-						i = brackets(tokens, i, true);
-				}
-
-				(*objects)[objIndex].arg_indexes.push_back(objects->size());
-				parse_obj(objects, tokens, index + 1, brackets(tokens, index + 1, true));
-				return;
-			}
-			return;
-		default:
-			(*objects)[objIndex].name = token;
-		}
+	std::vector<std::string>
+		fnc_1 = {
+			"floor",
+			"exp",
+			"ln",
+			"sqrt",
+			"inv_sqrt",
+			"cosh",
+			"sinh",
+			"coth", "ctgh",
+			"tanh", "tgh",
+			"arccosh",
+			"arcsinh",
+			"arccoth", "arcctgh",
+			"arctanh", "arctgh",
+			"cos",
+			"sin",
+			"cot", "ctg",
+			"tan", "tg",
+			"arccos",
+			"arcsin",
+			"arccot", "arcctg",
+			"arctan", "arctg",
+			"rand",
+	},
+		fnc_2 = {
+		"root",
+		"log",
+	},
+		fnc_4 = {
+		"S", "Sum",
+		"P", "Product",
+		"R", "Return",
+	};
+	int fnc = -1;
+	for (auto s : fnc_1) if (token == s) {
+		fnc = 1;
+		break;
 	}
+	for (auto s : fnc_2) if (token == s) {
+		fnc = 2;
+		break;
+	}
+	for (auto s : fnc_4) if (token == s) {
+		fnc = 4;
+		break;
+	}
+	switch (fnc) {
+	case(1):
+		if (tokens[index + 1] == "(") {
+			(*objects)[objIndex].name = token;
+			(*objects)[objIndex].arg_indexes.push_back(objects->size());
+			parse_obj(objects, tokens, index + 1, brackets(tokens, index + 1, true));
+			return;
+		}
+		return;
+	case(2):
+		if (tokens[index + 1] == "[" && tokens[brackets(tokens, index + 1, true) + 1] == "(") {
+			(*objects)[objIndex].name = token;
+			(*objects)[objIndex].arg_indexes.push_back(objects->size());
+			parse_obj(objects, tokens, index + 1, brackets(tokens, index + 1, true));
+
+			index = brackets(tokens, index + 1, true);
+			(*objects)[objIndex].arg_indexes.push_back(objects->size());
+			parse_obj(objects, tokens, index + 1, brackets(tokens, index + 1, true));
+			return;
+		}
+		return;
+	case(3):
+		return;
+	case(4):
+		if (tokens[index + 1] == "{" && tokens[brackets(tokens, index + 1, true) + 1] == "(") {
+			(*objects)[objIndex].name = token;
+
+			int start_i = index + 2;
+			index = brackets(tokens, index + 1, true);
+			for (int i = start_i; i <= index; i++) {
+				if (tokens[i] == "}" || tokens[i] == ";") {
+					(*objects)[objIndex].arg_indexes.push_back(objects->size());
+					parse_obj(objects, tokens, start_i, i - 1);
+					start_i = i + 1;
+					continue;
+				}
+				if (tokens[i] == "(" || tokens[i] == "[" || tokens[i] == "{")
+					i = brackets(tokens, i, true);
+			}
+
+			(*objects)[objIndex].arg_indexes.push_back(objects->size());
+			parse_obj(objects, tokens, index + 1, brackets(tokens, index + 1, true));
+			return;
+		}
+		return;
+	}
+	if (index + 1 < tokens.size()) if (tokens[index + 1] == "(") {
+		(*objects)[objIndex].name = token;
+
+		int start_i = index + 2;
+		index = brackets(tokens, index + 1, true);
+		for (int i = start_i; i <= index; i++) {
+			if (tokens[i] == ")" || tokens[i] == ",") {
+				(*objects)[objIndex].arg_indexes.push_back(objects->size());
+				parse_obj(objects, tokens, start_i, i - 1);
+				start_i = i + 1;
+				continue;
+			}
+			if (tokens[i] == "(" || tokens[i] == "[" || tokens[i] == "{")
+				i = brackets(tokens, i, true);
+		}
+		return;
+	}
+	(*objects)[objIndex].name = token;
 }
 
 int brackets(std::vector<std::string> tokens, int bracket_index, bool forward) {
@@ -272,8 +298,8 @@ bool need_mul(std::string token1, std::string token2) {
 	if (priority(token1) > 2 || priority(token2) > 2) return false;
 	//	[...] | {...}
 	if (token1 == "[" || token1 == "]" || token1 == "{" || token1 == "}" || token2 == "[" || token2 == "]" || token2 == "{" || token2 == "}") return false;
-	//	(...) | ...! | ...;...
-	if (token1 == "(" || token2 == ")" || token2 == "!" || token1 == ";" || token2 == ";") return false;
+	//	(...) | ...! | ...;... | ...,...
+	if (token1 == "(" || token2 == ")" || token2 == "!" || token1 == ";" || token2 == ";" || token1 == "," || token2 == ",") return false;
 	//	fnc()
 	if (('a' <= token1[0] && token1[0] <= 'z' || token1[0] == '_') && token2 == "(") return false;
 
@@ -331,7 +357,7 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 		if (this->name == "log") return math::ln(args_results[1]) / math::ln(args_results[0]);
 		break;
 	}
-	case(4):
+	case(4): {
 		if (this->name == "S" || this->name == "Sum") {
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
@@ -375,8 +401,15 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 		}
 		break;
 	}
+	}
 	for (auto a : (*args))
 		if (a.name == this->name)
 			return a.value;
+	for (auto f : functions_list)
+		if (f.name == this->name) {
+			for (int i = 0; i < f.args.size() &&  i < args_results.size(); i++)
+				f.args[i].value = args_results[i];
+			return f.return_value();
+		}
 	return 0;
 }

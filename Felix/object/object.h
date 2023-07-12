@@ -39,12 +39,17 @@ struct Function {
 		return objects[0].return_value(obj, ar);
 	}
 
+	Function() {}
 	Function(std::string name, std::vector<Variable> args, std::vector<Object> objects) {
 		this->name = name;
 		this->args = args;
 		this->objects = objects;
 	}
 };
+
+extern std::vector<Function> functions_list;
+
+std::string toString(std::vector<Object>, int);
 
 std::vector<Object> parse_expr(std::string);
 std::string parse_token(std::string);

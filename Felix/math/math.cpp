@@ -113,6 +113,11 @@ namespace math {
 	}																						//	need to change for "flex_float" instead "long double"
 
 	//	for complex
+	std::string toString(complex x) {
+		if (x.i < 0) return "(" + std::to_string(x.R) + std::to_string(x.i) + "i)";
+		return "(" + std::to_string(x.R) + "+" + std::to_string(x.i) + "i)";
+	}
+
 	complex floor(complex x) { return complex(floor(x.R), floor(x.i)); }
 	number abs(complex x) {
 		if (x.i == 0) return sign(x.R) * x.R;
@@ -178,9 +183,9 @@ namespace math {
 
 	complex fct(complex x) {
 		if (x.R < -0.5) return -pi / (sin(pi * x) * fct(-1 - x));
-		const long double n = 32.5;
+		const long double n = 64.5;
 		complex res = exp(-x + (x + n) * ln(x + n) - n * ln(n));
-		for (int i = 1; i < n; i++) res = res * i / (x + i);
+		for (int i = 1; i < n; i++) res = res * (i / (x + i));
 		return res;
 	}
 }
