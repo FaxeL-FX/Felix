@@ -114,9 +114,10 @@ namespace math {
 
 	//	for complex
 	std::string toString(complex x) {
-		if (x.i < 0) return "(" + std::to_string(x.R) + std::to_string(x.i) + "i)";
-		return "(" + std::to_string(x.R) + "+" + std::to_string(x.i) + "i)";
-	}
+		if (x.i == 0) x.i = 0;
+		if (x.i < 0) return std::to_string(x.R) + std::to_string(x.i) + "i";
+		return std::to_string(x.R) + "+" + std::to_string(x.i) + "i";
+	}																						//	need to change for "flex_float" instead "long double"
 
 	complex floor(complex x) { return complex(floor(x.R), floor(x.i)); }
 	number abs(complex x) {
