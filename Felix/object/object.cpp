@@ -124,6 +124,7 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 	}
 	else if (token == "rand") {
 		(*objects)[objIndex].name = "_Rand";
+		return;
 	}
 	std::vector<std::string>
 		fnc_1 = {
