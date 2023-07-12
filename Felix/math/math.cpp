@@ -153,7 +153,7 @@ namespace math {
 	complex inv_sqrt(complex x) { return exp(-0.5 * ln(x)); }
 
 	complex cosh(complex x) { return (exp(x) + exp(-x)) * 0.5; }
-	complex sinh(complex x) { return (exp(x) - exp(-x)) * complex(0, 0.5); }
+	complex sinh(complex x) { return (exp(x) - exp(-x)) * 0.5; }
 	complex coth(complex x) {
 		complex positive = exp(x), negative = exp(-x);
 		return (positive + negative) / (positive - negative);
