@@ -5,7 +5,7 @@
 
 float BMPWriter::max_float = 1;
 
-void BMPWriter::write_image(std::vector<std::vector<float>> rgb, int height, int width, char* file_name)
+void BMPWriter::write_image(std::vector<std::vector<float>> rgb, int size, char* file_name)
 {
     HANDLE file = CreateFileA
     (
@@ -21,13 +21,13 @@ void BMPWriter::write_image(std::vector<std::vector<float>> rgb, int height, int
     std::string file_cnt;
 
     file_cnt.append("P3\n");
-    file_cnt.append(std::to_string(width) + " " + std::to_string(height) + "\n");
+    file_cnt.append(std::to_string(size) + " " + std::to_string(size) + "\n");
     file_cnt.append("255\n");
 
-    for (int y = height - 1; y >= 0; y--)
-        for (int x = 0; x < width; x++)
+    for (int y = size - 1; y >= 0; y--)
+        for (int x = 0; x < size; x++)
         {
-            int offset = (y * width + x);
+            int offset = (y * size + x);
             if ((rgb[offset]).size() < 3) {
                 file_cnt.append("0 0 0\n");
                 continue;
@@ -38,6 +38,9 @@ void BMPWriter::write_image(std::vector<std::vector<float>> rgb, int height, int
             if (val_red < 0)   val_red = 0;
             if (val_green < 0) val_green = 0;
             if (val_blue < 0)  val_blue = 0;
+            if (255 < val_red)   val_red = 255;
+            if (255 < val_green) val_green = 255;
+            if (255 < val_blue)  val_blue = 255;
             file_cnt.append(std::to_string(val_red) + " " + std::to_string(val_green) + " " + std::to_string(val_blue) + "\n");
         }
 
@@ -60,6 +63,6 @@ void BMPWriter::write_image(std::vector<std::vector<float>> rgb, int height, int
     WriteFile(file,ptr,file_cnt.size(),&written,NULL);
     CloseHandle(file);
 }
-int BMPWriter::get_index(int heigth, int width, int x, int y) {
-    return y * width + x;
+int BMPWriter::get_index(std::vector<std::vector<float>>* rgb, int x, int y) {
+    return y * rgb->size() + x;
 }

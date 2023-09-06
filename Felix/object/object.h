@@ -2,6 +2,33 @@
 #include "../include.h"
 #include "../math/math.h"
 
+namespace mobj {
+	enum mathObjs {
+		_Default, _Const, _Rand,
+
+		_add, _dif, _mul, _div, _pow, _fct, _mod, _uMinus,
+
+		abs, inv_abs, arg, Re, Im, exist, floor, round, grid,
+
+		exp, ln,
+		sqrt, inv_sqrt,
+		root, log,
+
+		cos, arccos,
+		sin, arcsin,
+		cot, arccot,
+		tan, arctan,
+		cosh, arccosh,
+		sinh, arcsinh,
+		coth, arccoth,
+		tanh, arctanh,
+
+		gamma,
+
+		Sum, Product, Return,
+	};
+}
+
 struct Variable {
 	std::string name;
 	math::complex value;
@@ -13,6 +40,7 @@ struct Variable {
 };
 struct Object {
 	std::string name;
+	mobj::mathObjs type;
 	std::vector<int> arg_indexes;
 	math::complex value;
 
@@ -34,6 +62,7 @@ struct Function {
 	std::vector<Object> objects;
 
 	math::complex return_value() {
+		if (objects.size() < 1) return 0;
 		std::vector<Object>* obj = &objects;
 		std::vector<Variable>* ar = &args;
 		return objects[0].return_value(obj, ar);
@@ -50,6 +79,7 @@ struct Function {
 extern std::vector<Function> functions_list;
 
 std::string toString(std::vector<Object>, int);
+mobj::mathObjs nameToType(std::string);
 
 std::vector<Object> parse_expr(std::string);
 std::string parse_token(std::string);
@@ -60,3 +90,5 @@ char antibr(char);
 int priority(std::string);
 int find_token(std::vector<std::string>, int, bool);
 bool need_mul(std::string, std::string);
+
+math::complex value(std::vector<Object>, std::vector<Variable>);

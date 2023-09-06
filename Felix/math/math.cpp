@@ -70,7 +70,7 @@ namespace math {
 
 	//	for number
 	number floor(number x) {
-		return (long long)x;
+		return std::floor(x);
 	}																						//	need to change for "flex_float" instead "long double"
 	number sign(number x) {
 		if (x < 0) return -1;
@@ -108,11 +108,15 @@ namespace math {
 		if (x == 1) return 0;
 		if (x < 0) return pi - arccos(-x);
 		number res = sqrt((x + 1) * 2);
-		for (int i = 1; i < 12; i++) res = sqrt(2 + res);
-		return sqrt(2 - res) * ((unsigned long long)1 << 12);
+		for (int i = 1; i < 8; i++) res = sqrt(2 + res);
+		return sqrt(2 - res) * (1 << 8);
 	}																						//	need to change for "flex_float" instead "long double"
 
 	//	for complex
+	bool operator==(complex x, complex y) {
+		if (x.R == y.R && x.i == y.i) return true;
+		return false;
+	}
 	std::string toString(complex x) {
 		if (x.i == 0) x.i = 0;
 		if (x.i < 0) return std::to_string(x.R) + std::to_string(x.i) + "i";
@@ -136,23 +140,25 @@ namespace math {
 		return x * inv_sqrt(x.R * x.R + x.i * x.i);
 	}
 	complex mul_i(complex x) { return complex(-x.i, x.R); }
+	number arg(complex x) {
+		number cosine;
+		if (x.i == 0)
+			if (x.R < 0)	cosine = -1;
+			else			cosine = 1;
+		else				cosine = x.R * inv_abs(x);
+		if (x.i < 0) return -arccos(cosine);
+		return arccos(cosine);
+	}																						//	need to change for "flex_float" instead "long double"
 
 	complex exp(complex x) {
+		if (x.R < -709) return 0;
 		complex res = x >> 64;
 		if (res.R < 0) res = -res;
 		for (int i = 0; i < 64; i++) res = (res << 1) + res * res;
 		if (x.R < 0) return 1 / (res + 1);
 		return res + 1;
 	}																						//	need to change for "flex_float" instead "long double"
-	complex ln(complex x) {
-		number cosine;
-		if (x.i == 0)
-			if (x.R < 0)	cosine = -1;
-			else			cosine = 1;
-		else				cosine = x.R * inv_abs(x);
-		if (x.i < 0) return complex(ln(abs(x)), -arccos(cosine));
-		return complex(ln(abs(x)), arccos(cosine));
-	}																						//	need to change for "flex_float" instead "long double"
+	complex ln(complex x) { return complex(ln(abs(x)), arg(x)); }
 
 	complex pow(complex x, complex y) { return exp(y * ln(x)); }
 	complex sqrt(complex x) { return exp(0.5 * ln(x)); }
@@ -171,7 +177,7 @@ namespace math {
 	complex arccosh(complex x) { return ln(x + sqrt(x * x - 1)); }
 	complex arcsinh(complex x) { return ln(x + sqrt(x * x + 1)); }
 	complex arccoth(complex x) { return arctanh(1 / x); }
-	complex arctanh(complex x) { return -ln((1 - x) * inv_sqrt(1 - x * x)); }
+	complex arctanh(complex x) { return -0.5 * ln((1 - x) / (1 + x)); }
 
 	complex cos(complex x) { return        cosh(mul_i(x)); }
 	complex sin(complex x) { return -mul_i(sinh(mul_i(x))); }
@@ -184,9 +190,9 @@ namespace math {
 
 	complex fct(complex x) {
 		if (x.R < -0.5) return -pi / (sin(pi * x) * fct(-1 - x));
-		const long double n = 64.5;
+		const long double n = 32.5;
 		complex res = exp(-x + (x + n) * ln(x + n) - n * ln(n));
-		for (int i = 1; i < n; i++) res = res * (i / (x + i));
+		for (int i = 1; i < n; i++) res = res * i / (x + i);
 		return res;
 	}
 }

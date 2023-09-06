@@ -112,6 +112,7 @@ namespace math {
 	number arccos(number);
 
 	//	for complex
+	bool operator==(complex, complex);
 	std::string toString(complex);
 
 	complex floor(complex);
@@ -119,6 +120,7 @@ namespace math {
 	number inv_abs(complex);
 	complex normalize(complex);
 	complex mul_i(complex);
+	number arg(complex);
 
 	complex exp(complex);
 	complex ln(complex);
