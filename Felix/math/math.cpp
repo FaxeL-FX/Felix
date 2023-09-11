@@ -59,6 +59,14 @@ namespace math {
 		res = fmod(res, 1.0);
 		return res;
 	}																						//	need to change for "flex_float" instead "long double"
+	number rand(int seed, std::vector<complex> v) {
+		number res = cos(seed);
+		for (int i = 1; i <= 16; i++)
+			for (auto n : v)
+				res = res + sin(n.R) + res - 16 * floor(res * 0.0625);
+		res = fmod(res, 1.0);
+		return res;
+	}
 	number rand(int seed, complex z) {
 		std::vector<number> v = { z.R, z.i };
 		return rand(seed, v);

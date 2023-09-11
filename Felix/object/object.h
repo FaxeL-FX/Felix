@@ -4,7 +4,7 @@
 
 namespace mobj {
 	enum mathObjs {
-		_Error, _Default, _Const, _Rand,
+		_Error, _Default, _Const, rand,
 
 		_add, _dif, _mul, _div, _pow, _fct, _mod, _uMinus,
 
@@ -27,12 +27,6 @@ namespace mobj {
 
 		Sum, Product, Return,
 		Integral, Derivative, IntegralAlongExp,
-	};
-	struct mathObject {
-		mathObjs type;
-		std::vector<std::string> names;
-		math::complex(*function)(math::complex, ...);
-		int args_number;
 	};
 }
 
@@ -85,7 +79,6 @@ struct Function {
 
 extern std::vector<Function> functions_list;
 
-std::string toString(std::vector<Object>, int);
 mobj::mathObjs nameToType(std::string);
 
 std::vector<Object> parse_expr(std::string);

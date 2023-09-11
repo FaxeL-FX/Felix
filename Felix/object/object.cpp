@@ -3,17 +3,8 @@
 
 std::vector<Function> functions_list;
 
-std::string toString(std::vector<Object> objects, int index) {
-	switch (objects[index].arg_indexes.size()) {
-	case(0): {
-		//if (this->name == "_Const")
-		return objects[index].name;
-	}
-	}
-}
 mobj::mathObjs nameToType(std::string token) {
 	/**/ if (token == "_Const") return mobj::mathObjs::_Const;
-	else if (token == "_Rand") return mobj::mathObjs::_Rand;
 
 	else if (token == "+") return mobj::mathObjs::_add;
 	else if (token == "*") return mobj::mathObjs::_mul;
@@ -82,6 +73,7 @@ std::vector<Object> parse_expr(std::string expr) {
 	std::vector<Object> objects;
 	std::vector<Object>* objs = &objects;
 	parse_obj(objs, tokens, 0, tokens.size() - 1);
+
 	return objects;
 }
 std::string parse_token(std::string expr) {
@@ -92,7 +84,7 @@ std::string parse_token(std::string expr) {
 	else if ('a' <= c && c <= 'z') type = 2;
 
 	if (type == 0) switch (expr[0]) {
-	case('+', '-', '*', '/', '%', '^', '!', '(', ')', '[', ']', '{', '}', '='):
+	case('+', '-', '*', '/', '%', '^', '!', '(', ')', '[', ']', '{', '}', '=', ',', ';'):
 		return expr.substr(0, 1);
 	case('<', '>'):
 		if ((1 < expr.length()) && expr[1] == '=')	return expr.substr(0, 2);
@@ -180,10 +172,6 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 		(*objects)[objIndex].value = math::i;
 		return;
 	}
-	else if (token == "rand") {
-		(*objects)[objIndex].type = mobj::mathObjs::_Rand;
-		return;
-	}
 	if (index + 1 < tokens.size()) {
 		if (tokens[index + 1] == "(") {
 			(*objects)[objIndex].name = token;
@@ -214,7 +202,7 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 			parse_obj(objects, tokens, index + 1, brackets(tokens, index + 1, true));
 			return;
 		}
-		if (tokens[index + 1] == "{" && tokens[brackets(tokens, index + 1, true) + 1] == "(") {
+		if (tokens[index + 1] == "{" && tokens[brackets(tokens, index + 1, true) + 1] == "[") {
 			(*objects)[objIndex].name = token;
 			(*objects)[objIndex].type = nameToType(token);
 
@@ -302,7 +290,7 @@ bool need_mul(std::string token1, std::string token2) {
 	//	(...) | ...! | ...;... | ...,...
 	if (token1 == "(" || token2 == ")" || token2 == "!" || token1 == ";" || token2 == ";" || token1 == "," || token2 == ",") return false;
 	//	fnc()
-	if (('a' <= token1[0] && token1[0] <= 'z' || token1[0] == '_') && token2 == "(") return false;
+	if (('a' <= token1[0] && token1[0] <= 'z' || 'A' <= token1[0] && token1[0] <= 'Z' || token1[0] == '_') && token2 == "(") return false;
 
 	return true;
 }
@@ -315,7 +303,6 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 	case(mobj::mathObjs::_Error): return math::exp(3000);
 
 	case(mobj::mathObjs::_Const): return this->value;
-	case(mobj::mathObjs::_Rand): return math::rand(std::chrono::steady_clock::now().time_since_epoch().count() % 4096);
 	}
 
 	else if (arg_indexes.size() == 1) switch (this->type) {
@@ -463,6 +450,10 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 	}
 	}
 
+	if (this->name == "rand") {
+		if (args_results.size() == 0) return math::rand(std::chrono::steady_clock::now().time_since_epoch().count() % 4096);
+		return math::rand(std::chrono::steady_clock::now().time_since_epoch().count() % 4096, args_results);
+	}
 	for (auto a : (*args))
 		if (a.name == this->name)
 			return a.value;

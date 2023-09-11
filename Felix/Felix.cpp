@@ -115,10 +115,6 @@ bool run_command(std::string c) {
 	}
 	if (args[0] == "del") {
 		if (args.size() < 2) return false;
-		if (args[1] == "all") {
-			functions_list.clear();
-			return true;
-		}
 		for (int i = 0; i < functions_list.size(); i++)
 			if (functions_list[i].name == args[1])
 				functions_list.erase(functions_list.begin() + i);
@@ -294,6 +290,99 @@ bool run_command(std::string c) {
 		return true;
 	}
 	if (args[0] == "help") {
+		std::string response = "";
+		if (args.size() == 1) {
+			response += " Choose a Category\n";
+			response += "   >help operators\n";
+			response += "   >help functions\n";
+			response += "   >help commands\n";
+			std::cout << response;
+			return true;
+		}
+		if (args.size() == 2) {
+			if (args[1] == "operators") {
+				response += " => x+y -> sum\n";
+				response += " => x-y -> subtraction\n";
+				response += " =>  -y -> opposite\n";
+				response += " => x*y -> multiplication\n";
+				response += " => x/y -> division\n";
+				response += " => x^y -> power\n";
+				response += " => x%y -> modulus (remainder of the division)\n";
+				response += " => x!  -> factorial\n";
+				std::cout << response;
+				return true;
+			}
+			if (args[1] == "functions") {
+				response += " How To Call Functions\n";
+				response += " =>           n -> n = const\n";
+				response += " =>        f(x) -> f(x, ...)\n";
+				response += " =>     f[x](y) -> f(x, y)\n";
+				response += " => f{x;y;z}[w] -> f(x, y, z, w)\n";
+				response += "\n Power Functions\n";
+				response += " =>      exp(x) -> exponent\n";
+				response += " =>       ln(x) -> natural logarithm\n";
+				response += " =>     sqrt(x) -> square root\n";
+				response += " => inv_sqrt(x) -> inverse square root\n";
+				response += " =>  root[y](x) -> y-th root of x\n";
+				response += " =>   log[y](x) -> logarithm of x to base y\n";
+				response += "\n Trigonometric Functions\n";
+				response += " =>     cos(x)       cot(x) |     ctg(x)\n";
+				response += " =>    cosh(x)      coth(x) |    ctgh(x)\n";
+				response += " =>  arccos(x)    arccot(x) |  arcctg(x)\n";
+				response += " => arccosh(x)   arccoth(x) | arcctgh(x)\n";
+				response += " =>     sin(x)       tan(x) |      tg(x)\n";
+				response += " =>    sinh(x)      tanh(x) |     tgh(x)\n";
+				response += " =>  arcsin(x)    arctan(x) |   arctg(x)\n";
+				response += " => arcsinh(x)   arctanh(x) |  arctgh(x)\n";
+				response += "\n Other Functions\n";
+				response += " =>   gamma(x) -> gamma function\n";
+				response += " =>     abs(x) -> absolute value\n";
+				response += " => inv_abs(x) -> inverse absolute value\n";
+				response += " =>     arg(x) -> argument of x\n";
+				response += " =>      Re(x) -> real part\n";
+				response += " =>      Im(x) -> imaginary part\n";
+				response += " =>   floor(x)\n";
+				response += " =>   round(x)\n";
+				response += " =>   exist(x) -> if number exist returns 0 else 1\n";
+				response += " =>    grid(x) -> if number on the grid returns 0 else (0 < ...)\n";
+				response += " => S{var;begin;end}[f(var)] | Sum{var;begin;end}[f(var)]\n";
+				response += " => P{var;begin;end}[f(var)] | Product{var;begin;end}[f(var)]\n";
+				response += " => R{var;begin;end}[f(var)] | Return{var;begin;end}[f(var)]\n";
+				response += " =>         D{var;x}[f(var)] | Derivative{var;x}[f(var)]\n";
+				response += " =>       I{var;a;b}[f(var)] | Integral{var;a;b}[f(var)]\n";
+				response += " =>    Iexp{var;a;b}[f(var)] | IntegralAlongExp{var;a;b}[f(var)]\n";
+				response += " => rand | rand(x) | rand(x, ...)\n";
+				std::cout << response;
+				return true;
+			}
+			if (args[1] == "commands") {
+				response += " Define\n";
+				response += "  defining a constant\n";
+				response += "   >def n <expression>\n";
+				response += "   >def n = <expression>\n";
+				response += "  defining a function\n";
+				response += "   >def f(x,...) <expression>\n";
+				response += "   >def f(x,...) = <expression>\n";
+				response += "\n Delete\n";
+				response += "  >del <function_name>   -> deletes the function\n";
+				response += "\n List\n";
+				response += "  >list    -> shows functions & constants list\n";
+				response += "\n Clear\n";
+				response += "  >clear   -> clears the list\n";
+				response += "\n Scale\n";
+				response += "  >scale <center> <radius>   -> defines position & scale of plot\n";
+				response += "     center is a complex number (1-2i translates to (1;-2))\n";
+				response += "\n Print\n";
+				response += "  >print <function_name> <resolution> <*modificators>\n";
+				response += "     resolution is one integer number (400 means image with size 400x400)\n";
+				response += "     modificators:\n";
+				response += "     =>     eq -> equation mode (f(z) = 0)\n";
+				response += "     =>      c -> complex spectrum mode (abs(z) - brightness, arg(z) - hue)\n";
+				response += "     => noGrid -> disables the grid\n";
+				std::cout << response;
+				return true;
+			}
+		}
 		return true;
 	}
 

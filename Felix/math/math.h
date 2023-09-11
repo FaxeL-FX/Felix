@@ -94,6 +94,7 @@ namespace math {
 
 	//	functions
 	number rand(int, std::vector<number>);
+	number rand(int, std::vector<complex>);
 	number rand(int, complex);
 	number rand(int);
 	
