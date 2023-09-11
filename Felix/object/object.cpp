@@ -60,6 +60,9 @@ mobj::mathObjs nameToType(std::string token) {
 	else if (token == "S" || token == "Sum") return mobj::mathObjs::Sum;
 	else if (token == "P" || token == "Product") return mobj::mathObjs::Product;
 	else if (token == "R" || token == "Return") return mobj::mathObjs::Return;
+	else if (token == "I" || token == "Integral") return mobj::mathObjs::Integral;
+	else if (token == "D" || token == "Derivative") return mobj::mathObjs::Derivative;
+	else if (token == "Iexp" || token == "IntegralAlongExp") return mobj::mathObjs::IntegralAlongExp;
 
 	return mobj::mathObjs::_Default;
 }
@@ -105,11 +108,13 @@ std::string parse_token(std::string expr) {
 	return expr.substr(0, i);
 }
 void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, int begin, int end) {
-	if (begin < 0) begin = 0;
-	if (tokens.size() <= end) end = tokens.size() - 1;
 	objects->push_back(Object());
 	std::string token = tokens[end];
 	int index = end, objIndex = objects->size() - 1;
+	if (begin < 0 || tokens.size() <= end) {
+		(*objects)[objIndex].type = mobj::mathObjs::_Error;
+		return;
+	}
 	(*objects)[objIndex].type = mobj::mathObjs::_Default;
 
 	for (int i = end; begin <= i && i <= end; i--) {
@@ -306,17 +311,15 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 	std::vector<math::complex> args_results;
 	for (auto i : this->arg_indexes) args_results.push_back((*objects)[i].return_value(objects, args));
 
-	switch (this->type) {
+	/**/ if (arg_indexes.size() == 0) switch (this->type) {
+	case(mobj::mathObjs::_Error): return math::exp(3000);
+
 	case(mobj::mathObjs::_Const): return this->value;
 	case(mobj::mathObjs::_Rand): return math::rand(std::chrono::steady_clock::now().time_since_epoch().count() % 4096);
-		//
-	case(mobj::mathObjs::_add): return args_results[0] + args_results[1];
-	case(mobj::mathObjs::_dif): return args_results[0] - args_results[1];
+	}
+
+	else if (arg_indexes.size() == 1) switch (this->type) {
 	case(mobj::mathObjs::_uMinus): return -args_results[0];
-	case(mobj::mathObjs::_mul): return args_results[0] * args_results[1];
-	case(mobj::mathObjs::_div): return args_results[0] / args_results[1];
-	case(mobj::mathObjs::_pow): return math::pow(args_results[0], args_results[1]);
-	case(mobj::mathObjs::_mod): return args_results[0] % args_results[1];
 	case(mobj::mathObjs::_fct): return math::fct(args_results[0]);
 		//
 	case(mobj::mathObjs::abs): return math::abs(args_results[0]);
@@ -342,8 +345,6 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 	case(mobj::mathObjs::ln): return math::ln(args_results[0]);
 	case(mobj::mathObjs::sqrt): return math::sqrt(args_results[0]);
 	case(mobj::mathObjs::inv_sqrt): return math::inv_sqrt(args_results[0]);
-	case(mobj::mathObjs::root): return math::pow(args_results[1], 1 / args_results[0]);
-	case(mobj::mathObjs::log): return math::ln(args_results[1]) / math::ln(args_results[0]);
 		//
 	case(mobj::mathObjs::cos): return math::cos(args_results[0]);
 	case(mobj::mathObjs::cosh): return math::cosh(args_results[0]);
@@ -364,6 +365,34 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 		//
 	case(mobj::mathObjs::gamma): return math::fct(args_results[0] - 1);
 		//
+	}
+
+	else if (arg_indexes.size() == 2) switch (this->type) {
+	case(mobj::mathObjs::_add): return args_results[0] + args_results[1];
+	case(mobj::mathObjs::_dif): return args_results[0] - args_results[1];
+	case(mobj::mathObjs::_mul): return args_results[0] * args_results[1];
+	case(mobj::mathObjs::_div): return args_results[0] / args_results[1];
+	case(mobj::mathObjs::_pow): return math::pow(args_results[0], args_results[1]);
+	case(mobj::mathObjs::_mod): return args_results[0] % args_results[1];
+		//
+	case(mobj::mathObjs::root): return math::pow(args_results[1], 1 / args_results[0]);
+	case(mobj::mathObjs::log): return math::ln(args_results[1]) / math::ln(args_results[0]);
+	}
+
+	else if (arg_indexes.size() == 3) switch (this->type) {
+	case(mobj::mathObjs::Derivative): {
+		const int n = 256;
+		int var_index = args->size();
+		args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1] + 0.5 / n));
+		math::complex res = (*objects)[this->arg_indexes[2]].return_value(objects, args);
+		(*args)[var_index].value = args_results[1] - 0.5 / n;
+		res = res - (*objects)[this->arg_indexes[2]].return_value(objects, args);
+		args->erase(args->begin() + var_index);
+		return res * n;
+	}
+	}
+
+	else if (arg_indexes.size() == 4) switch (this->type) {
 	case(mobj::mathObjs::Sum): {
 		int var_index = args->size();
 		args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
@@ -405,18 +434,44 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 		args->erase(args->begin() + var_index);
 		return res;
 	}
-	default: {
-		for (auto a : (*args))
-			if (a.name == this->name)
-				return a.value;
-		for (auto f : functions_list)
-			if (f.name == this->name) {
-				for (int i = 0; i < f.args.size() && i < args_results.size(); i++)
-					f.args[i].value = args_results[i];
-				return f.return_value();
-			}
+
+	case(mobj::mathObjs::Integral): {
+		const int n = 256;
+		int var_index = args->size();
+		args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+		math::complex res = 0, dx = (args_results[2] - args_results[1]) / n;
+		for (int k = 0; k < n; k++) {
+			res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args);
+			(*args)[var_index].value = (*args)[var_index].value + dx;
+		}
+		args->erase(args->begin() + var_index);
+		return res * dx;
+	}
+	case(mobj::mathObjs::IntegralAlongExp): {
+		const int n = 256;
+		int var_index = args->size();
+		args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+		math::complex res = 0, dx = (math::ln(args_results[2] / args_results[1])) / n, x = math::ln(args_results[1]), dt;
+		for (int k = 0; k < n; k++) {
+			dt = math::exp(x + dx) - math::exp(x);
+			res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * dt;
+			x = x + dx;
+			(*args)[var_index].value = math::exp(x);
+		}
+		args->erase(args->begin() + var_index);
+		return res;
 	}
 	}
+
+	for (auto a : (*args))
+		if (a.name == this->name)
+			return a.value;
+	for (auto f : functions_list)
+		if (f.name == this->name) {
+			for (int i = 0; i < f.args.size() && i < args_results.size(); i++)
+				f.args[i].value = args_results[i];
+			return f.return_value();
+		}
 	return 0;
 }
 

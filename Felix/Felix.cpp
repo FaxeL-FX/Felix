@@ -1,4 +1,4 @@
-﻿//	v1.5.0
+﻿//	v1.6.0
 
 #include <iostream>
 #include "include.h"
@@ -24,6 +24,12 @@ struct Color {
 		this->R = rgb[0];
 		this->G = rgb[1];
 		this->B = rgb[2];
+		this->A = 1;
+	}
+	Color(float W) {
+		this->R = W;
+		this->G = W;
+		this->B = W;
 		this->A = 1;
 	}
 };
@@ -64,6 +70,7 @@ math::number plot_radius = 4;
 bool run_command(std::string c) {
 	std::vector<std::string> args;
 	for (;;) {
+		while (c[0] == ' ') c = c.substr(1);
 		int index = c.find(' ');
 		if (-1 < index) {
 			args.push_back(c.substr(0, index));
@@ -75,7 +82,7 @@ bool run_command(std::string c) {
 		}
 	}
 
-	if (args[0] == "add") {
+	if (args[0] == "def") {
 		if (args.size() < 3) return false;
 		Function f;
 
@@ -95,13 +102,18 @@ bool run_command(std::string c) {
 		else f.name = args[1];
 
 		std::string expr = "";
-		for (int i = 2; i < args.size(); i++) expr += args[i];
+		for (int i = 2 + (args[2] == "="); i < args.size(); i++) expr += args[i];
 		f.objects = parse_expr(expr);
 
+		for (int i = 0; i < functions_list.size(); i++)
+			if (functions_list[i].name == f.name) {
+				functions_list[i] = f;
+				return true;
+			}
 		functions_list.push_back(f);
 		return true;
 	}
-	if (args[0] == "remove") {
+	if (args[0] == "del") {
 		if (args.size() < 2) return false;
 		if (args[1] == "all") {
 			functions_list.clear();
@@ -240,7 +252,7 @@ bool run_command(std::string c) {
 					}
 					if (down < up) down++;
 					for (int j = down; j <= up && j < resolution; j++) {
-						img[j * resolution + iX] = toVecF(pen(img[j * resolution + iX], Color(1, 1, 1, 0.75)));
+						img[j * resolution + iX] = toVecF(penAdd(img[j * resolution + iX], Color(1 / (1 + res.i * res.i))));
 					}
 					iYp = iY;
 				}
@@ -279,6 +291,9 @@ bool run_command(std::string c) {
 		default: return false;
 		}
 		BMPWriter::write_image(img, resolution, (char*)"graph.bmp");
+		return true;
+	}
+	if (args[0] == "help") {
 		return true;
 	}
 

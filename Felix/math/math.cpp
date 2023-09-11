@@ -157,7 +157,7 @@ namespace math {
 		for (int i = 0; i < 64; i++) res = (res << 1) + res * res;
 		if (x.R < 0) return 1 / (res + 1);
 		return res + 1;
-	}																						//	need to change for "flex_float" instead "long double"
+	}
 	complex ln(complex x) { return complex(ln(abs(x)), arg(x)); }
 
 	complex pow(complex x, complex y) { return exp(y * ln(x)); }
