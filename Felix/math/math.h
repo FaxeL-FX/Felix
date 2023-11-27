@@ -60,15 +60,6 @@ namespace math {
 	typedef long double number;
 	extern const number pi;
 
-	//number operator+(number x, number y);
-	//number operator-(number x);
-	//number operator-(number x, number y);
-	//number operator*(number x, number y);
-	//number operator/(number x, number y);
-	//number operator%(number x, number y);
-	//number operator<<(number x, int n);
-	//number operator>>(number x, int n);
-	
 	bool sign(double);
 	int E(double);
 	unsigned long long M(double);
@@ -81,7 +72,9 @@ namespace math {
 		complex(number R) { this->R = R; i = 0; }
 		complex(number R, number i) { this->R = R; this->i = i; }
 	};
-	extern const complex i;
+	extern const complex i, fctIntegralConstant;
+
+	complex getFctIntegralConstant();
 
 	complex operator+(complex, complex);
 	complex operator-(complex);
@@ -93,35 +86,35 @@ namespace math {
 	complex operator>>(complex, int);
 
 	//	functions
-	number rand(int, std::vector<number>);
-	number rand(int, std::vector<complex>);
-	number rand(int, complex);
-	number rand(int);
-	
+	long double rand(int, std::vector<long double>);
+	long double rand(int, std::vector<complex>);
+	long double rand(int, complex);
+	long double rand(int);
+
 	//	for number
-	number floor(number);
-	number sign(number);
+	long double floor(long double);
+	long double sign(long double);
 
-	number exp(number);
-	number ln(number);
+	long double exp(long double);
+	long double ln(long double);
 
-	number sqrt(number);
-	number inv_sqrt(number);
+	long double sqrt(long double);
+	long double inv_sqrt(long double);
 
-	number cos(number);
-	number sin(number);
-	number arccos(number);
+	long double cos(long double);
+	long double sin(long double);
+	long double arccos(long double);
 
 	//	for complex
 	bool operator==(complex, complex);
 	std::string toString(complex);
 
 	complex floor(complex);
-	number abs(complex);
-	number inv_abs(complex);
+	long double abs(complex);
+	long double inv_abs(complex);
 	complex normalize(complex);
 	complex mul_i(complex);
-	number arg(complex);
+	long double arg(complex);
 
 	complex exp(complex);
 	complex ln(complex);
@@ -149,4 +142,5 @@ namespace math {
 	complex arctan(complex);
 
 	complex fct(complex);
+	complex fctIntegral(complex);
 }

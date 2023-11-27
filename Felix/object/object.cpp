@@ -47,6 +47,7 @@ mobj::mathObjs nameToType(std::string token) {
 	else if (token == "arctanh" || token == "arctgh") return mobj::mathObjs::arctanh;
 
 	else if (token == "gamma") return mobj::mathObjs::gamma;
+	else if (token == "fctIntegral" || token == "fctI") return mobj::mathObjs::fctIntegral;
 
 	else if (token == "S" || token == "Sum") return mobj::mathObjs::Sum;
 	else if (token == "P" || token == "Product") return mobj::mathObjs::Product;
@@ -351,6 +352,7 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 	case(mobj::mathObjs::arctanh): return math::arctanh(args_results[0]);
 		//
 	case(mobj::mathObjs::gamma): return math::fct(args_results[0] - 1);
+	case(mobj::mathObjs::fctIntegral): return math::fctIntegral(args_results[0]);
 		//
 	}
 

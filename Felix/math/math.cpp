@@ -3,15 +3,6 @@ namespace math {
 	//	number
 	const number pi = 3.1415926535897932384626433832795028841971693993751058209749445923;
 
-	//number operator+(number x, number y) { return x + y; }
-	//number operator-(number x) { return -x; }
-	//number operator-(number x, number y) { return x - y; }
-	//number operator*(number x, number y) { return x * y; }
-	//number operator/(number x, number y) { return x / y; }
-	//number operator%(number x, number y) { return x - y * floor(x / y); }
-	//number operator<<(number x, int n) { return 0; }
-	//number operator>>(number x, int n) { return x << -n; }
-
 	bool sign(double x) {
 		unsigned long long i = *(unsigned long long*) & x;
 		return i >> 63;
@@ -28,8 +19,20 @@ namespace math {
 		return (double)M(x) / ((unsigned long long)1 << 52);
 	}
 
+	complex getFctIntegralConstant() {
+		const int n = 256;
+		complex res, a = complex(0, pi / n), b = 8 / 256;
+		for (int k = 0; k < n; k++) {
+			complex t = exp(k * b - (n - k) * a) + 1;
+			res = res + t * exp(-t) / ln(t) * (exp((k + 1) * b - (n - k - 1) * a) - exp(k * b - (n - k) * a));
+		}
+		return res;
+	}
+
 	//	complex
-	const complex i(0, 1);
+	const complex
+		i(0, 1),
+		fctIntegralConstant = getFctIntegralConstant();
 
 	complex operator+(complex x, complex y) { return complex(x.R + y.R, x.i + y.i); }
 	complex operator-(complex x) { return complex(-x.R, -x.i); }
@@ -51,74 +54,74 @@ namespace math {
 	complex operator>>(complex x, int n) { return x << -n; }
 
 	//	functions
-	number rand(int seed, std::vector<number> v) {
-		number res = cos(seed);
+	long double rand(int seed, std::vector<long double> v) {
+		long double res = cos(seed);
 		for (int i = 1; i <= 16; i++)
 			for (auto n : v)
 				res = res + sin(n) + res - 16 * floor(res * 0.0625);
 		res = fmod(res, 1.0);
 		return res;
-	}																						//	need to change for "flex_float" instead "long double"
-	number rand(int seed, std::vector<complex> v) {
-		number res = cos(seed);
+	}
+	long double rand(int seed, std::vector<complex> v) {
+		long double res = cos(seed);
 		for (int i = 1; i <= 16; i++)
 			for (auto n : v)
 				res = res + sin(n.R) + res - 16 * floor(res * 0.0625);
 		res = fmod(res, 1.0);
 		return res;
 	}
-	number rand(int seed, complex z) {
-		std::vector<number> v = { z.R, z.i };
+	long double rand(int seed, complex z) {
+		std::vector<long double> v = { z.R, z.i };
 		return rand(seed, v);
 	}
-	number rand(int n) {
-		std::vector<number> v = { (number)n };
+	long double rand(int n) {
+		std::vector<long double> v = { (long double)n };
 		return rand(n, v);
 	}
 
 	//	for number
-	number floor(number x) {
+	long double floor(long double x) {
 		return std::floor(x);
-	}																						//	need to change for "flex_float" instead "long double"
-	number sign(number x) {
+	}	
+	long double sign(long double x) {
 		if (x < 0) return -1;
 		return 1;
 	}
 
-	number exp(number x) {
-		number res = x / ((unsigned long long)1 << 32);
+	long double exp(long double x) {
+		long double res = x / ((unsigned long long)1 << 32);
 		if (res < 0) res = -res;
 		for (int i = 0; i < 32; i++) res = 2 * res + res * res;
 		if (x < 0) return 1 / (res + 1);
 		return res + 1;
-	}																						//	need to change for "flex_float" instead "long double"
-	number log(number x) {
-		number res = 0, part = 1;
+	}
+	long double log(long double x) {
+		long double res = 0, part = 1;
 		for (int k = 1; k < 32; k++) {
 			part = part * (1 - x);
-			res = res + ((1 - part) / k) / ((unsigned long long)1 << k);
+			res = res + (1 - part) / (k * ((unsigned long long)1 << k));
 		}
 		return res;
-	}																						//	need to change for "flex_float" instead "long double"
-	number ln(number x) { return log(fract(x)) + 0.6931471805599453 * E(x); }
+	}
+	long double ln(long double x) { return log(fract(x)) + 0.6931471805599453 * E(x); }
 
-	number sqrt(number x) { return exp(0.5 * ln(x)); }
-	number inv_sqrt(number x) { return exp(-0.5 * ln(x)); }
+	long double sqrt(long double x) { return exp(0.5 * ln(x)); }
+	long double inv_sqrt(long double x) { return exp(-0.5 * ln(x)); }
 
-	number cos(number x) {
-		number res = x / ((unsigned long long)1 << 16);
+	long double cos(long double x) {
+		long double res = x / ((unsigned long long)1 << 16);
 		res = 2 - res * res;
 		for (int i = 0; i < 16; i++) res = res * res - 2;
 		return res * 0.5;
-	}																						//	need to change for "flex_float" instead "long double"
-	number sin(number x) { return cos(x - 1.57079632679); }
-	number arccos(number x) {
+	}
+	long double sin(long double x) { return cos(x - 1.57079632679); }
+	long double arccos(long double x) {
 		if (x == 1) return 0;
 		if (x < 0) return pi - arccos(-x);
-		number res = sqrt((x + 1) * 2);
+		long double res = sqrt((x + 1) * 2);
 		for (int i = 1; i < 8; i++) res = sqrt(2 + res);
 		return sqrt(2 - res) * (1 << 8);
-	}																						//	need to change for "flex_float" instead "long double"
+	}
 
 	//	for complex
 	bool operator==(complex x, complex y) {
@@ -129,15 +132,15 @@ namespace math {
 		if (x.i == 0) x.i = 0;
 		if (x.i < 0) return std::to_string(x.R) + std::to_string(x.i) + "i";
 		return std::to_string(x.R) + "+" + std::to_string(x.i) + "i";
-	}																						//	need to change for "flex_float" instead "long double"
+	}
 
 	complex floor(complex x) { return complex(floor(x.R), floor(x.i)); }
-	number abs(complex x) {
+	long double abs(complex x) {
 		if (x.i == 0) return sign(x.R) * x.R;
 		if (x.R == 0) return sign(x.i) * x.i;
 		return sqrt(x.R * x.R + x.i * x.i);
 	}
-	number inv_abs(complex x) { return inv_sqrt(x.R * x.R + x.i * x.i); }
+	long double inv_abs(complex x) { return inv_sqrt(x.R * x.R + x.i * x.i); }
 	complex normalize(complex x) {
 		if (x.i == 0)
 			if (x.R < 0)	return -1;
@@ -148,15 +151,15 @@ namespace math {
 		return x * inv_sqrt(x.R * x.R + x.i * x.i);
 	}
 	complex mul_i(complex x) { return complex(-x.i, x.R); }
-	number arg(complex x) {
-		number cosine;
+	long double arg(complex x) {
+		long double cosine;
 		if (x.i == 0)
 			if (x.R < 0)	cosine = -1;
 			else			cosine = 1;
 		else				cosine = x.R * inv_abs(x);
 		if (x.i < 0) return -arccos(cosine);
 		return arccos(cosine);
-	}																						//	need to change for "flex_float" instead "long double"
+	}
 
 	complex exp(complex x) {
 		if (x.R < -709) return 0;
@@ -201,6 +204,14 @@ namespace math {
 		const long double n = 32.5;
 		complex res = exp(-x + (x + n) * ln(x + n) - n * ln(n));
 		for (int i = 1; i < n; i++) res = res * i / (x + i);
+		return res;
+	}
+	complex fctIntegral(complex x) {
+		const int n = 256;
+		complex res = fctIntegralConstant, logX = ln(x) / n;
+		for (int k = 0; k < n; k++) {
+			res = res + fct(exp(k * logX)) * (exp((k + 1) * logX) - exp(k * logX));
+		}
 		return res;
 	}
 }

@@ -4,6 +4,9 @@
 #include "include.h"
 #include "object/object.h"
 #include "bmp/BMPWriter.h"
+#include <thread>
+
+const unsigned int prc_count = std::thread::hardware_concurrency();
 
 struct Color {
 	float R, G, B, A;
@@ -102,7 +105,7 @@ bool run_command(std::string c) {
 		else f.name = args[1];
 
 		std::string expr = "";
-		for (int i = 2 + (args[2] == "="); i < args.size(); i++) expr += args[i];
+		for (int i = 2 + (args[2] == "="); i < args.size(); i++) expr += args[i] + ' ';
 		f.objects = parse_expr(expr);
 
 		for (int i = 0; i < functions_list.size(); i++)
@@ -159,6 +162,7 @@ bool run_command(std::string c) {
 			}
 
 		int resolution = std::stoi(args[2]);
+		int prc = resolution + (prc_count < resolution) * (prc_count - resolution);
 		std::vector<std::vector<float>> img;
 		std::vector<std::vector<float>>* im = &img;
 		for (int i = 0; i < resolution * resolution; i++) {
@@ -197,90 +201,129 @@ bool run_command(std::string c) {
 		}
 		case(1): {
 			if (cmplx) {
-				math::number
-					startX = plot_center.R - plot_radius,
-					startY = plot_center.i - plot_radius,
-					step = 2 * plot_radius / resolution;
-				math::complex res;
-				for (int iX = 0; iX < resolution; iX++) {
-					for (int iY = 0; iY < resolution; iY++) {
-						f.args[0].value.R = startX + step * iX;
-						f.args[0].value.i = startY + step * iY;
-						res = f.return_value();
-						img[iY * resolution + iX] = toVecF(pen(img[iY * resolution + iX], toCol(res)));
-					}
+				std::vector<std::thread> thr(prc);
+				for (int i = 0; i < prc; i++) {
+					thr[i] = std::thread([](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f) {
+						math::number
+							startX = plot_center.R - plot_radius,
+							startY = plot_center.i - plot_radius,
+							step = 2 * plot_radius / resolution;
+						math::complex res;
+						for (int iX = begin; iX < end && iX < resolution; iX++) {
+							for (int iY = 0; iY < resolution; iY++) {
+								f.args[0].value.R = startX + step * iX;
+								f.args[0].value.i = startY + step * iY;
+								res = f.return_value();
+								(*img)[iY * resolution + iX] = toVecF(pen((*img)[iY * resolution + iX], toCol(res)));
+							}
+						}
+						}, im, i* resolution / prc, (i + 1)* resolution / prc, resolution, f);
 				}
+				for (int i = 0; i < prc; i++) thr[i].join();
 			}
 			else if (eq) {
-				math::number
-					startX = plot_center.R - plot_radius,
-					startY = plot_center.i - plot_radius,
-					step = 2 * plot_radius / resolution;
-				math::complex res;
-				for (int iX = 0; iX < resolution; iX++) {
-					for (int iY = 0; iY < resolution; iY++) {
-						f.args[0].value.R = startX + step * iX;
-						f.args[0].value.i = startY + step * iY;
-						res = 1 / (1 + math::abs(f.return_value()));
-						img[iY * resolution + iX] = toVecF(penAdd(img[iY * resolution + iX], Color(res.R, res.R, res.R, 1)));
-					}
+				std::vector<std::thread> thr(prc);
+				for (int i = 0; i < prc; i++) {
+					thr[i] = std::thread([](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f) {
+						math::number
+							startX = plot_center.R - plot_radius,
+							startY = plot_center.i - plot_radius,
+							step = 2 * plot_radius / resolution;
+						math::complex res;
+						for (int iX = begin; iX < end && iX < resolution; iX++) {
+							for (int iY = 0; iY < resolution; iY++) {
+								f.args[0].value.R = startX + step * iX;
+								f.args[0].value.i = startY + step * iY;
+								res = 1 / (1 + math::abs(f.return_value()));
+								(*img)[iY * resolution + iX] = toVecF(penAdd((*img)[iY * resolution + iX], Color(res.R, res.R, res.R, 1)));
+							}
+						}
+					}, im, i * resolution / prc, (i + 1) * resolution / prc, resolution, f);
 				}
+				for (int i = 0; i < prc; i++) thr[i].join();
 			}
 			else {
-				int iY, iYp;
-				math::number start = plot_center.R - plot_radius, step = 2 * plot_radius / resolution;
-				math::complex res;
-				for (int iX = 0; iX < resolution; iX++) {
-					f.args[0].value = start + step * iX;
-					res = f.return_value();
-					iY = ((res.R - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
-					if (resolution <= iY) iY = resolution - 1;
-					if (iY < 0) iY = 0;
-					if (iX == 0) iYp = iY;
-					int up, down;
-					if (iYp > iY) {
-						up = iYp;
-						down = iY;
-					}
-					else {
-						up = iY;
-						down = iYp;
-					}
-					if (down < up) down++;
-					for (int j = down; j <= up && j < resolution; j++) {
-						img[j * resolution + iX] = toVecF(penAdd(img[j * resolution + iX], Color(1 / (1 + res.i * res.i))));
-					}
-					iYp = iY;
+				std::vector<std::thread> thr(prc);
+				for (int i = 0; i < prc; i++) {
+					thr[i] = std::thread([](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f) {
+						int iY, iYp;
+						math::number start = plot_center.R - plot_radius, step = 2 * plot_radius / resolution;
+						math::complex res;
+						f.args[0].value = start + step * (begin - 1);
+						res = f.return_value();
+						iYp = ((res.R - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
+						if (resolution <= iYp) iYp = resolution - 1;
+						if (iYp < 0) iYp = 0;
+						for (int iX = begin; iX < end && iX < resolution; iX++) {
+							f.args[0].value = start + step * iX;
+							res = f.return_value();
+							iY = ((res.R - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
+							if (resolution <= iY) iY = resolution - 1;
+							if (iY < 0) iY = 0;
+							int up, down;
+							if (iYp > iY) {
+								up = iYp;
+								down = iY;
+							}
+							else {
+								up = iY;
+								down = iYp;
+							}
+							if (down < up) down++;
+							for (int j = down; j <= up && j < resolution; j++) {
+								(*img)[j * resolution + iX] = toVecF(penAdd((*img)[j * resolution + iX], Color(1 / (1 + res.i * res.i))));
+							}
+							iYp = iY;
+						}
+					}, im, i * resolution / prc, (i + 1) * resolution / prc, resolution, f);
 				}
+				for (int i = 0; i < prc; i++) thr[i].join();
 			}
 			break;
 		}
 		case(2): {
-			math::number
-				startX = plot_center.R - plot_radius,
-				startY = plot_center.i - plot_radius,
-				step = 2 * plot_radius / resolution;
-			math::complex res;
 			if (cmplx) {
-				for (int iX = 0; iX < resolution; iX++) {
-					for (int iY = 0; iY < resolution; iY++) {
-						f.args[0].value = startX + step * iX;
-						f.args[1].value = startY + step * iY;
-						res = f.return_value();
-						img[iY * resolution + iX] = toVecF(pen(img[iY * resolution + iX], toCol(res)));
-					}
+				std::vector<std::thread> thr(prc);
+				for (int i = 0; i < prc; i++) {
+					thr[i] = std::thread([](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f) {
+						math::number
+							startX = plot_center.R - plot_radius,
+							startY = plot_center.i - plot_radius,
+							step = 2 * plot_radius / resolution;
+						math::complex res;
+						for (int iX = begin; iX < end && iX < resolution; iX++) {
+							for (int iY = 0; iY < resolution; iY++) {
+								f.args[0].value = startX + step * iX;
+								f.args[1].value = startY + step * iY;
+								res = f.return_value();
+								(*img)[iY * resolution + iX] = toVecF(pen((*img)[iY * resolution + iX], toCol(res)));
+							}
+						}
+					}, im, i * resolution / prc, (i + 1) * resolution / prc, resolution, f);
 				}
+				for (int i = 0; i < prc; i++) thr[i].join();
 			}
 			else {
-				for (int iX = 0; iX < resolution; iX++) {
-					for (int iY = 0; iY < resolution; iY++) {
-						f.args[0].value = startX + step * iX;
-						f.args[1].value = startY + step * iY;
-						res = f.return_value();
-						Color c(1,1,1, 1 / (1 + math::abs(res)));
-						img[iY * resolution + iX] = toVecF(penAdd(img[iY * resolution + iX], c));
-					}
+				std::vector<std::thread> thr(prc);
+				for (int i = 0; i < prc; i++) {
+					thr[i] = std::thread([](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f) {
+						math::number
+							startX = plot_center.R - plot_radius,
+							startY = plot_center.i - plot_radius,
+							step = 2 * plot_radius / resolution;
+						math::complex res;
+						for (int iX = begin; iX < end && iX < resolution; iX++) {
+							for (int iY = 0; iY < resolution; iY++) {
+								f.args[0].value = startX + step * iX;
+								f.args[1].value = startY + step * iY;
+								res = f.return_value();
+								Color c(1, 1, 1, 1 / (1 + math::abs(res)));
+								(*img)[iY * resolution + iX] = toVecF(penAdd((*img)[iY * resolution + iX], c));
+							}
+						}
+					}, im, i * resolution / prc, (i + 1) * resolution / prc, resolution, f);
 				}
+				for (int i = 0; i < prc; i++) thr[i].join();
 			}
 			break;
 		}
@@ -336,6 +379,7 @@ bool run_command(std::string c) {
 				response += " => arcsinh(x)   arctanh(x) = arctgh(x)\n";
 				response += "\n Other Functions\n";
 				response += " =>   gamma(x) -> gamma function\n";
+				response += " =>    fctI(x) -> integral of factorial\n";
 				response += " =>     abs(x) -> absolute value\n";
 				response += " => inv_abs(x) -> inverse absolute value\n";
 				response += " =>     arg(x) -> argument of x\n";

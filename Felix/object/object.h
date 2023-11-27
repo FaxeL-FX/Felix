@@ -23,7 +23,7 @@ namespace mobj {
 		coth, arccoth,
 		tanh, arctanh,
 
-		gamma,
+		gamma, fctIntegral,
 
 		Sum, Product, Return,
 		Integral, Derivative, IntegralAlongExp,
