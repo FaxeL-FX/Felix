@@ -66,32 +66,101 @@ namespace math {
 	double fract(double);
 
 	//	complex
-	struct complex {
-		number R, i;
-		complex() { R = 0; i = 0; }
-		complex(number R) { this->R = R; i = 0; }
-		complex(number R, number i) { this->R = R; this->i = i; }
+	extern struct complex_exponential;
+	struct fixed_point32 {
+		int64_t num = 0;
+		fixed_point32() {}
+		fixed_point32(int n) {
+			this->num = (long long)n << 32;
+		}
+		fixed_point32(long long n) {
+			this->num = n << 32;
+		}
+		fixed_point32(long double n) {
+			this->num = n * ((long long)1 << 32);
+		}
+		operator long double() {
+			return (long double)this->num / ((long long)1 << 32);
+		}
 	};
-	extern const complex i, fctIntegralConstant;
+	struct complex_linear {
+		number R, i;
+		complex_linear() {
+			this->R = 0;
+			this->i = 0;
+		}
+		complex_linear(number R) {
+			this->R = R;
+			this->i = 0;
+		}
+		complex_linear(number R, number i) {
+			this->R = R;
+			this->i = i;
+		}
+		complex_linear(complex_exponential x);
+	};
+	struct complex_exponential {
+		long double r;
+		fixed_point32 a;
+		complex_exponential() {
+			this->r = 0;
+			this->a = 0;
+		}
+		complex_exponential(number x);
+		complex_exponential(number r, number a) {
+			this->r = r;
+			this->a = a;
+		}
+		complex_exponential(complex_linear x);
+	};
+#if 1
+	typedef complex_exponential complex;
+#else
+	typedef complex_linear complex;
+#endif
+	extern const complex_linear
+		i,
+		fctIntegralConstant;
 
-	complex getFctIntegralConstant();
+	fixed_point32 operator+(fixed_point32, fixed_point32);
+	fixed_point32 operator-(fixed_point32);
+	fixed_point32 operator-(fixed_point32, fixed_point32);
+	fixed_point32 operator*(fixed_point32, long double);
+	fixed_point32 operator/(fixed_point32, long double);
+	fixed_point32 operator%(fixed_point32, fixed_point32);
+	fixed_point32 operator<<(fixed_point32, int);
+	fixed_point32 operator>>(fixed_point32, int);
+	bool operator==(fixed_point32, fixed_point32);
 
-	complex operator+(complex, complex);
-	complex operator-(complex);
-	complex operator-(complex, complex);
-	complex operator*(complex, complex);
-	complex operator/(complex, complex);
-	complex operator%(complex, complex);
-	complex operator<<(complex, int);
-	complex operator>>(complex, int);
+	complex_linear getFctIntegralConstant();
+
+	complex_linear operator+(complex_linear, complex_linear);
+	complex_linear operator-(complex_linear);
+	complex_linear operator-(complex_linear, complex_linear);
+	complex_linear operator*(complex_linear, complex_linear);
+	complex_linear operator/(complex_linear, complex_linear);
+	complex_linear operator%(complex_linear, complex_linear);
+	complex_linear operator<<(complex_linear, int);
+	complex_linear operator>>(complex_linear, int);
+	bool operator==(complex_linear, complex_linear);
+
+	complex_exponential operator+(complex_exponential, complex_exponential);
+	complex_exponential operator-(complex_exponential);
+	complex_exponential operator-(complex_exponential, complex_exponential);
+	complex_exponential operator*(complex_exponential, complex_exponential);
+	complex_exponential operator/(complex_exponential, complex_exponential);
+	complex_exponential operator%(complex_exponential, complex_exponential);
+	complex_exponential operator<<(complex_exponential, int);
+	complex_exponential operator>>(complex_exponential, int);
+	bool operator==(complex_exponential, complex_exponential);
 
 	//	functions
 	long double rand(int, std::vector<long double>);
 	long double rand(int, std::vector<complex>);
-	long double rand(int, complex);
+	long double rand(int, complex_linear);
 	long double rand(int);
 
-	//	for number
+	//	long double
 	long double floor(long double);
 	long double sign(long double);
 
@@ -105,24 +174,40 @@ namespace math {
 	long double sin(long double);
 	long double arccos(long double);
 
-	//	for complex
-	bool operator==(complex, complex);
-	std::string toString(complex);
+	//	complex_linear
+	std::string toString(complex_linear);
 
-	complex floor(complex);
-	long double abs(complex);
-	long double inv_abs(complex);
-	complex normalize(complex);
-	complex mul_i(complex);
-	long double arg(complex);
+	complex_linear floor(complex_linear);
+	long double abs(complex_linear);
+	long double inv_abs(complex_linear);
+	complex_linear normalize(complex_linear);
+	complex_linear mul_i(complex_linear);
+	long double arg(complex_linear);
+	bool exist(complex_linear);
 
-	complex exp(complex);
-	complex ln(complex);
+	complex_linear exp(complex_linear);
+	complex_linear ln(complex_linear);
+	complex_linear pow(complex_linear, complex_linear);
+	complex_linear sqrt(complex_linear);
+	complex_linear inv_sqrt(complex_linear);
 
-	complex pow(complex, complex);
-	complex sqrt(complex);
-	complex inv_sqrt(complex);
+	//	complex_exponential
+	std::string toString(complex_exponential);
+	complex_exponential floor(complex_exponential);
+	long double abs(complex_exponential);
+	long double inv_abs(complex_exponential);
+	complex_exponential normalize(complex_exponential);
+	complex_exponential mul_i(complex_exponential);
+	long double arg(complex_exponential);
+	bool exist(complex_exponential);
 
+	complex_exponential exp(complex_exponential);
+	complex_exponential ln(complex_exponential);
+	complex_exponential pow(complex_exponential, complex_exponential);
+	complex_exponential sqrt(complex_exponential);
+	complex_exponential inv_sqrt(complex_exponential);
+
+	//	complex
 	complex cosh(complex);
 	complex sinh(complex);
 	complex coth(complex);
@@ -142,5 +227,5 @@ namespace math {
 	complex arctan(complex);
 
 	complex fct(complex);
-	complex fctIntegral(complex);
+	complex fctIntegral(complex, complex);
 }

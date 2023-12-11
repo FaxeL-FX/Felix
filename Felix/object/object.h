@@ -8,7 +8,7 @@ namespace mobj {
 
 		_add, _dif, _mul, _div, _pow, _fct, _mod, _uMinus,
 
-		abs, inv_abs, arg, Re, Im, exist, floor, round, grid,
+		abs, inv_abs, arg, sign, Re, Im, exist, floor, round, grid,
 
 		exp, ln,
 		sqrt, inv_sqrt,
