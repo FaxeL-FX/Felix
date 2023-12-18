@@ -28,16 +28,8 @@ namespace math {
 		return x;
 	}
 	fixed_point32 operator-(fixed_point32 x, fixed_point32 y) { return x + -y; }
-	fixed_point32 operator*(fixed_point32 x, long double y) {
-		x.num = x.num * y;
-		return x;
-	}
-	fixed_point32 operator/(fixed_point32 x, long double y) {
-		x.num = x.num / y;
-		return x;
-	}
-	fixed_point32 operator%(fixed_point32 x, fixed_point32 y) {
-		x.num = x.num % y.num;
+	fixed_point32 operator*(fixed_point32 x, fixed_point32 y) {
+		x.num = ((x.num >> 32) * y.num) << 32 + (((x.num << 32) >> 32) * y.num) >> 32;
 		return x;
 	}
 	fixed_point32 operator<<(fixed_point32 x, int n) {
@@ -103,11 +95,9 @@ namespace math {
 	}
 
 	complex_exponential operator+(complex_exponential x, complex_exponential y) {
-		return (complex_linear)x + (complex_linear)y;
-		// depression...
 		number
 			radius = sqrt(x.r * x.r + y.r * y.r + 2 * x.r * y.r * cos(y.a - x.a)),
-			angle = sign(x.a) * sign(y.a) * arccos((x.r * cos(x.a) + y.r * cos(y.a)) / radius);
+			angle = sign(x.r * sin(x.a) + y.r * sin(y.a)) * arccos((x.r * cos(x.a) + y.r * cos(y.a)) / radius);
 		return complex_exponential(radius, angle);
 	}
 	complex_exponential operator-(complex_exponential x) { return complex_exponential(x.r, x.a + (fixed_point32)pi); }
@@ -284,12 +274,12 @@ namespace math {
 		long double c = cos(y.a), s = sin(y.a), l = ln(x.r);
 		return complex_exponential(exp(y.r * (l * c - (long double)x.a * s)), y.r * (l * s + (long double)x.a * c));
 	}
-	complex_exponential sqrt(complex_exponential x) { return complex_exponential(sqrt(x.r), x.a * (long double)0.5); }
-	complex_exponential inv_sqrt(complex_exponential x) { return complex_exponential(inv_sqrt(x.r), x.a * (long double)(-0.5)); }
+	complex_exponential sqrt(complex_exponential x) { return complex_exponential(sqrt(x.r), x.a * 0.5); }
+	complex_exponential inv_sqrt(complex_exponential x) { return complex_exponential(inv_sqrt(x.r), x.a * (-0.5)); }
 
 	complex_exponential fct(complex_exponential x) {
 		complex_linear X = x, productRes = 1;
-		if (X.R < -0.5) return -pi / (sin(pi * x) * fct((complex_exponential)(-1 - X)));
+		if (X.R < -0.5) return -pi / ((complex_exponential)sin(pi * x) * fct((complex_exponential)(-1 - X)));
 		float n = 32.5;
 		complex_exponential Xn = X + n, res = pow(Xn, Xn) / exp(x) * exp(-n * ln(n));
 		for (int i = 1; i < n; i++) productRes = productRes * i  / (X + i);

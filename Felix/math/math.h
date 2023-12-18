@@ -125,9 +125,7 @@ namespace math {
 	fixed_point32 operator+(fixed_point32, fixed_point32);
 	fixed_point32 operator-(fixed_point32);
 	fixed_point32 operator-(fixed_point32, fixed_point32);
-	fixed_point32 operator*(fixed_point32, long double);
-	fixed_point32 operator/(fixed_point32, long double);
-	fixed_point32 operator%(fixed_point32, fixed_point32);
+	fixed_point32 operator*(fixed_point32, fixed_point32);
 	fixed_point32 operator<<(fixed_point32, int);
 	fixed_point32 operator>>(fixed_point32, int);
 	bool operator==(fixed_point32, fixed_point32);
