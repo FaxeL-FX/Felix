@@ -31,15 +31,19 @@ namespace mobj {
 }
 
 struct Variable {
+	int id = -1;
 	std::string name;
 	math::complex value;
 
-	Variable(std::string name, math::complex value) {
+	Variable(int id, std::string name, math::complex value) {
+		this->id = id;
 		this->name = name;
 		this->value = value;
 	}
 };
 struct Object {
+	int fncID = -1,
+		argID = -1;
 	std::string name;
 	mobj::mathObjs type;
 	std::vector<int> arg_indexes;
@@ -47,7 +51,9 @@ struct Object {
 
 	math::complex return_value(std::vector<Object>* objects, std::vector<Variable>* args);
 
-	Object(std::string name, std::vector<int> arg_indexes, math::complex value) {
+	Object(int fncID, int argID, std::string name, std::vector<int> arg_indexes, math::complex value) {
+		this->fncID = fncID;
+		this->argID = argID;
 		this->name = name;
 		this->arg_indexes = arg_indexes;
 		this->value = value;
@@ -58,6 +64,7 @@ struct Object {
 	Object() {}
 };
 struct Function {
+	int id = -1;
 	std::string name;
 	std::vector<Variable> args;
 	std::vector<Object> objects;
@@ -70,7 +77,8 @@ struct Function {
 	}
 
 	Function() {}
-	Function(std::string name, std::vector<Variable> args, std::vector<Object> objects) {
+	Function(int id, std::string name, std::vector<Variable> args, std::vector<Object> objects) {
+		this->id = id;
 		this->name = name;
 		this->args = args;
 		this->objects = objects;

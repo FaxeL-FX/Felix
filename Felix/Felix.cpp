@@ -100,6 +100,7 @@ bool run_command(std::string c) {
 	if (args[0] == "def") {
 		if (args.size() < 3) return false;
 		Function f;
+		f.id = functions_list.size();
 
 		int bracket_index = args[1].find('(');
 		if (-1 < bracket_index) {
@@ -108,9 +109,9 @@ bool run_command(std::string c) {
 			while (arguments.length() > 0) {
 				int index1 = arguments.find(','),
 					index2 = arguments.find(')');
-				/**/ if (-1 < index1) f.args.push_back(Variable(arguments.substr(0, index1), 0));
-				else if (-1 < index2) f.args.push_back(Variable(arguments.substr(0, index2), 0));
-				else /*------------*/ f.args.push_back(Variable(arguments, 0));
+				/**/ if (-1 < index1) f.args.push_back(Variable(f.args.size(), arguments.substr(0, index1), 0));
+				else if (-1 < index2) f.args.push_back(Variable(f.args.size(), arguments.substr(0, index2), 0));
+				else /*------------*/ f.args.push_back(Variable(f.args.size(), arguments, 0));
 				arguments = arguments.substr(f.args[f.args.size() - 1].name.length() + 1);
 			}
 		}
@@ -119,6 +120,13 @@ bool run_command(std::string c) {
 		std::string expr = "";
 		for (int i = 2 + (args[2] == "="); i < args.size(); i++) expr += args[i] + ' ';
 		f.objects = parse_expr(expr);
+		for (int i = 0; i < f.objects.size(); i++) {
+			for (auto arg : f.args)
+				if (f.objects[i].name == arg.name) {
+					f.objects[i].argID = arg.id;
+					break;
+				}
+		}
 
 		for (int i = 0; i < functions_list.size(); i++)
 			if (functions_list[i].name == f.name) {

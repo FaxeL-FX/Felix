@@ -113,7 +113,7 @@ namespace math {
 		}
 		complex_exponential(complex_linear x);
 	};
-#if 1
+#if 0
 	typedef complex_exponential complex;
 #else
 	typedef complex_linear complex;
