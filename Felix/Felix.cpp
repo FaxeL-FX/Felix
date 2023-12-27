@@ -100,7 +100,6 @@ bool run_command(std::string c) {
 	if (args[0] == "def") {
 		if (args.size() < 3) return false;
 		Function f;
-		f.id = functions_list.size();
 
 		int bracket_index = args[1].find('(');
 		if (-1 < bracket_index) {
@@ -116,6 +115,10 @@ bool run_command(std::string c) {
 			}
 		}
 		else f.name = args[1];
+
+		f.id = 0;
+		for (char c : f.name)
+			f.id = (f.id << 1) + (int)c;
 
 		std::string expr = "";
 		for (int i = 2 + (args[2] == "="); i < args.size(); i++) expr += args[i] + ' ';
@@ -151,7 +154,7 @@ bool run_command(std::string c) {
 				for (auto a : f.args) std::cout << a.name << ",";
 				std::cout << "\b)";
 			}
-			std::cout << "\n";
+			std::cout << " [ID:" << f.id << "]\n";
 		}
 		return true;
 	}

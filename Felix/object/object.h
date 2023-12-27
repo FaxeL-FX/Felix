@@ -42,8 +42,7 @@ struct Variable {
 	}
 };
 struct Object {
-	int fncID = -1,
-		argID = -1;
+	int fncID, argID;
 	std::string name;
 	mobj::mathObjs type;
 	std::vector<int> arg_indexes;
@@ -51,17 +50,22 @@ struct Object {
 
 	math::complex return_value(std::vector<Object>* objects, std::vector<Variable>* args);
 
-	Object(int fncID, int argID, std::string name, std::vector<int> arg_indexes, math::complex value) {
-		this->fncID = fncID;
-		this->argID = argID;
+	Object(std::string name, std::vector<int> arg_indexes, math::complex value) {
+		this->fncID = -1;
+		this->argID = -1;
 		this->name = name;
 		this->arg_indexes = arg_indexes;
 		this->value = value;
 	}
 	Object(std::string name) {
+		this->fncID = -1;
+		this->argID = -1;
 		this->name = name;
 	}
-	Object() {}
+	Object() {
+		this->fncID = -1;
+		this->argID = -1;
+	}
 };
 struct Function {
 	int id = -1;
@@ -69,12 +73,7 @@ struct Function {
 	std::vector<Variable> args;
 	std::vector<Object> objects;
 
-	math::complex return_value() {
-		if (objects.size() < 1) return 0;
-		std::vector<Object>* obj = &objects;
-		std::vector<Variable>* ar = &args;
-		return objects[0].return_value(obj, ar);
-	}
+	math::complex return_value();
 
 	Function() {}
 	Function(int id, std::string name, std::vector<Variable> args, std::vector<Object> objects) {
