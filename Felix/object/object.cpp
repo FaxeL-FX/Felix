@@ -3,61 +3,65 @@
 
 std::vector<Function> functions_list;
 
-mobj::mathObjs nameToType(std::string token) {
-	if (token == "_Const") return mobj::mathObjs::_Const;
+ObjType nameToType(std::string token) {
+	if ('0' <= token[0] && token[0] <= '9' || token[0] == '.') return ObjType::_Const;
 
-	if (token == "+") return mobj::mathObjs::_add;
-	if (token == "*") return mobj::mathObjs::_mul;
-	if (token == "/") return mobj::mathObjs::_div;
-	if (token == "%") return mobj::mathObjs::_mod;
-	if (token == "^") return mobj::mathObjs::_pow;
+	if (token == "+") return ObjType::_add;
+	if (token == "*") return ObjType::_mul;
+	if (token == "/") return ObjType::_div;
+	if (token == "%") return ObjType::_mod;
+	if (token == "^") return ObjType::_pow;
 	
-	if (token == "abs") return mobj::mathObjs::abs;
-	if (token == "inv_abs") return mobj::mathObjs::inv_abs;
-	if (token == "arg") return mobj::mathObjs::arg;
-	if (token == "sign") return mobj::mathObjs::sign;
-	if (token == "Re") return mobj::mathObjs::Re;
-	if (token == "Im") return mobj::mathObjs::Im;
-	if (token == "exist") return mobj::mathObjs::exist;
-	if (token == "floor") return mobj::mathObjs::floor;
-	if (token == "round") return mobj::mathObjs::round;
-	if (token == "grid") return mobj::mathObjs::grid;
+	if (token == "exp")			return ObjType::_exp;
+	if (token == "ln")			return ObjType::_ln;
+	if (token == "sqrt")		return ObjType::_sqrt;
+	if (token == "inv_sqrt")	return ObjType::_inv_sqrt;
+	if (token == "root")		return ObjType::_root;
+	if (token == "log")			return ObjType::_log;
 	
-	if (token == "exp") return mobj::mathObjs::exp;
-	if (token == "ln") return mobj::mathObjs::ln;
-	if (token == "sqrt") return mobj::mathObjs::sqrt;
-	if (token == "inv_sqrt") return mobj::mathObjs::inv_sqrt;
-	if (token == "root") return mobj::mathObjs::root;
-	if (token == "log") return mobj::mathObjs::log;
-	
-	if (token == "cos") return mobj::mathObjs::cos;
-	if (token == "cosh") return mobj::mathObjs::cosh;
-	if (token == "arccos") return mobj::mathObjs::arccos;
-	if (token == "arccosh") return mobj::mathObjs::arccosh;
-	if (token == "sin") return mobj::mathObjs::sin;
-	if (token == "sinh") return mobj::mathObjs::sinh;
-	if (token == "arcsin") return mobj::mathObjs::arcsin;
-	if (token == "arcsinh") return mobj::mathObjs::arcsinh;
-	if (token == "cot" || token == "ctg") return mobj::mathObjs::cot;
-	if (token == "coth" || token == "ctgh") return mobj::mathObjs::coth;
-	if (token == "arccot" || token == "arcctg") return mobj::mathObjs::arccot;
-	if (token == "arccoth" || token == "arcctgh") return mobj::mathObjs::arccoth;
-	if (token == "tan" || token == "tg") return mobj::mathObjs::tan;
-	if (token == "tanh" || token == "tgh") return mobj::mathObjs::tanh;
-	if (token == "arctan" || token == "arctg") return mobj::mathObjs::arctan;
-	if (token == "arctanh" || token == "arctgh") return mobj::mathObjs::arctanh;
+	if (token == "cos")		return ObjType::_cos;
+	if (token == "cosh")	return ObjType::_cosh;
+	if (token == "arccos")	return ObjType::_arccos;
+	if (token == "arccosh") return ObjType::_arccosh;
+	if (token == "sin")		return ObjType::_sin;
+	if (token == "sinh")	return ObjType::_sinh;
+	if (token == "arcsin")	return ObjType::_arcsin;
+	if (token == "arcsinh") return ObjType::_arcsinh;
+	if (token == "cot" || token == "ctg")			return ObjType::_cot;
+	if (token == "coth" || token == "ctgh")			return ObjType::_coth;
+	if (token == "arccot" || token == "arcctg")		return ObjType::_arccot;
+	if (token == "arccoth" || token == "arcctgh")	return ObjType::_arccoth;
+	if (token == "tan" || token == "tg")			return ObjType::_tan;
+	if (token == "tanh" || token == "tgh")			return ObjType::_tanh;
+	if (token == "arctan" || token == "arctg")		return ObjType::_arctan;
+	if (token == "arctanh" || token == "arctgh")	return ObjType::_arctanh;
 
-	if (token == "gamma") return mobj::mathObjs::gamma;
-	if (token == "fctIntegral" || token == "fctI") return mobj::mathObjs::fctIntegral;
+	if (token == "S" || token == "Sum")					return ObjType::_Sum;
+	if (token == "P" || token == "Product")				return ObjType::_Product;
+	if (token == "R" || token == "Return")				return ObjType::_Return;
+	if (token == "I" || token == "Integral")			return ObjType::_Integral;
+	if (token == "D" || token == "Derivative")			return ObjType::_Derivative;
+	if (token == "Iexp" || token == "IntegralAlongExp") return ObjType::_IntegralAlongExp;
+	if (token == "Poly" || token == "Polynomial")		return ObjType::_Polynomial;
 
-	if (token == "S" || token == "Sum") return mobj::mathObjs::Sum;
-	if (token == "P" || token == "Product") return mobj::mathObjs::Product;
-	if (token == "R" || token == "Return") return mobj::mathObjs::Return;
-	if (token == "I" || token == "Integral") return mobj::mathObjs::Integral;
-	if (token == "D" || token == "Derivative") return mobj::mathObjs::Derivative;
-	if (token == "Iexp" || token == "IntegralAlongExp") return mobj::mathObjs::IntegralAlongExp;
+	if (token == "abs")		return ObjType::_abs;
+	if (token == "inv_abs") return ObjType::_inv_abs;
+	if (token == "arg")		return ObjType::_arg;
+	if (token == "sign")	return ObjType::_sign;
+	if (token == "Re")		return ObjType::_Re;
+	if (token == "Im")		return ObjType::_Im;
+	if (token == "floor")	return ObjType::_floor;
+	if (token == "ceil")	return ObjType::_ceil;
+	if (token == "round")	return ObjType::_round;
 
-	return mobj::mathObjs::_Default;
+	if (token == "exist")	return ObjType::_exist;
+	if (token == "grid")	return ObjType::_grid;
+
+	if (token == "gamma")							return ObjType::_gamma;
+	if (token == "fctIntegral" || token == "fctI")	return ObjType::_fctIntegral;
+	if (token == "H")								return ObjType::_Harmonic;
+
+	return ObjType::_Default;
 }
 
 std::vector<Object> parse_expr(std::string expr) {
@@ -75,11 +79,9 @@ std::vector<Object> parse_expr(std::string expr) {
 	std::vector<Object> objects;
 	parse_obj(&objects, tokens, 0, tokens.size() - 1);
 	for (int i = 0; i < objects.size(); i++) {
-		for (auto fnc : functions_list)
-			if (objects[i].name == fnc.name) {
-				objects[i].fncID = fnc.id;
-				break;
-			}
+		objects[i].id = 0;
+		for (char c : objects[i].name)
+			objects[i].id = (objects[i].id << 1) + (int)c;
 	}
 
 	return objects;
@@ -112,10 +114,10 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 	std::string token = tokens[end];
 	int index = end, objIndex = objects->size() - 1;
 	if (begin < 0 || tokens.size() <= end) {
-		(*objects)[objIndex].type = mobj::mathObjs::_Error;
+		(*objects)[objIndex].type = ObjType::_Error;
 		return;
 	}
-	(*objects)[objIndex].type = mobj::mathObjs::_Default;
+	(*objects)[objIndex].type = ObjType::_Default;
 
 	for (int i = end; begin <= i && i <= end; i--) {
 		if (tokens[index] == "(" || tokens[index] == "[" || tokens[index] == "{" || tokens[i] == ")" || tokens[i] == "]" || tokens[i] == "}") {
@@ -140,12 +142,12 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 	}
 	if (token == "-") {
 		if (index == begin) {
-			(*objects)[objIndex].type = mobj::mathObjs::_uMinus;
+			(*objects)[objIndex].type = ObjType::_uMinus;
 			(*objects)[objIndex].arg_indexes.push_back(objects->size());
 			parse_obj(objects, tokens, index + 1, end);
 		}
 		else {
-			(*objects)[objIndex].type = mobj::mathObjs::_dif;
+			(*objects)[objIndex].type = ObjType::_dif;
 			(*objects)[objIndex].arg_indexes.push_back(objects->size());
 			parse_obj(objects, tokens, begin, index - 1);
 			(*objects)[objIndex].arg_indexes.push_back(objects->size());
@@ -154,29 +156,29 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 		return;
 	}
 	if (token == "!") {
-		(*objects)[objIndex].type = mobj::mathObjs::_fct;
+		(*objects)[objIndex].type = ObjType::_fct;
 		(*objects)[objIndex].arg_indexes.push_back(objects->size());
 		parse_obj(objects, tokens, begin, index - 1);
 		return;
 	}
 	if ('0' <= token[0] && token[0] <= '9' || token[0] == '.') {
-		(*objects)[objIndex].type = mobj::mathObjs::_Const;
+		(*objects)[objIndex].type = ObjType::_Const;
 		(*objects)[objIndex].value = std::strtold(token.c_str(), 0);
 		return;
 	}
 
 	/**/ if (token == "pi") {
-		(*objects)[objIndex].type = mobj::mathObjs::_Const;
+		(*objects)[objIndex].type = ObjType::_Const;
 		(*objects)[objIndex].value = math::pi;
 		return;
 	}
 	else if (token == "e") {
-		(*objects)[objIndex].type = mobj::mathObjs::_Const;
+		(*objects)[objIndex].type = ObjType::_Const;
 		(*objects)[objIndex].value = math::exp(1);
 		return;
 	}
 	else if (token == "i") {
-		(*objects)[objIndex].type = mobj::mathObjs::_Const;
+		(*objects)[objIndex].type = ObjType::_Const;
 		(*objects)[objIndex].value = math::i;
 		return;
 	}
@@ -226,9 +228,18 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 				if (tokens[i] == "(" || tokens[i] == "[" || tokens[i] == "{")
 					i = brackets(tokens, i, true);
 			}
-
-			(*objects)[objIndex].arg_indexes.push_back(objects->size());
-			parse_obj(objects, tokens, index + 1, brackets(tokens, index + 1, true));
+			start_i = index + 2;
+			index = brackets(tokens, index + 1, true);
+			for (int i = start_i; i <= index; i++) {
+				if (tokens[i] == "]" || tokens[i] == ";") {
+					(*objects)[objIndex].arg_indexes.push_back(objects->size());
+					parse_obj(objects, tokens, start_i, i - 1);
+					start_i = i + 1;
+					continue;
+				}
+				if (tokens[i] == "(" || tokens[i] == "[" || tokens[i] == "{")
+					i = brackets(tokens, i, true);
+			}
 			return;
 		}
 	}
@@ -309,71 +320,74 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 
 	switch (arg_indexes.size()) {
 	case(0): switch (this->type) {
-		case(mobj::mathObjs::_Error): return math::exp(3000);
-		case(mobj::mathObjs::_Const): return this->value;
+		case(ObjType::_Error): return math::exp(3000);
+		case(ObjType::_Const): return this->value;
 	}
 	case(1): switch (this->type) {
-		case(mobj::mathObjs::_uMinus): return -args_results[0];
-		case(mobj::mathObjs::_fct): return math::fct(args_results[0]);
+		case(ObjType::_uMinus): return -args_results[0];
+		case(ObjType::_fct): return math::fct(args_results[0]);
 
-		case(mobj::mathObjs::abs): return math::abs(args_results[0]);
-		case(mobj::mathObjs::inv_abs): return math::inv_abs(args_results[0]);
-		case(mobj::mathObjs::arg): return math::arg(args_results[0]);
-		case(mobj::mathObjs::sign): return math::normalize(args_results[0]);
-		case(mobj::mathObjs::Re): return ((math::complex_linear)args_results[0]).R;
-		case(mobj::mathObjs::Im): return ((math::complex_linear)args_results[0]).i;
-		case(mobj::mathObjs::exist): return !math::exist(args_results[0]);
-		case(mobj::mathObjs::floor): return math::floor(args_results[0]);
-		case(mobj::mathObjs::round): return math::floor(args_results[0] + math::complex(0.5, 0.5));
-		case(mobj::mathObjs::grid): {
+		case(ObjType::_exp): return math::exp(args_results[0]);
+		case(ObjType::_ln): return math::ln(args_results[0]);
+		case(ObjType::_sqrt): return math::sqrt(args_results[0]);
+		case(ObjType::_inv_sqrt): return math::inv_sqrt(args_results[0]);
+
+		case(ObjType::_cos): return math::cos(args_results[0]);
+		case(ObjType::_cosh): return math::cosh(args_results[0]);
+		case(ObjType::_arccos): return math::arccos(args_results[0]);
+		case(ObjType::_arccosh): return math::arccosh(args_results[0]);
+		case(ObjType::_sin): return math::sin(args_results[0]);
+		case(ObjType::_sinh): return math::sinh(args_results[0]);
+		case(ObjType::_arcsin): return math::arcsin(args_results[0]);
+		case(ObjType::_arcsinh): return math::arcsinh(args_results[0]);
+		case(ObjType::_cot): return math::cot(args_results[0]);
+		case(ObjType::_coth): return math::coth(args_results[0]);
+		case(ObjType::_arccot): return math::arccot(args_results[0]);
+		case(ObjType::_arccoth): return math::arccoth(args_results[0]);
+		case(ObjType::_tan): return math::tan(args_results[0]);
+		case(ObjType::_tanh): return math::tanh(args_results[0]);
+		case(ObjType::_arctan): return math::arctan(args_results[0]);
+		case(ObjType::_arctanh): return math::arctanh(args_results[0]);
+
+		case(ObjType::_abs): return math::abs(args_results[0]);
+		case(ObjType::_inv_abs): return math::inv_abs(args_results[0]);
+		case(ObjType::_arg): return math::arg(args_results[0]);
+		case(ObjType::_sign): return math::normalize(args_results[0]);
+		case(ObjType::_Re): return ((math::complex_linear)args_results[0]).R;
+		case(ObjType::_Im): return ((math::complex_linear)args_results[0]).i;
+		case(ObjType::_floor): return math::floor(args_results[0]);
+		case(ObjType::_ceil): return math::ceil(args_results[0]);
+		case(ObjType::_round): return math::floor(args_results[0] + math::complex(0.5, 0.5));
+
+		case(ObjType::_exist): return !math::exist(args_results[0]);
+		case(ObjType::_grid): {
 			math::complex_linear res = args_results[0] - math::floor(args_results[0] + math::complex(0.5, 0.5));
 			if (res.R < 0) res.R = -res.R;
 			if (res.i < 0) res.i = -res.i;
 			if (res.R > res.i) return res.i;
 			return res.R;
 		}
-
-		case(mobj::mathObjs::exp): return math::exp(args_results[0]);
-		case(mobj::mathObjs::ln): return math::ln(args_results[0]);
-		case(mobj::mathObjs::sqrt): return math::sqrt(args_results[0]);
-		case(mobj::mathObjs::inv_sqrt): return math::inv_sqrt(args_results[0]);
-
-		case(mobj::mathObjs::cos): return math::cos(args_results[0]);
-		case(mobj::mathObjs::cosh): return math::cosh(args_results[0]);
-		case(mobj::mathObjs::arccos): return math::arccos(args_results[0]);
-		case(mobj::mathObjs::arccosh): return math::arccosh(args_results[0]);
-		case(mobj::mathObjs::sin): return math::sin(args_results[0]);
-		case(mobj::mathObjs::sinh): return math::sinh(args_results[0]);
-		case(mobj::mathObjs::arcsin): return math::arcsin(args_results[0]);
-		case(mobj::mathObjs::arcsinh): return math::arcsinh(args_results[0]);
-		case(mobj::mathObjs::cot): return math::cot(args_results[0]);
-		case(mobj::mathObjs::coth): return math::coth(args_results[0]);
-		case(mobj::mathObjs::arccot): return math::arccot(args_results[0]);
-		case(mobj::mathObjs::arccoth): return math::arccoth(args_results[0]);
-		case(mobj::mathObjs::tan): return math::tan(args_results[0]);
-		case(mobj::mathObjs::tanh): return math::tanh(args_results[0]);
-		case(mobj::mathObjs::arctan): return math::arctan(args_results[0]);
-		case(mobj::mathObjs::arctanh): return math::arctanh(args_results[0]);
-
-		case(mobj::mathObjs::gamma): return math::fct(args_results[0] - 1);
-		case(mobj::mathObjs::fctIntegral): return math::fctIntegral(args_results[0], 0);
+		
+		case(ObjType::_gamma): return math::fct(args_results[0] - 1);
+		case(ObjType::_fctIntegral): return math::fctIntegral(args_results[0], 0);
+		case(ObjType::_Harmonic): return math::Harmonic(args_results[0]);
 	}
 	case(2): switch (this->type) {
-		case(mobj::mathObjs::_add): return args_results[0] + args_results[1];
-		case(mobj::mathObjs::_dif): return args_results[0] - args_results[1];
-		case(mobj::mathObjs::_mul): return args_results[0] * args_results[1];
-		case(mobj::mathObjs::_div): return args_results[0] / args_results[1];
-		case(mobj::mathObjs::_pow): return math::pow(args_results[0], args_results[1]);
-		case(mobj::mathObjs::_mod): return args_results[0] % args_results[1];
+		case(ObjType::_add): return args_results[0] + args_results[1];
+		case(ObjType::_dif): return args_results[0] - args_results[1];
+		case(ObjType::_mul): return args_results[0] * args_results[1];
+		case(ObjType::_div): return args_results[0] / args_results[1];
+		case(ObjType::_pow): return math::pow(args_results[0], args_results[1]);
+		case(ObjType::_mod): return args_results[0] % args_results[1];
 
-		case(mobj::mathObjs::root): return math::pow(args_results[1], 1 / args_results[0]);
-		case(mobj::mathObjs::log): return math::ln(args_results[1]) / math::ln(args_results[0]);
+		case(ObjType::_root): return math::pow(args_results[1], 1 / args_results[0]);
+		case(ObjType::_log): return math::ln(args_results[1]) / math::ln(args_results[0]);
 	}
 	case(3): switch (this->type) {
-		case(mobj::mathObjs::Derivative): {
+		case(ObjType::_Derivative): {
 			const int n = 256;
 			int var_index = args->size();
-			args->push_back(Variable(var_index, (*objects)[this->arg_indexes[0]].name, args_results[1] + 0.5 / n));
+			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1] + 0.5 / n));
 			math::complex res = (*objects)[this->arg_indexes[2]].return_value(objects, args);
 			(*args)[var_index].value = args_results[1] - 0.5 / n;
 			res = res - (*objects)[this->arg_indexes[2]].return_value(objects, args);
@@ -382,40 +396,90 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 		}
 	}
 	case(4): switch (this->type) {
-		case(mobj::mathObjs::Sum): {
+		case(ObjType::_Sum):
+		case(ObjType::_Product): {
 			int var_index = args->size();
-			args->push_back(Variable(var_index, (*objects)[this->arg_indexes[0]].name, args_results[1]));
+			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
 			math::complex
+				res = (*objects)[this->arg_indexes[3]].return_value(objects, args),
 				difference = args_results[2] - args_results[1],
-				step = math::normalize(difference),
-				res = 0;
-			int repeats = math::abs(difference) + 1;
-			for (int i = 0; i < repeats; i++) {
-				res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args);
-				(*args)[var_index].value = (*args)[var_index].value + step;
+				step = math::normalize(difference);
+			long double
+				radius = math::abs(difference),
+				radFract = radius - math::floor(radius);
+			math::complex
+				angle1 = math::mul_i((math::complex)math::arccos(0.5 * radFract)),
+				angle2 = math::mul_i((math::complex)math::arccos(0.5 * (1 - radFract))),
+				step1 =  step * math::exp( angle1),
+				step2 =  step * math::exp(-angle1),
+				step3 = -step * math::exp( angle2),
+				step4 = -step * math::exp(-angle2);
+
+			(*args)[var_index].value = (*args)[var_index].value + 0.5 * (1 - step);
+			/**/ if (this->type == ObjType::_Sum) {
+				for (int i = 0; i < (int)radius; i++) {
+					(*args)[var_index].value = (*args)[var_index].value + step;
+					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step;
+				}
+				if (radFract != 0) {
+					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step + step1);
+					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step1 * 0.5 * (1 - radFract);
+					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step1 + step2);
+					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step2 * 0.5 * (1 - radFract);
+					(*args)[var_index].value = (*args)[var_index].value - step1;
+					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step2 * 0.5 * (1 - radFract);
+					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step2 + step1);
+					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step1 * 0.5 * (1 - radFract);
+
+					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step - step1) - step2;
+					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step * radFract;
+
+					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step + step3);
+					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step3 * 0.5 * radFract;
+					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step3 + step4);
+					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step4 * 0.5 * radFract;
+					(*args)[var_index].value = (*args)[var_index].value - step3;
+					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step4 * 0.5 * radFract;
+					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step4 + step3);
+					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step3 * 0.5 * radFract;
+				}
 			}
+			else if (this->type == ObjType::_Product) {
+				for (int i = 0; i < (int)radius; i++) {
+					(*args)[var_index].value = (*args)[var_index].value + step;
+					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step);
+				}
+				if (radFract != 0) {
+					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step + step1);
+					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step1 * 0.5 * (1 - radFract));
+					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step1 + step2);
+					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step2 * 0.5 * (1 - radFract));
+					(*args)[var_index].value = (*args)[var_index].value - step1;
+					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step2 * 0.5 * (1 - radFract));
+					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step2 + step1);
+					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step1 * 0.5 * (1 - radFract));
+
+					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step - step1) - step2;
+					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step * radFract);
+
+					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step + step3);
+					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step3 * 0.5 * radFract);
+					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step3 + step4);
+					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step4 * 0.5 * radFract);
+					(*args)[var_index].value = (*args)[var_index].value - step3;
+					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step4 * 0.5 * radFract);
+					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step4 + step3);
+					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step3 * 0.5 * radFract);
+				}
+			}
+
 			args->erase(args->begin() + var_index);
 			return res;
 		}
-		case(mobj::mathObjs::Product): {
+		case(ObjType::_Return): {
 			int var_index = args->size();
-			args->push_back(Variable(var_index, (*objects)[this->arg_indexes[0]].name, args_results[1]));
-			math::complex
-				difference = args_results[2] - args_results[1],
-				step = math::normalize(difference),
-				res = 1;
-			int repeats = math::abs(difference) + 1;
-			for (int i = 0; i < repeats; i++) {
-				res = res * (*objects)[this->arg_indexes[3]].return_value(objects, args);
-				(*args)[var_index].value = (*args)[var_index].value + step;
-			}
-			args->erase(args->begin() + var_index);
-			return res;
-		}
-		case(mobj::mathObjs::Return): {
-			int var_index = args->size();
-			args->push_back(Variable(var_index, (*objects)[this->arg_indexes[0]].name, args_results[1]));
-			int repeats = ((math::complex_linear)args_results[2]).R;
+			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+			int repeats = math::round(((math::complex_linear)args_results[2]).R);
 			for (int i = 0; i < repeats; i++) {
 				(*args)[var_index].value = (*objects)[this->arg_indexes[3]].return_value(objects, args);
 			}
@@ -424,10 +488,10 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 			return res;
 		}
 
-		case(mobj::mathObjs::Integral): {
+		case(ObjType::_Integral): {
 			const int n = 256;
 			int var_index = args->size();
-			args->push_back(Variable(var_index, (*objects)[this->arg_indexes[0]].name, args_results[1]));
+			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
 			math::complex res = 0, dx = (args_results[2] - args_results[1]) / n;
 			for (int k = 0; k < n; k++) {
 				res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args);
@@ -436,10 +500,10 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 			args->erase(args->begin() + var_index);
 			return res * dx;
 		}
-		case(mobj::mathObjs::IntegralAlongExp): {
+		case(ObjType::_IntegralAlongExp): {
 			const int n = 256;
 			int var_index = args->size();
-			args->push_back(Variable(var_index, (*objects)[this->arg_indexes[0]].name, args_results[1]));
+			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
 			math::complex res = 0, dx = (math::ln(args_results[2] / args_results[1])) / n, x = math::ln(args_results[1]), dt;
 			for (int k = 0; k < n; k++) {
 				dt = math::exp(x + dx) - math::exp(x);
@@ -452,16 +516,54 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 		}
 	}
 	}
-	if (this->type == mobj::mathObjs::rand) {
+	if (this->type == ObjType::_Polynomial && args_results.size() > 3) {
+		int var_index = args->size();
+		args->push_back(Variable((*objects)[this->arg_indexes[0]].name));
+
+		std::vector<std::vector<math::complex>> matrix(args_results.size() - 3, std::vector<math::complex>(args_results.size() - 2, 1));
+		for (int i = 0; i < matrix.size(); i++) {
+			for (int j = 1; j < matrix.size(); j++) {
+				for (int k = j; k < matrix.size(); k++) {
+					matrix[i][k] = matrix[i][k] * args_results[i + 3];
+				}
+			}
+			(*args)[var_index].value = args_results[i + 3];
+			matrix[i][matrix.size()] = (*objects)[this->arg_indexes[1]].return_value(objects, args);
+		}
+
+		for (int i = 0; i < matrix.size(); i++) {
+			math::complex multiple = matrix[i][i];
+			for (int j = i; j < matrix[0].size(); j++)
+				matrix[i][j] = matrix[i][j] / multiple;
+			for (int j = 0; j < matrix.size(); j++) {
+				if (i == j) continue;
+				multiple = matrix[j][i];
+				for (int k = 0; k < matrix[0].size(); k++)
+					matrix[j][k] = matrix[j][k] - multiple * matrix[i][k];
+			}
+		}
+
+		math::complex
+			var = 1,
+			res = matrix[0][matrix.size()];
+		for (int i = 1; i < matrix.size(); i++) {
+			var = var * args_results[2];
+			res = res + var * matrix[i][matrix.size()];
+		}
+
+		args->erase(args->begin() + var_index);
+		return res;
+	}
+	if (this->type == ObjType::_rand) {
 		if (args_results.size() == 0) return math::rand(std::chrono::steady_clock::now().time_since_epoch().count() % 4096);
 		return math::rand(std::chrono::steady_clock::now().time_since_epoch().count() % 4096, args_results);
 	}
 
 	for (auto arg : *args)
-		if (this->argID == arg.id)
+		if (this->id == arg.id)
 			return arg.value;
 	for (auto fnc : functions_list)
-		if (this->fncID == fnc.id) {
+		if (this->id == fnc.id) {
 			for (int i = 0; i < fnc.args.size() && i < args_results.size(); i++)
 				fnc.args[i].value = args_results[i];
 			return fnc.return_value();

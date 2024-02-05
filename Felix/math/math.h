@@ -100,8 +100,7 @@ namespace math {
 		complex_linear(complex_exponential x);
 	};
 	struct complex_exponential {
-		long double r;
-		fixed_point32 a;
+		long double r, a;
 		complex_exponential() {
 			this->r = 0;
 			this->a = 0;
@@ -160,7 +159,9 @@ namespace math {
 
 	//	long double
 	long double floor(long double);
+	long double ceil(long double);
 	long double sign(long double);
+	long double round(long double);
 
 	long double exp(long double);
 	long double ln(long double);
@@ -176,6 +177,7 @@ namespace math {
 	std::string toString(complex_linear);
 
 	complex_linear floor(complex_linear);
+	complex_linear ceil(complex_linear);
 	long double abs(complex_linear);
 	long double inv_abs(complex_linear);
 	complex_linear normalize(complex_linear);
@@ -206,6 +208,8 @@ namespace math {
 	complex_exponential inv_sqrt(complex_exponential);
 
 	//	complex
+	complex conjugate(complex);
+
 	complex cosh(complex);
 	complex sinh(complex);
 	complex coth(complex);
@@ -226,4 +230,5 @@ namespace math {
 
 	complex fct(complex);
 	complex fctIntegral(complex, complex);
+	complex Harmonic(complex);
 }

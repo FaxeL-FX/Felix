@@ -1,4 +1,4 @@
-﻿//	v1.6.2
+﻿//	v1.7.1
 
 #include <iostream>
 #include "include.h"
@@ -75,12 +75,10 @@ Color toCol(math::complex_exponential x) {
 	c.B = 1 - 0.5 / (0.5 + c.B * c.B * x.r);
 	return c;
 }
-std::vector<float> toVecF(Color c) {
-	return { c.R, c.G, c.B };
-}
+std::vector<float> toVecF(Color c) { return { c.R, c.G, c.B }; }
 
 math::complex_linear plot_center = 0;
-math::number plot_radius = 4;
+long double plot_radius = 8;
 
 bool run_command(std::string c) {
 	std::vector<std::string> args;
@@ -108,9 +106,14 @@ bool run_command(std::string c) {
 			while (arguments.length() > 0) {
 				int index1 = arguments.find(','),
 					index2 = arguments.find(')');
-				/**/ if (-1 < index1) f.args.push_back(Variable(f.args.size(), arguments.substr(0, index1), 0));
-				else if (-1 < index2) f.args.push_back(Variable(f.args.size(), arguments.substr(0, index2), 0));
-				else /*------------*/ f.args.push_back(Variable(f.args.size(), arguments, 0));
+				Variable var;
+				/**/ if (-1 < index1) var.name = arguments.substr(0, index1);
+				else if (-1 < index2) var.name = arguments.substr(0, index2);
+				else /*------------*/ var.name = arguments;
+
+				var = Variable(var.name);
+
+				f.args.push_back(var);
 				arguments = arguments.substr(f.args[f.args.size() - 1].name.length() + 1);
 			}
 		}
@@ -123,13 +126,6 @@ bool run_command(std::string c) {
 		std::string expr = "";
 		for (int i = 2 + (args[2] == "="); i < args.size(); i++) expr += args[i] + ' ';
 		f.objects = parse_expr(expr);
-		for (int i = 0; i < f.objects.size(); i++) {
-			for (auto arg : f.args)
-				if (f.objects[i].name == arg.name) {
-					f.objects[i].argID = arg.id;
-					break;
-				}
-		}
 
 		for (int i = 0; i < functions_list.size(); i++)
 			if (functions_list[i].name == f.name) {
@@ -169,46 +165,42 @@ bool run_command(std::string c) {
 		return true;
 	}
 	if (args[0] == "print") {
-		bool monochrome = false, grid = true, cmplx = false, eq = false;
-		if (args.size() < 3) return false;
+		bool grid = true, cmplx = false, eq = false;
+		if (args.size() < 2) return false;
 		for (int i = 3; i < args.size(); i++) {
-			/**/ if (args[i] == "m") monochrome = true;
-			else if (args[i] == "noGrid") grid = false;
+			/**/ if (args[i] == "noGrid") grid = false;
 			else if (args[i] == "c") cmplx = true;
 			else if (args[i] == "eq") eq = true;
 		}
 		Function f;
+		bool no_func = true;
 		for (auto fnc : functions_list)
 			if (fnc.name == args[1]) {
 				f = fnc;
+				no_func = false;
 				break;
 			}
+		if (no_func) {
+			f = Function(-1, args[1],
+				{
+					Variable("x")
+				},
+				{
+					Object(nameToType(args[1]), { 1 }),
+					Object("x")
+				}
+			);
+		}
 
-		int resolution = std::stoi(args[2]);
+		int resolution;
+		if (args.size() < 3)	resolution = 400;
+		else					resolution = std::stoi(args[2]);
+		if (resolution < 0) resolution = -resolution;
+		if (1600 < resolution) resolution = 1600;
 		int prc = resolution + (prc_count < resolution) * (prc_count - resolution);
 		std::vector<std::vector<float>> img;
 		std::vector<std::vector<float>>* im = &img;
-		for (int i = 0; i < resolution * resolution; i++) {
-			img.push_back({ 0, 0, 0 });
-		}
-		if (grid) {
-			for (int i = 1; i < 2 * plot_radius; i++) {
-				math::number x = math::floor(plot_center.R - plot_radius) + i;
-				int iX = ((x - plot_center.R) / plot_radius + 1) * 0.5 * resolution;
-				for (int j = 0; j < resolution; j++) {
-					if (x == 0) img[j * resolution + iX] = { 0.5,  0.5,  0.5  };
-					else		img[j * resolution + iX] = { 0.25, 0.25, 0.25 };
-				}
-			}
-			for (int i = 1; i < 2 * plot_radius; i++) {
-				math::number y = math::floor(plot_center.i - plot_radius) + i;
-				int iY = ((y - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
-				for (int j = 0; j < resolution; j++) {
-					if (y == 0) img[iY * resolution + j] = { 0.5,  0.5,  0.5 };
-					else		img[iY * resolution + j] = { 0.25, 0.25, 0.25 };
-				}
-			}
-		}
+		for (int i = 0; i < resolution * resolution; i++) img.push_back({ 0, 0, 0 });
 
 		int progress = 0, * pr = &progress, * resol = &resolution;
 		bool go = true, *g = &go;
@@ -370,6 +362,26 @@ bool run_command(std::string c) {
 		}
 		go = false;
 		counter.join();
+
+		if (grid) {
+			for (int i = 1; i < 2 * plot_radius; i++) {
+				math::number x = math::floor(plot_center.R - plot_radius) + i;
+				int iX = ((x - plot_center.R) / plot_radius + 1) * 0.5 * resolution;
+				for (int j = 0; j < resolution; j++) {
+					if (x == 0) img[j * resolution + iX] = toVecF(penAdd(img[j * resolution + iX], Color(0.5)));
+					else		img[j * resolution + iX] = toVecF(penAdd(img[j * resolution + iX], Color(0.25)));
+				}
+			}
+			for (int i = 1; i < 2 * plot_radius; i++) {
+				math::number y = math::floor(plot_center.i - plot_radius) + i;
+				int iY = ((y - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
+				for (int j = 0; j < resolution; j++) {
+					if (y == 0) img[iY * resolution + j] = toVecF(penAdd(img[iY * resolution + j], Color(0.5)));
+					else		img[iY * resolution + j] = toVecF(penAdd(img[iY * resolution + j], Color(0.25)));
+				}
+			}
+		}
+
 		BMPWriter::write_image(img, resolution, (char*)"graph.bmp");
 		return true;
 	}
@@ -402,6 +414,7 @@ bool run_command(std::string c) {
 				response += " =>        f(x) -> f(x, ...)\n";
 				response += " =>     f[x](y) -> f(x, y)\n";
 				response += " => f{x;y;z}[w] -> f(x, y, z, w)\n";
+
 				response += "\n Power Functions\n";
 				response += " =>      exp(x) -> exponent\n";
 				response += " =>       ln(x) -> natural logarithm\n";
@@ -409,6 +422,7 @@ bool run_command(std::string c) {
 				response += " => inv_sqrt(x) -> inverse square root\n";
 				response += " =>  root[y](x) -> y-th root of x\n";
 				response += " =>   log[y](x) -> logarithm of x to base y\n";
+
 				response += "\n Trigonometric Functions\n";
 				response += " =>     cos(x)       cot(x) = ctg(x)\n";
 				response += " =>    cosh(x)      coth(x) = ctgh(x)\n";
@@ -418,24 +432,34 @@ bool run_command(std::string c) {
 				response += " =>    sinh(x)      tanh(x) = tgh(x)\n";
 				response += " =>  arcsin(x)    arctan(x) = arctg(x)\n";
 				response += " => arcsinh(x)   arctanh(x) = arctgh(x)\n";
-				response += "\n Other Functions\n";
-				response += " =>   gamma(x) -> gamma function\n";
-				response += " =>    fctI(x) -> integral of factorial\n";
+
+				response += "\n FOR-Like Functions\n";
+				response += " =>    S{t;begin;end}[f(t)] = Sum\n";
+				response += " =>    P{t;begin;end}[f(t)] = Product\n";
+				response += " =>          R{t;x;n}[f(t)] = Return\n";
+				response += " =>            D{t;x}[f(t)] = Derivative\n";
+				response += " =>          I{t;a;b}[f(t)] = Integral\n";
+				response += " =>       Iexp{t;a;b}[f(t)] = IntegralAlongExp\n";
+				response += " => Poly{t;f(t);x}[a;b;...] = Polynomial\n";
+
+				response += "\n Value Functions\n";
 				response += " =>     abs(x) -> absolute value\n";
 				response += " => inv_abs(x) -> inverse absolute value\n";
 				response += " =>     arg(x) -> argument of x\n";
+				response += " =>    sign(x) -> normalized number\n";
 				response += " =>      Re(x) -> real part\n";
 				response += " =>      Im(x) -> imaginary part\n";
 				response += " =>   floor(x)\n";
+				response += " =>    ceil(x)\n";
 				response += " =>   round(x)\n";
+
+				response += "\n Logic Functions\n";
 				response += " =>   exist(x) -> if number exist returns 0 else 1\n";
 				response += " =>    grid(x) -> if number on the grid returns 0 else (0 < ...)\n";
-				response += " => S{var;begin;end}[f(var)] = Sum{var;begin;end}[f(var)]\n";
-				response += " => P{var;begin;end}[f(var)] = Product{var;begin;end}[f(var)]\n";
-				response += " =>       R{var;x;n}[f(var)] = Return{var;x;n}[f(var)]\n";
-				response += " =>         D{var;x}[f(var)] = Derivative{var;x}[f(var)]\n";
-				response += " =>       I{var;a;b}[f(var)] = Integral{var;a;b}[f(var)]\n";
-				response += " =>    Iexp{var;a;b}[f(var)] = IntegralAlongExp{var;a;b}[f(var)]\n";
+
+				response += "\n Other Functions\n";
+				response += " =>   gamma(x) -> gamma function\n";
+				response += " =>    fctI(x) -> integral of factorial\n";
 				response += " => rand | rand(x) | rand(x, ...)\n";
 				std::cout << response;
 				return true;
@@ -448,22 +472,30 @@ bool run_command(std::string c) {
 				response += "  defining a function\n";
 				response += "   >def f(x,...) <expression>\n";
 				response += "   >def f(x,...) = <expression>\n";
+
 				response += "\n Delete\n";
 				response += "  >del <function_name>   -> deletes the function\n";
+
 				response += "\n List\n";
 				response += "  >list    -> shows functions & constants list\n";
+
 				response += "\n Clear\n";
 				response += "  >clear   -> clears the list\n";
+
 				response += "\n Scale\n";
 				response += "  >scale <center> <radius>   -> defines position & scale of plot\n";
-				response += "     center is a complex number (1-2i translates to (1;-2))\n";
+				response += "     center is a complex number (\"1-2i\" translates to (1;-2))\n";
+
 				response += "\n Print\n";
-				response += "  >print <function_name> <resolution> <*modificators>\n";
+				response += "  >print <function_name> <*resolution> <*modificators>\n";
 				response += "     resolution is one integer number (400 means image with size 400x400)\n";
 				response += "     modificators:\n";
 				response += "     =>     eq -> equation mode (f(z) = 0)\n";
 				response += "     =>      c -> complex spectrum mode (abs(z) - brightness, arg(z) - hue)\n";
 				response += "     => noGrid -> disables the grid\n";
+
+				response += "\n Help\n";
+				response += "  >help <*category>   :D\n";
 				std::cout << response;
 				return true;
 			}

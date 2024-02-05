@@ -100,7 +100,7 @@ namespace math {
 			angle = sign(x.r * sin(x.a) + y.r * sin(y.a)) * arccos((x.r * cos(x.a) + y.r * cos(y.a)) / radius);
 		return complex_exponential(radius, angle);
 	}
-	complex_exponential operator-(complex_exponential x) { return complex_exponential(x.r, x.a + (fixed_point32)pi); }
+	complex_exponential operator-(complex_exponential x) { return complex_exponential(x.r, x.a + pi); }
 	complex_exponential operator-(complex_exponential x, complex_exponential y) { return x + -y; }
 	complex_exponential operator*(complex_exponential x, complex_exponential y) { return complex_exponential(x.r * y.r, x.a + y.a); }
 	complex_exponential operator/(complex_exponential x, complex_exponential y) { return complex_exponential(x.r / y.r, x.a - y.a); }
@@ -148,10 +148,16 @@ namespace math {
 	//	long double
 	long double floor(long double x) {
 		return std::floor(x);
-	}	
+	}
+	long double ceil(long double x) {
+		return std::ceil(x);
+	}
 	long double sign(long double x) {
 		if (x < 0) return -1;
 		return 1;
+	}
+	long double round(long double x) {
+		return (long long)(x + 0.5);
 	}
 
 	long double exp(long double x) {
@@ -204,6 +210,7 @@ namespace math {
 	}
 
 	complex_linear floor(complex_linear x) { return complex_linear(floor(x.R), floor(x.i)); }
+	complex_linear ceil(complex_linear x) { return complex_linear(ceil(x.R), ceil(x.i)); }
 	long double abs(complex_linear x) {
 		if (x.i == 0) return sign(x.R) * x.R;
 		if (x.R == 0) return sign(x.i) * x.i;
@@ -243,7 +250,11 @@ namespace math {
 		return res + 1;
 	}
 	complex_linear ln(complex_linear x) { return complex_linear(ln(abs(x)), arg(x)); }
-	complex_linear pow(complex_linear x, complex_linear y) { return exp(y * ln(x)); }
+	complex_linear pow(complex_linear x, complex_linear y) {
+		if (y == 0) return 1;
+		if (y.R < 0)	return 1 / pow(x, -y);
+		return exp(y * ln(x));
+	}
 	complex_linear sqrt(complex_linear x) { return exp(0.5 * ln(x)); }
 	complex_linear inv_sqrt(complex_linear x) { return exp(-0.5 * ln(x)); }
 
@@ -261,7 +272,7 @@ namespace math {
 	long double abs(complex_exponential x) { return x.r; }
 	long double inv_abs(complex_exponential x) { return 1 / x.r; }
 	complex_exponential normalize(complex_exponential x) { return complex_exponential(1, x.a); }
-	complex_exponential mul_i(complex_exponential x) { return complex_exponential(x.r, x.a + (fixed_point32)(0.5 * pi)); }
+	complex_exponential mul_i(complex_exponential x) { return complex_exponential(x.r, x.a + (0.5 * pi)); }
 	long double arg(complex_exponential x) { return x.a; }
 	bool exist(complex_exponential x) {
 		if (x.r == x.r) return true;
@@ -287,6 +298,8 @@ namespace math {
 	}
 
 	//	complex
+	complex conjugate(complex x) { return complex(x.R, -x.i); }
+
 	complex cosh(complex x) { return (exp(x) + exp(-x)) * 0.5; }
 	complex sinh(complex x) { return (exp(x) - exp(-x)) * 0.5; }
 	complex coth(complex x) {
@@ -317,6 +330,13 @@ namespace math {
 		for (int k = 0; k < n; k++) {
 			res = res + fct(exp(k * logX)) * (exp((k + 1) * logX) - exp(k * logX));
 		}
+		return res;
+	}
+	complex Harmonic(complex x) {
+		int n = 64;
+		complex res = ln(1 + x / n);
+		for (int k = 1; k <= n; k++)
+			res = res + x / (k * (x + k));
 		return res;
 	}
 }

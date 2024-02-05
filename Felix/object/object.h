@@ -2,69 +2,98 @@
 #include "../include.h"
 #include "../math/math.h"
 
-namespace mobj {
-	enum mathObjs {
-		_Error, _Default, _Const, rand,
+enum ObjType {
+	_Error, _Default, _Const, _rand,
 
-		_add, _dif, _mul, _div, _pow, _fct, _mod, _uMinus,
+	_add, _dif, _mul, _div, _pow, _fct, _mod, _uMinus,
 
-		abs, inv_abs, arg, sign, Re, Im, exist, floor, round, grid,
+	_exp, _ln,
+	_sqrt, _inv_sqrt,
+	_root, _log,
 
-		exp, ln,
-		sqrt, inv_sqrt,
-		root, log,
+	_cos, _arccos,
+	_sin, _arcsin,
+	_cot, _arccot,
+	_tan, _arctan,
+	_cosh, _arccosh,
+	_sinh, _arcsinh,
+	_coth, _arccoth,
+	_tanh, _arctanh,
 
-		cos, arccos,
-		sin, arcsin,
-		cot, arccot,
-		tan, arctan,
-		cosh, arccosh,
-		sinh, arcsinh,
-		coth, arccoth,
-		tanh, arctanh,
+	_Sum, _Product, _Return,
+	_Integral, _Derivative, _IntegralAlongExp,
+	_Polynomial,
 
-		gamma, fctIntegral,
+	_abs, _inv_abs, _arg, _sign, _Re, _Im, _floor, _ceil, _round,
 
-		Sum, Product, Return,
-		Integral, Derivative, IntegralAlongExp,
-	};
-}
+	_exist, _grid,
+
+	_gamma, _fctIntegral, _Harmonic,
+};
 
 struct Variable {
 	int id = -1;
 	std::string name;
-	math::complex value;
+	math::complex value = 0;
 
+	Variable(std::string name) {
+		this->name = name;
+		this->id = 0;
+		for (auto c : this->name)
+			this->id = (this->id << 1) + (int)c;
+	}
+	Variable(std::string name, math::complex value) {
+		this->name = name;
+		this->value = value;
+		this->id = 0;
+		for (auto c : this->name)
+			this->id = (this->id << 1) + (int)c;
+	}
 	Variable(int id, std::string name, math::complex value) {
 		this->id = id;
 		this->name = name;
 		this->value = value;
 	}
+	Variable() {}
 };
 struct Object {
-	int fncID, argID;
+	int id;
 	std::string name;
-	mobj::mathObjs type;
+	ObjType type;
 	std::vector<int> arg_indexes;
 	math::complex value;
 
 	math::complex return_value(std::vector<Object>* objects, std::vector<Variable>* args);
 
+	Object(std::string name, ObjType type, std::vector<int> arg_indexes, math::complex value) {
+		this->name = name;
+		this->type = type;
+		this->arg_indexes = arg_indexes;
+		this->value = value;
+		this->id = 0;
+		for (auto c : this->name)
+			this->id = (this->id << 1) + (int)c;
+	}
 	Object(std::string name, std::vector<int> arg_indexes, math::complex value) {
-		this->fncID = -1;
-		this->argID = -1;
 		this->name = name;
 		this->arg_indexes = arg_indexes;
 		this->value = value;
+		this->id = 0;
+		for (auto c : this->name)
+			this->id = (this->id << 1) + (int)c;
+	}
+	Object(ObjType type, std::vector<int> arg_indexes) {
+		this->type = type;
+		this->arg_indexes = arg_indexes;
 	}
 	Object(std::string name) {
-		this->fncID = -1;
-		this->argID = -1;
 		this->name = name;
+		this->id = 0;
+		for (auto c : this->name)
+			this->id = (this->id << 1) + (int)c;
 	}
 	Object() {
-		this->fncID = -1;
-		this->argID = -1;
+		this->id = -1;
 	}
 };
 struct Function {
@@ -86,7 +115,7 @@ struct Function {
 
 extern std::vector<Function> functions_list;
 
-mobj::mathObjs nameToType(std::string);
+ObjType nameToType(std::string);
 
 std::vector<Object> parse_expr(std::string);
 std::string parse_token(std::string);
