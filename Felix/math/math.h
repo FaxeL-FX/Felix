@@ -56,9 +56,7 @@ namespace math {
 		}
 	};
 
-	//	def number
-	typedef long double number;
-	extern const number pi;
+	extern const long double pi, inf;
 
 	bool sign(double);
 	int E(double);
@@ -84,16 +82,16 @@ namespace math {
 		}
 	};
 	struct complex_linear {
-		number R, i;
+		long double R, i;
 		complex_linear() {
 			this->R = 0;
 			this->i = 0;
 		}
-		complex_linear(number R) {
+		complex_linear(long double R) {
 			this->R = R;
 			this->i = 0;
 		}
-		complex_linear(number R, number i) {
+		complex_linear(long double R, long double i) {
 			this->R = R;
 			this->i = i;
 		}
@@ -105,8 +103,8 @@ namespace math {
 			this->r = 0;
 			this->a = 0;
 		}
-		complex_exponential(number x);
-		complex_exponential(number r, number a) {
+		complex_exponential(long double x);
+		complex_exponential(long double r, long double a) {
 			this->r = r;
 			this->a = a;
 		}

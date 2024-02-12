@@ -5,9 +5,20 @@
 enum ObjType {
 	_Error, _Default, _Const, _rand,
 
-	_add, _dif, _mul, _div, _pow, _fct, _mod, _uMinus,
+	_Sum_List, _Product_List,
+	_Sum_FOR, _Product_FOR,
+	_flip_sign, _inverse,
 
 	_exp, _ln,
+	_Harmonic,
+
+	_Integral_Defined, _Integral_Undefined,
+	_Return,
+
+
+
+	_add, _dif, _mul, _div, _pow, _fct, _mod, _uMinus,
+
 	_sqrt, _inv_sqrt,
 	_root, _log,
 
@@ -20,7 +31,7 @@ enum ObjType {
 	_coth, _arccoth,
 	_tanh, _arctanh,
 
-	_Sum, _Product, _Return,
+	_Sum, _Product,
 	_Integral, _Derivative, _IntegralAlongExp,
 	_Polynomial,
 
@@ -28,7 +39,7 @@ enum ObjType {
 
 	_exist, _grid,
 
-	_gamma, _fctIntegral, _Harmonic,
+	_gamma, _fctIntegral,
 };
 
 struct Variable {
@@ -81,6 +92,7 @@ struct Object {
 		this->id = 0;
 		for (auto c : this->name)
 			this->id = (this->id << 1) + (int)c;
+		this->type = ObjType::_Default;
 	}
 	Object(ObjType type, std::vector<int> arg_indexes) {
 		this->type = type;
@@ -91,6 +103,7 @@ struct Object {
 		this->id = 0;
 		for (auto c : this->name)
 			this->id = (this->id << 1) + (int)c;
+		this->type = ObjType::_Default;
 	}
 	Object() {
 		this->id = -1;
@@ -119,7 +132,7 @@ ObjType nameToType(std::string);
 
 std::vector<Object> parse_expr(std::string);
 std::string parse_token(std::string);
-void parse_obj(std::vector<Object>*, std::vector<std::string>, int, int);
+void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, int begin, int end);
 
 int brackets(std::vector<std::string>, int, bool);
 char antibr(char);

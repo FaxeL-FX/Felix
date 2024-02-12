@@ -1,7 +1,9 @@
 #include "math.h"
 namespace math {
 	//	number
-	const number pi = 3.1415926535897932384626433832795028841971693993751058209749445923;
+	const long double
+		pi = 3.1415926535897932384626433832795028841971693993751058209749445923,
+		inf = 1.0 / 0.0;
 
 	bool sign(double x) {
 		unsigned long long i = *(unsigned long long*) & x;
@@ -58,7 +60,7 @@ namespace math {
 		this->R = x.r * cos(x.a);
 		this->i = x.r * sin(x.a);
 	}
-	complex_exponential::complex_exponential(number x) {
+	complex_exponential::complex_exponential(long double x) {
 		this->r = x * sign(x);
 		if (x >= 0)	this->a = 0;
 		else		this->a = pi;
@@ -76,7 +78,14 @@ namespace math {
 	complex_linear operator-(complex_linear x, complex_linear y) { return complex_linear(x.R - y.R, x.i - y.i); }
 	complex_linear operator*(complex_linear x, complex_linear y) { return complex_linear(x.R * y.R - x.i * y.i, x.R * y.i + x.i * y.R); }
 	complex_linear operator/(complex_linear x, complex_linear y) {
-		number denominator = 1 / (y.R * y.R + y.i * y.i);
+		if (x == y) return 1;
+		if (x == 0) return 0;
+		if (0 == y) {
+			if (x.i == 0) return complex_linear(x.R / 0.0);
+			if (x.R == 0) return complex_linear(0, x.i / 0.0);
+			return complex_linear(x.R / 0.0, x.i / 0.0);
+		}
+		long double denominator = 1.0 / (y.R * y.R + y.i * y.i);
 		return complex_linear((x.R * y.R + x.i * y.i) * denominator, (y.R * x.i - x.R * y.i) * denominator);
 	}
 	complex_linear operator%(complex_linear x, complex_linear y) { return x - y * floor(x / y); }
@@ -95,7 +104,7 @@ namespace math {
 	}
 
 	complex_exponential operator+(complex_exponential x, complex_exponential y) {
-		number
+		long double
 			radius = sqrt(x.r * x.r + y.r * y.r + 2 * x.r * y.r * cos(y.a - x.a)),
 			angle = sign(x.r * sin(x.a) + y.r * sin(y.a)) * arccos((x.r * cos(x.a) + y.r * cos(y.a)) / radius);
 		return complex_exponential(radius, angle);
@@ -333,6 +342,7 @@ namespace math {
 		return res;
 	}
 	complex Harmonic(complex x) {
+		if (x.R < -0.5) return Harmonic(-x - 1) - pi * cot(pi * x);
 		int n = 64;
 		complex res = ln(1 + x / n);
 		for (int k = 1; k <= n; k++)

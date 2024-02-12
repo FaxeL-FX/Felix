@@ -11,6 +11,8 @@ ObjType nameToType(std::string token) {
 	if (token == "/") return ObjType::_div;
 	if (token == "%") return ObjType::_mod;
 	if (token == "^") return ObjType::_pow;
+
+	if (token == "!" || token == "fct") return ObjType::_fct;
 	
 	if (token == "exp")			return ObjType::_exp;
 	if (token == "ln")			return ObjType::_ln;
@@ -111,12 +113,12 @@ std::string parse_token(std::string expr) {
 }
 void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, int begin, int end) {
 	objects->push_back(Object());
-	std::string token = tokens[end];
 	int index = end, objIndex = objects->size() - 1;
 	if (begin < 0 || tokens.size() <= end) {
 		(*objects)[objIndex].type = ObjType::_Error;
 		return;
 	}
+	std::string token = tokens[end];
 	(*objects)[objIndex].type = ObjType::_Default;
 
 	for (int i = end; begin <= i && i <= end; i--) {
@@ -133,6 +135,10 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 		index = i;
 	}
 	if (token == "+" || token == "*" || token == "/" || token == "%" || token == "^") {
+		if (index <= begin || end <= index) {
+			(*objects)[objIndex].type = ObjType::_Error;
+			return;
+		}
 		(*objects)[objIndex].type = nameToType(token);
 		(*objects)[objIndex].arg_indexes.push_back(objects->size());
 		parse_obj(objects, tokens, begin, index - 1);
@@ -142,11 +148,19 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 	}
 	if (token == "-") {
 		if (index == begin) {
+			if (end <= index) {
+				(*objects)[objIndex].type = ObjType::_Error;
+				return;
+			}
 			(*objects)[objIndex].type = ObjType::_uMinus;
 			(*objects)[objIndex].arg_indexes.push_back(objects->size());
 			parse_obj(objects, tokens, index + 1, end);
 		}
 		else {
+			if (index < begin || end <= index) {
+				(*objects)[objIndex].type = ObjType::_Error;
+				return;
+			}
 			(*objects)[objIndex].type = ObjType::_dif;
 			(*objects)[objIndex].arg_indexes.push_back(objects->size());
 			parse_obj(objects, tokens, begin, index - 1);
@@ -156,6 +170,10 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 		return;
 	}
 	if (token == "!") {
+		if (index <= begin) {
+			(*objects)[objIndex].type = ObjType::_Error;
+			return;
+		}
 		(*objects)[objIndex].type = ObjType::_fct;
 		(*objects)[objIndex].arg_indexes.push_back(objects->size());
 		parse_obj(objects, tokens, begin, index - 1);
@@ -182,11 +200,11 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 		(*objects)[objIndex].value = math::i;
 		return;
 	}
+
+	(*objects)[objIndex].name = token;
+	(*objects)[objIndex].type = nameToType(token);
 	if (index + 1 < tokens.size()) {
 		if (tokens[index + 1] == "(") {
-			(*objects)[objIndex].name = token;
-			(*objects)[objIndex].type = nameToType(token);
-
 			int start_i = index + 2;
 			index = brackets(tokens, index + 1, true);
 			for (int i = start_i; i <= index; i++) {
@@ -202,8 +220,6 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 			return;
 		}
 		if (tokens[index + 1] == "[" && tokens[brackets(tokens, index + 1, true) + 1] == "(") {
-			(*objects)[objIndex].name = token;
-			(*objects)[objIndex].type = nameToType(token);
 			(*objects)[objIndex].arg_indexes.push_back(objects->size());
 			parse_obj(objects, tokens, index + 1, brackets(tokens, index + 1, true));
 
@@ -213,9 +229,6 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 			return;
 		}
 		if (tokens[index + 1] == "{" && tokens[brackets(tokens, index + 1, true) + 1] == "[") {
-			(*objects)[objIndex].name = token;
-			(*objects)[objIndex].type = nameToType(token);
-
 			int start_i = index + 2;
 			index = brackets(tokens, index + 1, true);
 			for (int i = start_i; i <= index; i++) {
@@ -243,7 +256,6 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 			return;
 		}
 	}
-	(*objects)[objIndex].name = token;
 }
 
 int brackets(std::vector<std::string> tokens, int bracket_index, bool forward) {
@@ -402,10 +414,14 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
 			math::complex
 				res = (*objects)[this->arg_indexes[3]].return_value(objects, args),
-				difference = args_results[2] - args_results[1],
-				step = math::normalize(difference);
+				difference = args_results[2] - args_results[1];
+			long long
+				repeats = math::floor(difference.R);
+			math::complex
+				diffPart = math::complex(difference.R - repeats,difference.i),
+				step = math::normalize(diffPart);
 			long double
-				radius = math::abs(difference),
+				radius = math::abs(diffPart),
 				radFract = radius - math::floor(radius);
 			math::complex
 				angle1 = math::mul_i((math::complex)math::arccos(0.5 * radFract)),
@@ -417,7 +433,7 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 
 			(*args)[var_index].value = (*args)[var_index].value + 0.5 * (1 - step);
 			/**/ if (this->type == ObjType::_Sum) {
-				for (int i = 0; i < (int)radius; i++) {
+				for (int i = 0; i < (long long)radius; i++) {
 					(*args)[var_index].value = (*args)[var_index].value + step;
 					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step;
 				}
@@ -442,6 +458,20 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step4 * 0.5 * radFract;
 					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step4 + step3);
 					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step3 * 0.5 * radFract;
+
+					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step3 - 1);
+				}
+				if (repeats < 0) {
+					for (int i = 0; repeats < i; i--) {
+						res = res - (*objects)[this->arg_indexes[3]].return_value(objects, args);
+						(*args)[var_index].value = (*args)[var_index].value - 1;
+					}
+				}
+				else {
+					for (int i = 0; i < repeats; i++) {
+						(*args)[var_index].value = (*args)[var_index].value + 1;
+						res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args);
+					}
 				}
 			}
 			else if (this->type == ObjType::_Product) {
@@ -470,6 +500,20 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step4 * 0.5 * radFract);
 					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step4 + step3);
 					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step3 * 0.5 * radFract);
+
+					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step3 - 1);
+				}
+				if (repeats < 0) {
+					for (int i = 0; repeats < i; i--) {
+						res = res / (*objects)[this->arg_indexes[3]].return_value(objects, args);
+						(*args)[var_index].value = (*args)[var_index].value - 1;
+					}
+				}
+				else {
+					for (int i = 0; i < repeats; i++) {
+						(*args)[var_index].value = (*args)[var_index].value + 1;
+						res = res * (*objects)[this->arg_indexes[3]].return_value(objects, args);
+					}
 				}
 			}
 
