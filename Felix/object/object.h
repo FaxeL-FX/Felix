@@ -30,8 +30,10 @@ enum ObjType {
 	_sinh, _arcsinh,
 	_coth, _arccoth,
 	_tanh, _arctanh,
+	_sin1, _cos1,
 
-	_Sum, _Product,
+	_Sum, _ForwardDifference,
+	_Product,
 	_Integral, _Derivative, _IntegralAlongExp,
 	_Polynomial,
 
@@ -39,13 +41,13 @@ enum ObjType {
 
 	_exist, _grid,
 
-	_gamma, _fctIntegral,
+	_gamma, _fctIntegral, _zeta,
 };
 
 struct Variable {
 	int id = -1;
 	std::string name;
-	math::complex value = 0;
+	math::number value = 0;
 
 	Variable(std::string name) {
 		this->name = name;
@@ -53,14 +55,14 @@ struct Variable {
 		for (auto c : this->name)
 			this->id = (this->id << 1) + (int)c;
 	}
-	Variable(std::string name, math::complex value) {
+	Variable(std::string name, math::number value) {
 		this->name = name;
 		this->value = value;
 		this->id = 0;
 		for (auto c : this->name)
 			this->id = (this->id << 1) + (int)c;
 	}
-	Variable(int id, std::string name, math::complex value) {
+	Variable(int id, std::string name, math::number value) {
 		this->id = id;
 		this->name = name;
 		this->value = value;
@@ -72,11 +74,11 @@ struct Object {
 	std::string name;
 	ObjType type;
 	std::vector<int> arg_indexes;
-	math::complex value;
+	math::number value;
 
-	math::complex return_value(std::vector<Object>* objects, std::vector<Variable>* args);
+	math::number return_value(std::vector<Object>* objects, std::vector<Variable>* args);
 
-	Object(std::string name, ObjType type, std::vector<int> arg_indexes, math::complex value) {
+	Object(std::string name, ObjType type, std::vector<int> arg_indexes, math::number value) {
 		this->name = name;
 		this->type = type;
 		this->arg_indexes = arg_indexes;
@@ -85,7 +87,7 @@ struct Object {
 		for (auto c : this->name)
 			this->id = (this->id << 1) + (int)c;
 	}
-	Object(std::string name, std::vector<int> arg_indexes, math::complex value) {
+	Object(std::string name, std::vector<int> arg_indexes, math::number value) {
 		this->name = name;
 		this->arg_indexes = arg_indexes;
 		this->value = value;
@@ -115,7 +117,7 @@ struct Function {
 	std::vector<Variable> args;
 	std::vector<Object> objects;
 
-	math::complex return_value();
+	math::number return_value();
 
 	Function() {}
 	Function(int id, std::string name, std::vector<Variable> args, std::vector<Object> objects) {
@@ -140,4 +142,4 @@ int priority(std::string);
 int find_token(std::vector<std::string>, int, bool);
 bool need_mul(std::string, std::string);
 
-math::complex value(std::vector<Object>, std::vector<Variable>);
+math::number value(std::vector<Object>, std::vector<Variable>);

@@ -1,4 +1,4 @@
-﻿//	v1.7.2
+﻿//	v1.8
 
 #include <iostream>
 #include "include.h"
@@ -44,9 +44,9 @@ Color pen(Color a, Color b) {
 	return a;
 }
 Color penAdd(Color a, Color b) {
-	a.R = a.R * a.A + b.R * b.A;
-	a.G = a.G * a.A + b.G * b.A;
-	a.B = a.B * a.A + b.B * b.A;
+	a.R += b.R * b.A;
+	a.G += b.G * b.A;
+	a.B += b.B * b.A;
 	if (a.R > 1) a.R = 1;
 	if (a.G > 1) a.G = 1;
 	if (a.B > 1) a.B = 1;
@@ -79,9 +79,15 @@ Color toCol(math::complex_exponential x) {
 	return c;
 }
 std::vector<float> toVecF(Color c) { return { c.R, c.G, c.B }; }
-Color fncColor(long double im) {
-	if (im == im) return Color(1 / (1 + im * im));
-	return Color(0);
+Color fncColor(double col, long double im) {
+	Color c(
+		0.5 * (1 + cos(col * 1.8)),
+		0.5 * (1 + cos(col * 1.8 + 2.095)),
+		0.5 * (1 + cos(col * 1.8 - 2.095)),
+		1);
+	if (im == im)	c.A = 1 / (1 + im * im);
+	else			c.A = 0;
+	return c;
 }
 
 math::complex_linear plot_center = 0;
@@ -214,6 +220,8 @@ bool run_command(std::string c) {
 			}
 			args[1] = args[1].substr(args[1].find_first_of(";,") + 1);
 		}
+
+		double colorNum = 0;
 		for (auto f : target_fncs) {
 			int progress = 0, * pr = &progress, * resol = &resolution;
 			bool go = true, * g = &go;
@@ -286,7 +294,7 @@ bool run_command(std::string c) {
 				else {
 					std::vector<std::thread> thr(prc);
 					for (int i = 0; i < prc; i++) {
-						thr[i] = std::thread([](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress) {
+						thr[i] = std::thread([](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, int color) {
 							int iY, iYp;
 							long double start = plot_center.R - plot_radius, step = 2 * plot_radius / resolution;
 							math::complex_linear res;
@@ -312,12 +320,12 @@ bool run_command(std::string c) {
 								}
 								if (down < up) down++;
 								for (int j = down; j <= up && j < resolution; j++) {
-									(*img)[j * resolution + iX] = toVecF(penAdd((*img)[j * resolution + iX], fncColor(res.i)));
+									(*img)[j * resolution + iX] = toVecF(penAdd((*img)[j * resolution + iX], fncColor(color, res.i)));
 								}
 								iYp = iY;
 								(*progress) += resolution;
 							}
-							}, im, i * resolution / prc, (i + 1) * resolution / prc, resolution, f, pr);
+							}, im, i * resolution / prc, (i + 1) * resolution / prc, resolution, f, pr, colorNum);
 					}
 					for (int i = 0; i < prc; i++) thr[i].join();
 				}
@@ -375,6 +383,7 @@ bool run_command(std::string c) {
 			}
 			go = false;
 			counter.join();
+			colorNum++;
 		}
 
 		if (grid) {
@@ -473,7 +482,7 @@ bool run_command(std::string c) {
 
 				response += "\n Other Functions\n";
 				response += " =>   gamma(x) -> gamma function\n";
-				response += " =>    fctI(x) -> integral of factorial\n";
+				response += " =>  fctI(x,n) -> n-th integral of factorial\n";
 				response += " => rand | rand(x) | rand(x, ...)\n";
 				std::cout << response;
 				return true;

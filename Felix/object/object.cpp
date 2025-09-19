@@ -37,6 +37,8 @@ ObjType nameToType(std::string token) {
 	if (token == "tanh" || token == "tgh")			return ObjType::_tanh;
 	if (token == "arctan" || token == "arctg")		return ObjType::_arctan;
 	if (token == "arctanh" || token == "arctgh")	return ObjType::_arctanh;
+	if (token == "sin1")	return ObjType::_sin1;
+	if (token == "cos1")	return ObjType::_cos1;
 
 	if (token == "S" || token == "Sum")					return ObjType::_Sum;
 	if (token == "P" || token == "Product")				return ObjType::_Product;
@@ -62,6 +64,7 @@ ObjType nameToType(std::string token) {
 	if (token == "gamma")							return ObjType::_gamma;
 	if (token == "fctIntegral" || token == "fctI")	return ObjType::_fctIntegral;
 	if (token == "H")								return ObjType::_Harmonic;
+	if (token == "zeta")							return ObjType::_zeta;
 
 	return ObjType::_Default;
 }
@@ -71,9 +74,11 @@ std::vector<Object> parse_expr(std::string expr) {
 	std::vector<std::string> tokens;
 	while (expr.length() > 0) {
 		std::string token = parse_token(expr);
-		if (token != " ") tokens.push_back(token);
+		if (token[0] != ' ') tokens.push_back(token);
 		expr = expr.substr(token.length());
 	}
+	//for (auto t : tokens) std::cout << t << "\n";
+
 	for (int i = 1; i < tokens.size(); i++)
 		if (need_mul(tokens[i - 1], tokens[i]))
 			tokens.insert(tokens.begin() + i, "*");
@@ -93,7 +98,7 @@ std::string parse_token(std::string expr) {
 	int type = 0;	//	types: 0->any , 1->number , 2->word
 	char c = std::tolower(expr[0]);
 	if ('0' <= expr[0] && expr[0] <= '9' || expr[0] == '.') type = 1;
-	else if ('a' <= c && c <= 'z') type = 2;
+	else if ('a' <= c && c <= 'z' || c == '_') type = 2;
 
 	if (type == 0) switch (expr[0]) {
 	case('+', '-', '*', '/', '%', '^', '!', '(', ')', '[', ']', '{', '}', '=', ',', ';'):
@@ -103,37 +108,48 @@ std::string parse_token(std::string expr) {
 		else										return expr.substr(0, 1);
 	}
 	int i = 1;
-	for (i; i < expr.length(); i++) {
-		c = std::tolower(expr[i]);
-		if (('0' <= c && c <= '9' || c == '.') && type == 1 ||
-			('a' <= c && c <= 'z' || c == '_') && type == 2) continue;
-		break;
+
+	// number
+	if (type == 1) {
+		for (i; i < expr.length(); i++) {
+			if (('0' <= expr[i] && expr[i] <= '9' || expr[i] == '.')) continue;
+			break;
+		}
+	}
+
+	// word
+	if (type == 2) {
+		for (i; i < expr.length(); i++) {
+			c = std::tolower(expr[i]);
+			if ('a' <= c && c <= 'z' || c == '_' || '0' <= c && c <= '9') continue;
+			break;
+		}
 	}
 	return expr.substr(0, i);
 }
 void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, int begin, int end) {
-	objects->push_back(Object());
-	int index = end, objIndex = objects->size() - 1;
-	if (begin < 0 || tokens.size() <= end) {
-		(*objects)[objIndex].type = ObjType::_Error;
-		return;
-	}
+	if (begin < 0 || tokens.size() <= end) return;
+
+	int index = end, objIndex = objects->size();
 	std::string token = tokens[end];
-	(*objects)[objIndex].type = ObjType::_Default;
+
+	if (tokens[end] == ")" || tokens[end] == "]" || tokens[end] == "}")
+		if (brackets(tokens, end, false) == begin)
+			return parse_obj(objects, tokens, begin + 1, end - 1);
 
 	for (int i = end; begin <= i && i <= end; i--) {
-		if (tokens[index] == "(" || tokens[index] == "[" || tokens[index] == "{" || tokens[i] == ")" || tokens[i] == "]" || tokens[i] == "}") {
-			if (i == end && brackets(tokens, i, false) == begin) {
-				objects->pop_back();
-				return parse_obj(objects, tokens, begin + 1, end - 1);
-			}
-			else i = brackets(tokens, i, false);
+		if (tokens[i] == ")" || tokens[i] == "]" || tokens[i] == "}") {
+			i = brackets(tokens, i, false);
 			continue;
 		}
 		if (priority(tokens[i]) <= priority(token)) continue;
-		token = tokens[i];
 		index = i;
+		token = tokens[index];
 	}
+
+	objects->push_back(Object());
+	(*objects)[objIndex].type = ObjType::_Default;
+
 	if (token == "+" || token == "*" || token == "/" || token == "%" || token == "^") {
 		if (index <= begin || end <= index) {
 			(*objects)[objIndex].type = ObjType::_Error;
@@ -208,7 +224,7 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 			int start_i = index + 2;
 			index = brackets(tokens, index + 1, true);
 			for (int i = start_i; i <= index; i++) {
-				if (tokens[i] == ")" || tokens[i] == ",") {
+				if (tokens[i] == ")" || tokens[i] == ";" || tokens[i] == ",") {
 					(*objects)[objIndex].arg_indexes.push_back(objects->size());
 					parse_obj(objects, tokens, start_i, i - 1);
 					start_i = i + 1;
@@ -232,7 +248,7 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 			int start_i = index + 2;
 			index = brackets(tokens, index + 1, true);
 			for (int i = start_i; i <= index; i++) {
-				if (tokens[i] == "}" || tokens[i] == ";") {
+				if (tokens[i] == "}" || tokens[i] == ";" || tokens[i] == ",") {
 					(*objects)[objIndex].arg_indexes.push_back(objects->size());
 					parse_obj(objects, tokens, start_i, i - 1);
 					start_i = i + 1;
@@ -244,7 +260,7 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 			start_i = index + 2;
 			index = brackets(tokens, index + 1, true);
 			for (int i = start_i; i <= index; i++) {
-				if (tokens[i] == "]" || tokens[i] == ";") {
+				if (tokens[i] == "]" || tokens[i] == ";" || tokens[i] == ",") {
 					(*objects)[objIndex].arg_indexes.push_back(objects->size());
 					parse_obj(objects, tokens, start_i, i - 1);
 					start_i = i + 1;
@@ -260,20 +276,19 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 
 int brackets(std::vector<std::string> tokens, int bracket_index, bool forward) {
 	char antibracket = antibr(tokens[bracket_index][0]);
-	if (forward) {
+	if (forward)
 		for (int index = bracket_index + 1; 0 <= index && index < tokens.size(); index++) {
 			if (tokens[index][0] == antibracket) return index;
 			if (tokens[index] == "(" || tokens[index] == "[" || tokens[index] == "{")
 				index = brackets(tokens, index, forward);
 		}
-		return tokens.size() - 1;
-	}
-	for (int index = bracket_index - 1; 0 <= index && index < tokens.size(); index--) {
-		if (tokens[index][0] == antibracket) return index;
-		if (tokens[index] == ")" || tokens[index] == "]" || tokens[index] == "}")
-			index = brackets(tokens, index, forward);
-	}
-	return 0;
+	else
+		for (int index = bracket_index - 1; 0 <= index && index < tokens.size(); index--) {
+			if (tokens[index][0] == antibracket) return index;
+			if (tokens[index] == ")" || tokens[index] == "]" || tokens[index] == "}")
+				index = brackets(tokens, index, forward);
+		}
+	return bracket_index;
 }
 char antibr(char b) {
 	switch (b) {
@@ -316,18 +331,20 @@ int find_token(std::vector<std::string> tokens, int token_index, bool forward) {
 bool need_mul(std::string token1, std::string token2) {
 	//	+ - * / ^
 	if (priority(token1) > 2 || priority(token2) > 2) return false;
-	//	[...] | {...}
-	if (token1 == "[" || token1 == "]" || token1 == "{" || token1 == "}" || token2 == "[" || token2 == "]" || token2 == "{" || token2 == "}") return false;
-	//	(...) | ...! | ...;... | ...,...
-	if (token1 == "(" || token2 == ")" || token2 == "!" || token1 == ";" || token2 == ";" || token1 == "," || token2 == ",") return false;
+
+	if (token1 == "(" || token1 == "[" || token1 == "{" || token1 == ";" || token1 == ",") return false;
+	if (token2 == ")" || token2 == "]" || token2 == "}" || token2 == ";" || token2 == "," || token2 == "!") return false;
+	// fnc[]() | fnc{}[]
+	if (token1 == "]" && token2 == "(" || token1 == "}" && token2 == "[") return false;
 	//	fnc()
-	if (('a' <= token1[0] && token1[0] <= 'z' || 'A' <= token1[0] && token1[0] <= 'Z' || token1[0] == '_') && token2 == "(") return false;
+	token1[0] = std::tolower(token1[0]);
+	if (('a' <= token1[0] && token1[0] <= 'z' || token1[0] == '_') && (token2 == "(" || token2 == "[" || token2 == "{")) return false;
 
 	return true;
 }
 
-math::complex Object::return_value(std::vector<Object>* objects, std::vector<Variable>* args) {
-	std::vector<math::complex> args_results;
+math::number Object::return_value(std::vector<Object>* objects, std::vector<Variable>* args) {
+	std::vector<math::number> args_results;
 	for (auto i : this->arg_indexes) args_results.push_back((*objects)[i].return_value(objects, args));
 
 	switch (arg_indexes.size()) {
@@ -360,29 +377,25 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 		case(ObjType::_tanh): return math::tanh(args_results[0]);
 		case(ObjType::_arctan): return math::arctan(args_results[0]);
 		case(ObjType::_arctanh): return math::arctanh(args_results[0]);
+		case(ObjType::_sin1): return math::sin1(args_results[0]);
+		case(ObjType::_cos1): return math::cos1(args_results[0]);
 
 		case(ObjType::_abs): return math::abs(args_results[0]);
 		case(ObjType::_inv_abs): return math::inv_abs(args_results[0]);
 		case(ObjType::_arg): return math::arg(args_results[0]);
 		case(ObjType::_sign): return math::normalize(args_results[0]);
-		case(ObjType::_Re): return ((math::complex_linear)args_results[0]).R;
-		case(ObjType::_Im): return ((math::complex_linear)args_results[0]).i;
-		case(ObjType::_floor): return math::floor(args_results[0]);
-		case(ObjType::_ceil): return math::ceil(args_results[0]);
-		case(ObjType::_round): return math::floor(args_results[0] + math::complex(0.5, 0.5));
+		case(ObjType::_Re): return Re(args_results[0]);
+		case(ObjType::_Im): return Im(args_results[0]);
+		//case(ObjType::_floor): return math::floor(args_results[0]);
+		//case(ObjType::_ceil): return math::ceil(args_results[0]);
+		//case(ObjType::_round): return math::floor(args_results[0] + math::complex(0.5, 0.5));
 
 		case(ObjType::_exist): return !math::exist(args_results[0]);
-		case(ObjType::_grid): {
-			math::complex_linear res = args_results[0] - math::floor(args_results[0] + math::complex(0.5, 0.5));
-			if (res.R < 0) res.R = -res.R;
-			if (res.i < 0) res.i = -res.i;
-			if (res.R > res.i) return res.i;
-			return res.R;
-		}
-		
+		case(ObjType::_grid): return math::grid(args_results[0]);
+
 		case(ObjType::_gamma): return math::fct(args_results[0] - 1);
-		case(ObjType::_fctIntegral): return math::fctIntegral(args_results[0], 0);
 		case(ObjType::_Harmonic): return math::Harmonic(args_results[0]);
+		case(ObjType::_zeta): return math::zeta(args_results[0]);
 	}
 	case(2): switch (this->type) {
 		case(ObjType::_add): return args_results[0] + args_results[1];
@@ -394,17 +407,22 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 
 		case(ObjType::_root): return math::pow(args_results[1], 1 / args_results[0]);
 		case(ObjType::_log): return math::ln(args_results[1]) / math::ln(args_results[0]);
+
+		case(ObjType::_fctIntegral): return math::fctIntegral(args_results[0], args_results[1]);
 	}
 	case(3): switch (this->type) {
 		case(ObjType::_Derivative): {
 			const int n = 256;
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1] + 0.5 / n));
-			math::complex res = (*objects)[this->arg_indexes[2]].return_value(objects, args);
+			math::number res = (*objects)[this->arg_indexes[2]].return_value(objects, args);
 			(*args)[var_index].value = args_results[1] - 0.5 / n;
 			res = res - (*objects)[this->arg_indexes[2]].return_value(objects, args);
 			args->erase(args->begin() + var_index);
 			return res * n;
+		}
+		case(ObjType::_ForwardDifference): {
+			return 0;
 		}
 	}
 	case(4): switch (this->type) {
@@ -527,7 +545,7 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 			for (int i = 0; i < repeats; i++) {
 				(*args)[var_index].value = (*objects)[this->arg_indexes[3]].return_value(objects, args);
 			}
-			math::complex res = (*args)[var_index].value;
+			math::number res = (*args)[var_index].value;
 			args->erase(args->begin() + var_index);
 			return res;
 		}
@@ -536,7 +554,7 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 			const int n = 256;
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
-			math::complex res = 0, dx = (args_results[2] - args_results[1]) / n;
+			math::number res = 0, dx = (args_results[2] - args_results[1]) / n;
 			for (int k = 0; k < n; k++) {
 				res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args);
 				(*args)[var_index].value = (*args)[var_index].value + dx;
@@ -548,7 +566,7 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 			const int n = 256;
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
-			math::complex res = 0, dx = (math::ln(args_results[2] / args_results[1])) / n, x = math::ln(args_results[1]), dt;
+			math::number res = 0, dx = (math::ln(args_results[2] / args_results[1])) / n, x = math::ln(args_results[1]), dt;
 			for (int k = 0; k < n; k++) {
 				dt = math::exp(x + dx) - math::exp(x);
 				res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * dt;
@@ -564,7 +582,7 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 		int var_index = args->size();
 		args->push_back(Variable((*objects)[this->arg_indexes[0]].name));
 
-		std::vector<std::vector<math::complex>> matrix(args_results.size() - 3, std::vector<math::complex>(args_results.size() - 2, 1));
+		std::vector<std::vector<math::number>> matrix(args_results.size() - 3, std::vector<math::number>(args_results.size() - 2, 1));
 		for (int i = 0; i < matrix.size(); i++) {
 			for (int j = 1; j < matrix.size(); j++) {
 				for (int k = j; k < matrix.size(); k++) {
@@ -576,7 +594,7 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 		}
 
 		for (int i = 0; i < matrix.size(); i++) {
-			math::complex multiple = matrix[i][i];
+			math::number multiple = matrix[i][i];
 			for (int j = i; j < matrix[0].size(); j++)
 				matrix[i][j] = matrix[i][j] / multiple;
 			for (int j = 0; j < matrix.size(); j++) {
@@ -587,7 +605,7 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 			}
 		}
 
-		math::complex
+		math::number
 			var = 1,
 			res = matrix[0][matrix.size()];
 		for (int i = 1; i < matrix.size(); i++) {
@@ -615,9 +633,9 @@ math::complex Object::return_value(std::vector<Object>* objects, std::vector<Var
 	return 0;
 }
 
-math::complex value(std::vector<Object> objects, std::vector<Variable> args) {
+math::number value(std::vector<Object> objects, std::vector<Variable> args) {
 	return objects[0].return_value(&objects, &args);
 }
-math::complex Function::return_value() {
+math::number Function::return_value() {
 	return value(this->objects, this->args);
 }

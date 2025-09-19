@@ -4,6 +4,14 @@ namespace math {
 	const long double
 		pi = 3.1415926535897932384626433832795028841971693993751058209749445923,
 		inf = 1.0 / 0.0;
+	const complex_linear
+		i(0, 1),
+		fctIntegralConstant = getFctIntegralConstant();
+	const infsim
+		infinity(acch + 1, 1.0),
+		zero(acch - 1, 1.0),
+		lnInf = -ln_sum(infinity),
+		fctIntegralConst = getFctIntegralConst();
 
 	bool sign(double x) {
 		unsigned long long i = *(unsigned long long*) & x;
@@ -60,6 +68,10 @@ namespace math {
 		this->R = x.r * cos(x.a);
 		this->i = x.r * sin(x.a);
 	}
+	complex_linear::complex_linear(infsim x) {
+		this->R = x.getNum(acch).R;
+		this->i = x.getNum(acch).i;
+	}
 	complex_exponential::complex_exponential(long double x) {
 		this->r = x * sign(x);
 		if (x >= 0)	this->a = 0;
@@ -69,9 +81,7 @@ namespace math {
 		this->r = abs(x);
 		this->a = arg(x);
 	}
-	const complex_linear
-		i(0, 1),
-		fctIntegralConstant = getFctIntegralConstant();
+	
 
 	complex_linear operator+(complex_linear x, complex_linear y) { return complex_linear(x.R + y.R, x.i + y.i); }
 	complex_linear operator-(complex_linear x) { return complex_linear(-x.R, -x.i); }
@@ -211,6 +221,14 @@ namespace math {
 		return sqrt(2 - res) * (1 << 8);
 	}
 
+	double factorial(double x) {
+		double res = 1.0;
+		for (double k = 2.0; k <= x; k++) res *= k;
+		for (double k = -1.0; x < k; k--) res *= k;
+		if (x < -1.0) return 1.0 / res;
+		return res;
+	}
+
 	//	complex_linear
 	std::string toString(complex_linear x) {
 		if (x.i == 0) x.i = 0;
@@ -287,6 +305,15 @@ namespace math {
 		if (x.r == x.r) return true;
 		return false;
 	}
+	complex_linear Re(complex_linear x) { return x.R; }
+	complex_linear Im(complex_linear x) { return x.i; }
+	complex_linear grid(complex_linear x) {
+		complex_linear res = x - math::floor(x + complex(0.5, 0.5));
+		if (res.R < 0) res.R = -res.R;
+		if (res.i < 0) res.i = -res.i;
+		if (res.R > res.i) return res.i;
+		return res.R;
+	}
 
 	complex_exponential exp(complex_exponential x) { return complex_exponential(exp(x.r * cos(x.a)), x.r * sin(x.a)); }
 	complex_exponential ln(complex_exponential x) { return complex_linear(ln(x.r), x.a); }
@@ -332,14 +359,45 @@ namespace math {
 	complex arcsin(complex x) { return -mul_i(arcsinh(mul_i(x))); }
 	complex arccot(complex x) { return  mul_i(arccoth(mul_i(x))); }
 	complex arctan(complex x) { return -mul_i(arctanh(mul_i(x))); }
+	complex sin1(complex x) {
+		x.R = fmod(x.R + 1.0, 2.0) - 1.0;
+		/**/ if (x.R > 0.5) return sin1(1 - x);
+		else if (x.R < -0.5) return sin1(-1 - x);
+		complex res = x;
+		for (int i = 1; i < 64; i++) {
+			res = res * (1 - x * x / (i * i));
+		}
+		return res;
+	}
+	complex cos1(complex x) {
+		x.R = fmod(x.R + 1.0, 2.0) - 1.0;
+		/**/ if (x.R > 0.5) return -cos1(1 - x);
+		else if (x.R < -0.5) return -cos1(-1 - x);
+		complex res = 1;
+		for (double i = 0.5; i < 64; i++) {
+			res = res * (1 - x * x / (i * i));
+		}
+		return res;
+	}
 
 	complex fctIntegral(complex x, complex N) {
-		const int n = 256;
+		int n = 256;
+		double invN = 1 / (double)n;
+		complex res, t = ln(complex(-1.0)), dt, w = 0.0;
+		dt = (ln(256) - t) * invN;
+		for (int i = 0; i < n; i++) {
+			t = t + dt;
+			w = exp(t) + 1.0;
+			res = res + exp(-w + x * ln(w) - N * ln(ln(w))) * (exp(t) - exp(t - dt));
+		}
+		return res;
+
+		/*const int n = 256;
 		complex res = fctIntegralConstant, logX = ln(x) / n;
 		for (int k = 0; k < n; k++) {
 			res = res + fct(exp(k * logX)) * (exp((k + 1) * logX) - exp(k * logX));
 		}
-		return res;
+		return res;*/
 	}
 	complex Harmonic(complex x) {
 		if (x.R < -0.5) return Harmonic(-x - 1) - pi * cot(pi * x);
@@ -348,5 +406,236 @@ namespace math {
 		for (int k = 1; k <= n; k++)
 			res = res + x / (k * (x + k));
 		return res;
+	}
+	complex zeta(complex x) {
+		if (x.R > 0) return 2 * pow(2 * pi, -x - 1) * cos((x + 1) * pi * 0.5) * fct(x) * zeta(-x - 1);
+		int n = 32;
+		complex res1 = 0;
+		for (int i = 0; i < n; i++) {
+			complex res2 = 0;
+			for (int j = 0; j <= i; j++) {
+				res2 = res2 + (1 - 2 * (j % 2)) * fct((complex)i) * pow(j + 1, x) / (fct((complex)j) * fct((complex)(i - j)));
+			}
+			res1 = res1 + res2 * pow(2, -(complex)i - 1);
+		}
+		return res1 / (1 - pow(2, x + 1));
+	}
+
+	// infsim
+	infsim operator+(infsim x, infsim y) {
+		for (int i = 0; i < accuracy; i++) x.setNum(i, x.getNum(i) + y.getNum(i));
+		return x;
+	}
+	infsim operator-(infsim x) {
+		for (int i = 0; i < accuracy; i++) x.setNum(i, -x.getNum(i));
+		return x;
+	}
+	infsim operator-(infsim x, infsim y) { return x + -y; }
+	infsim operator*(infsim x, infsim y) {
+		infsim res;
+		for (int i = 0; i < accuracy; i++)
+			for (int j = acch - i; i + j - acch < accuracy; j++)
+				res.setNum(i + j - acch, res.getNum(i + j - acch) + x.getNum(i) * y.getNum(j));
+		return res;
+	}
+	infsim inv(infsim x) {
+		int maxPower = accuracy - 1;
+		for (maxPower; 0 <= maxPower && x.getNum(maxPower).isZero(); maxPower--) {}
+		int invPower = acch - maxPower;
+		complex denominator = 1.0 / (x.getNum(maxPower));
+		x =  mul(x * infsim(acch + invPower, 1.0), denominator);
+		infsim numerator(acch + invPower, 1.0), res;
+		for (int i = acch + invPower; 0 <= i; i--) {
+			infsim mul(i, numerator.getNum(i));
+			res = res + mul;
+			numerator = numerator - mul * x;
+		}
+		return mul(res, denominator);
+	}
+	infsim operator/(infsim x, infsim y) { return x * inv(y); }
+	infsim mul(infsim x, complex y) {
+		for (int i = 0; i < accuracy; i++) x.setNum(i, x.getNum(i) * y);
+		return x;
+	}
+	infsim div(infsim x, complex y) {
+		for (int i = 0; i < accuracy; i++) x.setNum(i, x.getNum(i) / y);
+		return x;
+	}
+	infsim operator<<(infsim x, int n) {
+		if (n < 0)	for (int i = 0; i < accuracy; i++) x.setNum(i, x.getNum(i) >> -n);
+		else		for (int i = 0; i < accuracy; i++) x.setNum(i, x.getNum(i) << n);
+		return x;
+	}
+	infsim operator>>(infsim x, int n) { return x << -n; }
+
+
+	infsim Re(infsim x) {
+		infsim res;
+		for (int i = 0; i < accuracy; i++) res.setNum(i, x.getNum(i).R);
+		return res;
+	}
+	infsim Im(infsim x) {
+		infsim res;
+		for (int i = 0; i < accuracy; i++) res.setNum(i, x.getNum(i).i);
+		return res;
+	}
+	complex grid(infsim x) {
+		complex res = x.getNum(acch) - math::floor(x.getNum(acch) + complex(0.5, 0.5));
+		if (res.R < 0) res.R = -res.R;
+		if (res.i < 0) res.i = -res.i;
+		if (res.R > res.i) return res.i;
+		return res.R;
+	}
+	infsim mul_i(infsim x) {
+		for (int i = 0; i < accuracy; i++) x.setNum(i, x.getNum(i) * math::i);
+		return x;
+	}
+
+	infsim exp(infsim x) {
+		infsim res = x >> 64;
+		if (res.getNum(acch).R < 0) res = -res;
+		for (int i = 0; i < 64; i++) res = (res << 1) + res * res;
+		if (x.getNum(acch).R < 0) return 1 / (res + 1);
+		return res + 1;
+	}
+	infsim ln_sum(infsim x) {
+		x = x - zero;
+		infsim
+			res,
+			s = -1, t = -zero * inv(x);
+		//	s = 1, t = (1 - inv(x));
+		for (int k = 1; k < 128; k++) {
+			s = s * t;
+			res = res + div(s, k);
+		}
+		//res.setNum(acch, ln(x.getNum(acch)));
+		return res + infsim(ln(x.getNum(acch)));
+	}
+	infsim ln_integral(infsim x) {
+		int n = 128;
+		double invN = 1 / (double)n;
+		infsim res, t = 1.0, th = i * abs(x.getNum(acch)), dt;
+		if (x.getNum(acch).i < 0.0) th = -th;
+		if (x.getNum(acch).R < 0.0) {
+			dt = (th - 1.0) * invN;
+			for (int i = 0; i < n; i++) {
+				t = t + dt;
+				res = res + inv(t) * dt;
+			}
+		}
+		else th = 1.0;
+		dt = (x - th) * invN;
+		for (int i = 0; i < n; i++) {
+			t = t + dt;
+			res = res + inv(t) * dt;
+		}
+		return res;
+	}
+	infsim ln(infsim x) {
+		int maxPower = accuracy - 1;
+		for (maxPower; 0 <= maxPower && x.getNum(maxPower).isZero(); maxPower--) {}
+		int maxPowerVal = maxPower - acch;
+		x = infsim(acch - maxPowerVal, 1.0) * x;
+		//return mul(lnInf, maxPowerVal) + ln_integral(x);
+		return mul(lnInf, maxPowerVal) + ln_sum(x);
+	}
+	infsim pow(infsim x, infsim y) {
+		if (y.getNum(acch).R >= 1) return pow(x, y - 1) * x;
+		if (y.getNum(acch).R < 0) return pow(x, y + 1) / x;
+		return exp(y * ln(x));
+	}
+	infsim sqrt(infsim x) { return exp(0.5 * ln(x)); }
+	infsim inv_sqrt(infsim x) { return exp(-0.5 * ln(x)); }
+
+	infsim cosh(infsim x) { return (exp(x) + exp(-x)) * 0.5; }
+	infsim sinh(infsim x) { return (exp(x) - exp(-x)) * 0.5; }
+	infsim coth(infsim x) {
+		infsim positive = exp(x), negative = exp(-x);
+		return (positive + negative) / (positive - negative);
+	}
+	infsim tanh(infsim x) {
+		infsim positive = exp(x), negative = exp(-x);
+		return (positive - negative) / (positive + negative);
+	}
+	infsim arccosh(infsim x) { return ln(x + sqrt(x * x - 1)); }
+	infsim arcsinh(infsim x) { return ln(x + sqrt(x * x + 1)); }
+	infsim arccoth(infsim x) { return arctanh(1 / x); }
+	infsim arctanh(infsim x) { return -0.5 * ln((1 - x) / (1 + x)); }
+
+	infsim cos(infsim x) { return      cosh(mul_i(x)); }
+	infsim sin(infsim x) { return -mul_i(sinh(mul_i(x))); }
+	infsim cot(infsim x) { return  mul_i(coth(mul_i(x))); }
+	infsim tan(infsim x) { return -mul_i(tanh(mul_i(x))); }
+	infsim arccos(infsim x) { return -mul_i(arccosh(x)); }
+	infsim arcsin(infsim x) { return -mul_i(arcsinh(mul_i(x))); }
+	infsim arccot(infsim x) { return  mul_i(arccoth(mul_i(x))); }
+	infsim arctan(infsim x) { return -mul_i(arctanh(mul_i(x))); }
+	infsim sin1(infsim x) {
+		x.setNum(acch, fmod(x.getNum(acch).R + 1.0, 2.0) - 1.0);
+		/**/ if (x.getNum(acch).R > 0.5) return sin1(1 - x);
+		else if (x.getNum(acch).R < -0.5) return sin1(-1 - x);
+		infsim res = x;
+		for (int i = 1; i < 64; i++) {
+			res = res * (1 - x * x / (i * i));
+		}
+		return res;
+	}
+
+	infsim fct(infsim x) {
+		if (x.getNum(acch).R < -32) return inv(sin1(-x) * fct(-1 - x));
+		if (x.getNum(acch).R < -0.5) return fct(x + 1) / (x + 1);
+		float n = 128.5;
+		infsim res = exp(-x + (x + n) * ln(x + n) - n * ln(n));
+		for (int i = 1; i < n; i++) res = res * (i / (x + i));
+		return res;
+	}
+	infsim getFctIntegralConst() {
+		const int n = 256;
+		infsim res, a = infsim(0, pi / n), b = 8 / 256;
+		for (int k = 0; k < n; k++) {
+			infsim t = exp(k * b - (n - k) * a) + 1;
+			res = res + t * exp(-t) / ln(t) * (exp((k + 1) * b - (n - k - 1) * a) - exp(k * b - (n - k) * a));
+		}
+		return res;
+	}
+	infsim fctIntegral(infsim x) {
+		const int n = 16;
+		infsim res = fctIntegralConstant, logX = ln(x) / n;
+		for (int k = 0; k < n; k++) {
+			res = res + fct(exp(k * logX)) * (exp((k + 1) * logX) - exp(k * logX));
+		}
+		return res;
+	}
+	infsim fctIntegral(infsim x, infsim y) {
+		int n = 32;
+		double invN = 1 / (double)n;
+		infsim res, t = ln(infsim(-1.0)), dt, w = 0.0;
+		dt = (infsim(256) - t) * invN;
+		for (int i = 0; i < n; i++) {
+			t = t + dt;
+			w = exp(t) + 1.0;
+			res = res + exp(-w + x * ln(w) - y * ln(ln(w))) * (exp(t) - exp(t - dt));
+		}
+		return res;
+	}
+	infsim Harmonic(infsim x) {
+		if (x.getNum(acch).R < -0.5) return Harmonic(-x - 1) - pi * cot(pi * x);
+		int n = 64;
+		infsim res = ln(1 + x / n);
+		for (int k = 1; k <= n; k++)
+			res = res + x / (k * (x + k));
+		return res;
+	}
+	infsim zeta(infsim x) {
+		if (x.getNum(acch).R > 0) return -pow(2 * pi, -x) * sin1(x * 0.5) * fct(x) * zeta(-x - 1);
+		infsim res1 = 0;
+		for (int i = 0; i < 12; i++) {
+			infsim res2 = 0;
+			for (int j = 0; j <= i; j++) {
+				res2 = res2 + (1 - 2 * (j % 2)) * factorial(i) * pow(j + 1 + zero, x) / (factorial(j) * factorial(i - j));
+			}
+			res1 = res1 + mul(res2, pow(complex(2.0), -(i + 1)));
+		}
+		return res1 / (1 - pow(2, x + 1));
 	}
 }
