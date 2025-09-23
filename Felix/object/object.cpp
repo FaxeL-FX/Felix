@@ -40,13 +40,14 @@ ObjType nameToType(std::string token) {
 	if (token == "sin1")	return ObjType::_sin1;
 	if (token == "cos1")	return ObjType::_cos1;
 
-	if (token == "S" || token == "Sum")					return ObjType::_Sum;
-	if (token == "P" || token == "Product")				return ObjType::_Product;
-	if (token == "R" || token == "Return")				return ObjType::_Return;
-	if (token == "I" || token == "Integral")			return ObjType::_Integral;
-	if (token == "D" || token == "Derivative")			return ObjType::_Derivative;
-	if (token == "Iexp" || token == "IntegralAlongExp") return ObjType::_IntegralAlongExp;
-	if (token == "Poly" || token == "Polynomial")		return ObjType::_Polynomial;
+	if (token == "S" || token == "Sum")						return ObjType::_Sum;
+	if (token == "FDiff" || token == "ForwardDifference")	return ObjType::_ForwardDifference;
+	if (token == "P" || token == "Product")					return ObjType::_Product;
+	if (token == "R" || token == "Return")					return ObjType::_Return;
+	if (token == "I" || token == "Integral")				return ObjType::_Integral;
+	if (token == "D" || token == "Derivative")				return ObjType::_Derivative;
+	if (token == "Iexp" || token == "IntegralAlongExp")		return ObjType::_IntegralAlongExp;
+	if (token == "Poly" || token == "Polynomial")			return ObjType::_Polynomial;
 
 	if (token == "abs")		return ObjType::_abs;
 	if (token == "inv_abs") return ObjType::_inv_abs;
@@ -65,6 +66,9 @@ ObjType nameToType(std::string token) {
 	if (token == "fctIntegral" || token == "fctI")	return ObjType::_fctIntegral;
 	if (token == "H")								return ObjType::_Harmonic;
 	if (token == "zeta")							return ObjType::_zeta;
+
+
+	if (token == "rand")	return ObjType::_rand;
 
 	return ObjType::_Default;
 }
@@ -95,19 +99,10 @@ std::vector<Object> parse_expr(std::string expr) {
 }
 std::string parse_token(std::string expr) {
 	if (expr.length() == 0) return " ";
-	int type = 0;	//	types: 0->any , 1->number , 2->word
+	int type = 0, i = 1;	//	types: 0->any , 1->number , 2->word
 	char c = std::tolower(expr[0]);
 	if ('0' <= expr[0] && expr[0] <= '9' || expr[0] == '.') type = 1;
 	else if ('a' <= c && c <= 'z' || c == '_') type = 2;
-
-	if (type == 0) switch (expr[0]) {
-	case('+', '-', '*', '/', '%', '^', '!', '(', ')', '[', ']', '{', '}', '=', ',', ';'):
-		return expr.substr(0, 1);
-	case('<', '>'):
-		if ((1 < expr.length()) && expr[1] == '=')	return expr.substr(0, 2);
-		else										return expr.substr(0, 1);
-	}
-	int i = 1;
 
 	// number
 	if (type == 1) {
@@ -309,25 +304,6 @@ int priority(std::string token) {
 	else if (token == "(" || token == "[" || token == "{" || token == ")" || token == "]" || token == "}") return 0;
 	return 1;
 }
-int find_token(std::vector<std::string> tokens, int token_index, bool forward) {
-	if (token_index < 1 || tokens.size() <= token_index) return 0;
-	if (forward) {
-		for (int index = token_index + 1; index < tokens.size(); index++) {
-			if (tokens[index] == tokens[token_index]) return index;
-			switch (tokens[index][0]) {
-			case('(', '[', '{'): index = brackets(tokens, index, forward);
-			}
-		}
-		return tokens.size() - 1;
-	}
-	for (int index = token_index - 1; 0 <= index; index--) {
-		if (tokens[index] == tokens[token_index]) return index;
-		switch (tokens[index][0]) {
-		case(')', ']', '}'): index = brackets(tokens, index, forward);
-		}
-	}
-	return 0;
-}
 bool need_mul(std::string token1, std::string token2) {
 	//	+ - * / ^
 	if (priority(token1) > 2 || priority(token2) > 2) return false;
@@ -386,9 +362,10 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		case(ObjType::_sign): return math::normalize(args_results[0]);
 		case(ObjType::_Re): return Re(args_results[0]);
 		case(ObjType::_Im): return Im(args_results[0]);
-		//case(ObjType::_floor): return math::floor(args_results[0]);
-		//case(ObjType::_ceil): return math::ceil(args_results[0]);
-		//case(ObjType::_round): return math::floor(args_results[0] + math::complex(0.5, 0.5));
+
+		case(ObjType::_floor): return math::floor(args_results[0]);
+		case(ObjType::_ceil): return math::ceil(args_results[0]);
+		case(ObjType::_round): return math::floor(args_results[0] + math::complex(0.5, 0.5));
 
 		case(ObjType::_exist): return !math::exist(args_results[0]);
 		case(ObjType::_grid): return math::grid(args_results[0]);
@@ -422,7 +399,13 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			return res * n;
 		}
 		case(ObjType::_ForwardDifference): {
-			return 0;
+			int var_index = args->size();
+			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+			math::number res = (*objects)[this->arg_indexes[2]].return_value(objects, args);
+			(*args)[var_index].value = args_results[1] - 1;
+			res = res - (*objects)[this->arg_indexes[2]].return_value(objects, args);
+			args->erase(args->begin() + var_index);
+			return res;
 		}
 	}
 	case(4): switch (this->type) {
@@ -551,7 +534,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		}
 
 		case(ObjType::_Integral): {
-			const int n = 256;
+			const int n = 1024;
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
 			math::number res = 0, dx = (args_results[2] - args_results[1]) / n;
@@ -563,7 +546,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			return res * dx;
 		}
 		case(ObjType::_IntegralAlongExp): {
-			const int n = 256;
+			const int n = 1024;
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
 			math::number res = 0, dx = (math::ln(args_results[2] / args_results[1])) / n, x = math::ln(args_results[1]), dt;

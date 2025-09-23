@@ -139,7 +139,6 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 int brackets(std::vector<std::string>, int, bool);
 char antibr(char);
 int priority(std::string);
-int find_token(std::vector<std::string>, int, bool);
 bool need_mul(std::string, std::string);
 
 math::number value(std::vector<Object>, std::vector<Variable>);

@@ -1,4 +1,4 @@
-﻿//	v1.8
+﻿//	v1.8.2
 
 #include <iostream>
 #include "include.h"
@@ -79,15 +79,17 @@ Color toCol(math::complex_exponential x) {
 	return c;
 }
 std::vector<float> toVecF(Color c) { return { c.R, c.G, c.B }; }
-Color fncColor(double col, long double im) {
-	Color c(
-		0.5 * (1 + cos(col * 1.8)),
-		0.5 * (1 + cos(col * 1.8 + 2.095)),
-		0.5 * (1 + cos(col * 1.8 - 2.095)),
+Color fncColor(Color col, long double im) {
+	if (im == im)	col.A = 1 / (1 + im * im);
+	else			col.A = 0;
+	return col;
+}
+Color RGBColor(double col) {
+	return Color(
+		(2 + cos(col * 1.8)) / 3,
+		(2 + cos(col * 1.8 + 2.095)) / 3,
+		(2 + cos(col * 1.8 - 2.095)) / 3,
 		1);
-	if (im == im)	c.A = 1 / (1 + im * im);
-	else			c.A = 0;
-	return c;
 }
 
 math::complex_linear plot_center = 0;
@@ -222,7 +224,12 @@ bool run_command(std::string c) {
 		}
 
 		double colorNum = 0;
+		Color col(1);
 		for (auto f : target_fncs) {
+			if (target_fncs.size() > 1) {
+				col = RGBColor(colorNum);
+			}
+
 			int progress = 0, * pr = &progress, * resol = &resolution;
 			bool go = true, * g = &go;
 			std::thread counter = std::thread([](int* progress, int* resolution, bool* go) {
@@ -294,7 +301,7 @@ bool run_command(std::string c) {
 				else {
 					std::vector<std::thread> thr(prc);
 					for (int i = 0; i < prc; i++) {
-						thr[i] = std::thread([](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, int color) {
+						thr[i] = std::thread([](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, Color color) {
 							int iY, iYp;
 							long double start = plot_center.R - plot_radius, step = 2 * plot_radius / resolution;
 							math::complex_linear res;
@@ -325,7 +332,7 @@ bool run_command(std::string c) {
 								iYp = iY;
 								(*progress) += resolution;
 							}
-							}, im, i * resolution / prc, (i + 1) * resolution / prc, resolution, f, pr, colorNum);
+							}, im, i * resolution / prc, (i + 1) * resolution / prc, resolution, f, pr, col);
 					}
 					for (int i = 0; i < prc; i++) thr[i].join();
 				}
@@ -539,7 +546,8 @@ int main() {
 		}
 		else {
 			math::complex answer = value(parse_expr(expression), {});
-			std::cout << " -> " << math::toString((math::complex_linear)answer) << " = " << math::toString((math::complex_exponential)answer);
+			std::cout << " -> " << math::toString((math::complex_linear)answer);
+			//std::cout << " = " << math::toString((math::complex_exponential)answer);
 		}
 		std::cout << "\n\n";
 	}

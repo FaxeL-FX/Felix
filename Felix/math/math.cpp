@@ -286,10 +286,11 @@ namespace math {
 	complex_linear inv_sqrt(complex_linear x) { return exp(-0.5 * ln(x)); }
 
 	complex_linear fct(complex_linear x) {
-		if (x.R < -0.5) return -pi / ((complex_linear)sin(pi * x) * fct(-1 - x));
-		float n = 32.5;
-		complex_linear res = exp(-x + (x + n) * ln(x + n) - n * ln(n));
-		for (int i = 1; i < n; i++) res = res * (i / (x + i));
+		if (x.R < -0.5) return -1 / (sin1(x) * fct(-1 - x));
+		if (x.R > 0) return x * fct(x - 1);
+		float n = 2048.5; // 2048.5
+		complex_linear res = exp(-x + (x + 0.5) * ln(x + n) - 0.5 * ln(n));
+		for (int i = 1; i < n; i++) res = res * i / n * (x + n) / (x + i);
 		return res;
 	}
 
@@ -384,11 +385,11 @@ namespace math {
 		int n = 256;
 		double invN = 1 / (double)n;
 		complex res, t = ln(complex(-1.0)), dt, w = 0.0;
-		dt = (ln(256) - t) * invN;
+		dt = (ln(n) - t) * invN;
 		for (int i = 0; i < n; i++) {
 			t = t + dt;
 			w = exp(t) + 1.0;
-			res = res + exp(-w + x * ln(w) - N * ln(ln(w))) * (exp(t) - exp(t - dt));
+			res = res + exp(-w + x * ln(w) - N * ln(ln(w))) * (exp(t + 0.5 * dt) - exp(t - 0.5 * dt));
 		}
 		return res;
 
@@ -400,23 +401,25 @@ namespace math {
 		return res;*/
 	}
 	complex Harmonic(complex x) {
-		if (x.R < -0.5) return Harmonic(-x - 1) - pi * cot(pi * x);
-		int n = 64;
+		if (x.R < -0.5) return Harmonic(-x - 1) - cos1(x) / sin1(x);
+		int n = 2048;
 		complex res = ln(1 + x / n);
 		for (int k = 1; k <= n; k++)
 			res = res + x / (k * (x + k));
 		return res;
 	}
 	complex zeta(complex x) {
-		if (x.R > 0) return 2 * pow(2 * pi, -x - 1) * cos((x + 1) * pi * 0.5) * fct(x) * zeta(-x - 1);
+		if (x.R > 0) return -pow(2 * pi, -x) * sin1(x * 0.5) * fct(x) * zeta(-x - 1);
 		int n = 32;
+		long double pow2 = 1;
 		complex res1 = 0;
 		for (int i = 0; i < n; i++) {
 			complex res2 = 0;
 			for (int j = 0; j <= i; j++) {
-				res2 = res2 + (1 - 2 * (j % 2)) * fct((complex)i) * pow(j + 1, x) / (fct((complex)j) * fct((complex)(i - j)));
+				res2 = res2 + (1 - 2 * (j % 2)) * factorial(i) * pow(j + 1, x) / (factorial(j) * factorial(i - j));
 			}
-			res1 = res1 + res2 * pow(2, -(complex)i - 1);
+			pow2 *= 0.5;
+			res1 = res1 + res2 * pow2;
 		}
 		return res1 / (1 - pow(2, x + 1));
 	}
