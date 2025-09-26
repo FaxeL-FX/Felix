@@ -4,7 +4,7 @@ namespace math {
 	const long double
 		pi = 3.1415926535897932384626433832795028841971693993751058209749445923,
 		inf = 1.0 / 0.0;
-	const complex_linear
+	const complex
 		i(0, 1),
 		fctIntegralConstant = getFctIntegralConstant();
 	const infsim
@@ -29,77 +29,39 @@ namespace math {
 		return (double)M(x) / ((unsigned long long)1 << 52);
 	}
 
-	fixed_point32 operator+(fixed_point32 x, fixed_point32 y) {
-		x.num = x.num + y.num;
-		return x;
-	}
-	fixed_point32 operator-(fixed_point32 x) {
-		x.num = -x.num;
-		return x;
-	}
-	fixed_point32 operator-(fixed_point32 x, fixed_point32 y) { return x + -y; }
-	fixed_point32 operator*(fixed_point32 x, fixed_point32 y) {
-		x.num = ((x.num >> 32) * y.num) << 32 + (((x.num << 32) >> 32) * y.num) >> 32;
-		return x;
-	}
-	fixed_point32 operator<<(fixed_point32 x, int n) {
-		if (n < 0)  x.num = x.num >> n;
-		else		x.num = x.num << n;
-		return x;
-	}
-	fixed_point32 operator>>(fixed_point32 x, int n) { return x << -n; }
-	bool operator==(fixed_point32 x, fixed_point32 y) {
-		if (x.num == y.num) return true;
-		return false;
-	}
-
-	complex_linear getFctIntegralConstant() {
+	complex getFctIntegralConstant() {
 		const int n = 256;
-		complex_linear res, a = complex_linear(0, pi / n), b = 8 / 256;
+		complex res, a = complex(0, pi / n), b = 8 / 256;
 		for (int k = 0; k < n; k++) {
-			complex_linear t = exp(k * b - (n - k) * a) + 1;
+			complex t = exp(k * b - (n - k) * a) + 1;
 			res = res + t * exp(-t) / ln(t) * (exp((k + 1) * b - (n - k - 1) * a) - exp(k * b - (n - k) * a));
 		}
 		return res;
 	}
 
 	//	complex
-	complex_linear::complex_linear(complex_exponential x) {
-		this->R = x.r * cos(x.a);
-		this->i = x.r * sin(x.a);
-	}
-	complex_linear::complex_linear(infsim x) {
+	complex::complex(infsim x) {
 		this->R = x.getNum(acch).R;
 		this->i = x.getNum(acch).i;
 	}
-	complex_exponential::complex_exponential(long double x) {
-		this->r = x * sign(x);
-		if (x >= 0)	this->a = 0;
-		else		this->a = pi;
-	}
-	complex_exponential::complex_exponential(complex_linear x) {
-		this->r = abs(x);
-		this->a = arg(x);
-	}
-	
 
-	complex_linear operator+(complex_linear x, complex_linear y) { return complex_linear(x.R + y.R, x.i + y.i); }
-	complex_linear operator-(complex_linear x) { return complex_linear(-x.R, -x.i); }
-	complex_linear operator-(complex_linear x, complex_linear y) { return complex_linear(x.R - y.R, x.i - y.i); }
-	complex_linear operator*(complex_linear x, complex_linear y) { return complex_linear(x.R * y.R - x.i * y.i, x.R * y.i + x.i * y.R); }
-	complex_linear operator/(complex_linear x, complex_linear y) {
+	complex operator+(complex x, complex y) { return complex(x.R + y.R, x.i + y.i); }
+	complex operator-(complex x) { return complex(-x.R, -x.i); }
+	complex operator-(complex x, complex y) { return complex(x.R - y.R, x.i - y.i); }
+	complex operator*(complex x, complex y) { return complex(x.R * y.R - x.i * y.i, x.R * y.i + x.i * y.R); }
+	complex operator/(complex x, complex y) {
 		if (x == y) return 1;
 		if (x == 0) return 0;
 		if (0 == y) {
-			if (x.i == 0) return complex_linear(x.R / 0.0);
-			if (x.R == 0) return complex_linear(0, x.i / 0.0);
-			return complex_linear(x.R / 0.0, x.i / 0.0);
+			if (x.i == 0) return complex(x.R / 0.0);
+			if (x.R == 0) return complex(0, x.i / 0.0);
+			return complex(x.R / 0.0, x.i / 0.0);
 		}
 		long double denominator = 1.0 / (y.R * y.R + y.i * y.i);
-		return complex_linear((x.R * y.R + x.i * y.i) * denominator, (y.R * x.i - x.R * y.i) * denominator);
+		return complex((x.R * y.R + x.i * y.i) * denominator, (y.R * x.i - x.R * y.i) * denominator);
 	}
-	complex_linear operator%(complex_linear x, complex_linear y) { return x - y * floor(x / y); }
-	complex_linear operator<<(complex_linear x, int n) {
+	complex operator%(complex x, complex y) { return x - y * floor(x / y); }
+	complex operator<<(complex x, int n) {
 		if (n < 0) {
 			for (int i = 0; i < -n / 64; i++) x = x / ((unsigned long long)1 << 63) * 0.5;
 			return x / ((unsigned long long)1 << -n % 64);
@@ -107,34 +69,9 @@ namespace math {
 		for (int i = 0; i < n / 64; i++) x = x * ((unsigned long long)1 << 63) * 2;
 		return x * ((unsigned long long)1 << n % 64);
 	}																						//	need to change for "flex_float" instead "long double"
-	complex_linear operator>>(complex_linear x, int n) { return x << -n; }
-	bool operator==(complex_linear x, complex_linear y) {
+	complex operator>>(complex x, int n) { return x << -n; }
+	bool operator==(complex x, complex y) {
 		if (x.R == y.R && x.i == y.i) return true;
-		return false;
-	}
-
-	complex_exponential operator+(complex_exponential x, complex_exponential y) {
-		long double
-			radius = sqrt(x.r * x.r + y.r * y.r + 2 * x.r * y.r * cos(y.a - x.a)),
-			angle = sign(x.r * sin(x.a) + y.r * sin(y.a)) * arccos((x.r * cos(x.a) + y.r * cos(y.a)) / radius);
-		return complex_exponential(radius, angle);
-	}
-	complex_exponential operator-(complex_exponential x) { return complex_exponential(x.r, x.a + pi); }
-	complex_exponential operator-(complex_exponential x, complex_exponential y) { return x + -y; }
-	complex_exponential operator*(complex_exponential x, complex_exponential y) { return complex_exponential(x.r * y.r, x.a + y.a); }
-	complex_exponential operator/(complex_exponential x, complex_exponential y) { return complex_exponential(x.r / y.r, x.a - y.a); }
-	complex_exponential operator%(complex_exponential x, complex_exponential y) { return x - y * floor(x / y); }
-	complex_exponential operator<<(complex_exponential x, int n) {
-		if (n < 0) {
-			for (int i = 0; i < -n / 64; i++) x = x / ((unsigned long long)1 << 63) * 0.5;
-			return x / ((unsigned long long)1 << -n % 64);
-		}
-		for (int i = 0; i < n / 64; i++) x = x * ((unsigned long long)1 << 63) * 2;
-		return x * ((unsigned long long)1 << n % 64);
-	}
-	complex_exponential operator>>(complex_exponential x, int n) { return x << -n; }
-	bool operator==(complex_exponential x, complex_exponential y) {
-		if (x.r == y.r && x.a == y.a) return true;
 		return false;
 	}
 
@@ -151,11 +88,11 @@ namespace math {
 		long double res = cos(seed);
 		for (int i = 1; i <= 16; i++)
 			for (auto n : v)
-				res = res + sin(((complex_linear)n).R) + res - 16 * floor(res * 0.0625);
+				res = res + sin(((complex)n).R) + res - 16 * floor(res * 0.0625);
 		res = fmod(res, 1.0);
 		return res;
 	}
-	long double rand(int seed, complex_linear z) {
+	long double rand(int seed, complex z) {
 		std::vector<long double> v = { z.R, z.i };
 		return rand(seed, v);
 	}
@@ -229,22 +166,16 @@ namespace math {
 		return res;
 	}
 
-	//	complex_linear
-	std::string toString(complex_linear x) {
-		if (x.i == 0) x.i = 0;
-		if (x.i < 0) return std::to_string(x.R) + std::to_string(x.i) + "i";
-		return std::to_string(x.R) + "+" + std::to_string(x.i) + "i";
-	}
-
-	complex_linear floor(complex_linear x) { return complex_linear(floor(x.R), floor(x.i)); }
-	complex_linear ceil(complex_linear x) { return complex_linear(ceil(x.R), ceil(x.i)); }
-	long double abs(complex_linear x) {
+	//	complex
+	complex floor(complex x) { return complex(floor(x.R), floor(x.i)); }
+	complex ceil(complex x) { return complex(ceil(x.R), ceil(x.i)); }
+	long double abs(complex x) {
 		if (x.i == 0) return sign(x.R) * x.R;
 		if (x.R == 0) return sign(x.i) * x.i;
 		return sqrt(x.R * x.R + x.i * x.i);
 	}
-	long double inv_abs(complex_linear x) { return inv_sqrt(x.R * x.R + x.i * x.i); }
-	complex_linear normalize(complex_linear x) {
+	long double inv_abs(complex x) { return inv_sqrt(x.R * x.R + x.i * x.i); }
+	complex normalize(complex x) {
 		if (x.i == 0)
 			if (x.R < 0)	return -1;
 			else			return 1;
@@ -253,8 +184,8 @@ namespace math {
 			else			return i;
 		return x * inv_sqrt(x.R * x.R + x.i * x.i);
 	}
-	complex_linear mul_i(complex_linear x) { return complex_linear(-x.i, x.R); }
-	long double arg(complex_linear x) {
+	complex mul_i(complex x) { return complex(-x.i, x.R); }
+	long double arg(complex x) {
 		long double cosine;
 		if (x.i == 0)
 			if (x.R < 0)	cosine = -1;
@@ -263,78 +194,48 @@ namespace math {
 		if (x.i < 0) return -arccos(cosine);
 		return arccos(cosine);
 	}
-	bool exist(complex_linear x) {
+	bool exist(complex x) {
 		if (x.R == x.R && x.i == x.i) return true;
 		return false;
 	}
 
-	complex_linear exp(complex_linear x) {
+	complex exp(complex x) {
 		if (x.R < -709) return 0;
-		complex_linear res = x >> 64;
+		complex res = x >> 64;
 		if (res.R < 0) res = -res;
 		for (int i = 0; i < 64; i++) res = (res << 1) + res * res;
 		if (x.R < 0) return 1 / (res + 1);
 		return res + 1;
 	}
-	complex_linear ln(complex_linear x) { return complex_linear(ln(abs(x)), arg(x)); }
-	complex_linear pow(complex_linear x, complex_linear y) {
+	complex ln(complex x) { return complex(ln(abs(x)), arg(x)); }
+	complex pow(complex x, complex y) {
 		if (y == 0) return 1;
 		if (y.R < 0)	return 1 / pow(x, -y);
+		if (y.R > 1)	return x * pow(x, y - 1);
 		return exp(y * ln(x));
 	}
-	complex_linear sqrt(complex_linear x) { return exp(0.5 * ln(x)); }
-	complex_linear inv_sqrt(complex_linear x) { return exp(-0.5 * ln(x)); }
+	complex sqrt(complex x) { return exp(0.5 * ln(x)); }
+	complex inv_sqrt(complex x) { return exp(-0.5 * ln(x)); }
 
-	complex_linear fct(complex_linear x) {
+	complex fct(complex x) {
 		if (x.R < -0.5) return -1 / (sin1(x) * fct(-1 - x));
 		if (x.R > 0) return x * fct(x - 1);
 		float n = 2048.5; // 2048.5
-		complex_linear res = exp(-x + (x + 0.5) * ln(x + n) - 0.5 * ln(n));
+		complex res = exp(-x + (x + 0.5) * ln(x + n) - 0.5 * ln(n));
 		for (int i = 1; i < n; i++) res = res * i / n * (x + n) / (x + i);
 		return res;
 	}
 
-	//	complex_exponential
-	std::string toString(complex_exponential x) { return "[" + std::to_string(x.r) + ":" + std::to_string(x.a) + "]"; }
-	complex_exponential floor(complex_exponential x) { return floor((complex_linear)x); }
-	long double abs(complex_exponential x) { return x.r; }
-	long double inv_abs(complex_exponential x) { return 1 / x.r; }
-	complex_exponential normalize(complex_exponential x) { return complex_exponential(1, x.a); }
-	complex_exponential mul_i(complex_exponential x) { return complex_exponential(x.r, x.a + (0.5 * pi)); }
-	long double arg(complex_exponential x) { return x.a; }
-	bool exist(complex_exponential x) {
-		if (x.r == x.r) return true;
-		return false;
-	}
-	complex_linear Re(complex_linear x) { return x.R; }
-	complex_linear Im(complex_linear x) { return x.i; }
-	complex_linear grid(complex_linear x) {
-		complex_linear res = x - math::floor(x + complex(0.5, 0.5));
+	complex Re(complex x) { return x.R; }
+	complex Im(complex x) { return x.i; }
+	complex grid(complex x) {
+		complex res = x - math::floor(x + complex(0.5, 0.5));
 		if (res.R < 0) res.R = -res.R;
 		if (res.i < 0) res.i = -res.i;
 		if (res.R > res.i) return res.i;
 		return res.R;
 	}
 
-	complex_exponential exp(complex_exponential x) { return complex_exponential(exp(x.r * cos(x.a)), x.r * sin(x.a)); }
-	complex_exponential ln(complex_exponential x) { return complex_linear(ln(x.r), x.a); }
-	complex_exponential pow(complex_exponential x, complex_exponential y) {
-		long double c = cos(y.a), s = sin(y.a), l = ln(x.r);
-		return complex_exponential(exp(y.r * (l * c - (long double)x.a * s)), y.r * (l * s + (long double)x.a * c));
-	}
-	complex_exponential sqrt(complex_exponential x) { return complex_exponential(sqrt(x.r), x.a * 0.5); }
-	complex_exponential inv_sqrt(complex_exponential x) { return complex_exponential(inv_sqrt(x.r), x.a * (-0.5)); }
-
-	complex_exponential fct(complex_exponential x) {
-		complex_linear X = x, productRes = 1;
-		if (X.R < -0.5) return -pi / ((complex_exponential)sin(pi * x) * fct((complex_exponential)(-1 - X)));
-		float n = 32.5;
-		complex_exponential Xn = X + n, res = pow(Xn, Xn) / exp(x) * exp(-n * ln(n));
-		for (int i = 1; i < n; i++) productRes = productRes * i  / (X + i);
-		return res * (complex_exponential)productRes;
-	}
-
-	//	complex
 	complex conjugate(complex x) { return complex(x.R, -x.i); }
 
 	complex cosh(complex x) { return (exp(x) + exp(-x)) * 0.5; }
@@ -409,19 +310,22 @@ namespace math {
 		return res;
 	}
 	complex zeta(complex x) {
-		if (x.R > 0) return -pow(2 * pi, -x) * sin1(x * 0.5) * fct(x) * zeta(-x - 1);
-		int n = 32;
+		if (x.R > 0) return -fct(x) * exp(-x * 1.83787706640934548356) * sin1(x * 0.5) * zeta(-x - 1);
+		if (x.R < -170) return 1;
+		int n = 64;
 		long double pow2 = 1;
 		complex res1 = 0;
+
 		for (int i = 0; i < n; i++) {
 			complex res2 = 0;
 			for (int j = 0; j <= i; j++) {
-				res2 = res2 + (1 - 2 * (j % 2)) * factorial(i) * pow(j + 1, x) / (factorial(j) * factorial(i - j));
+				res2 = res2 + (1 - 2 * (j % 2)) * factorial(i) / factorial(i - j) * pow(j + 1, x) / factorial(j);
 			}
 			pow2 *= 0.5;
 			res1 = res1 + res2 * pow2;
 		}
-		return res1 / (1 - pow(2, x + 1));
+
+		return res1 / (1 - 2 * pow(2, x));
 	}
 
 	// infsim
@@ -491,6 +395,14 @@ namespace math {
 	}
 	infsim mul_i(infsim x) {
 		for (int i = 0; i < accuracy; i++) x.setNum(i, x.getNum(i) * math::i);
+		return x;
+	}
+	infsim floor(infsim x) {
+		x.Pol[acch] = floor(x.Pol[acch]);
+		return x;
+	}
+	infsim ceil(infsim x) {
+		x.Pol[acch] = ceil(x.Pol[acch]);
 		return x;
 	}
 
@@ -585,11 +497,11 @@ namespace math {
 	}
 
 	infsim fct(infsim x) {
-		if (x.getNum(acch).R < -32) return inv(sin1(-x) * fct(-1 - x));
-		if (x.getNum(acch).R < -0.5) return fct(x + 1) / (x + 1);
-		float n = 128.5;
-		infsim res = exp(-x + (x + n) * ln(x + n) - n * ln(n));
-		for (int i = 1; i < n; i++) res = res * (i / (x + i));
+		if (x.getNum(acch).R <= -1) return fct(x + 1) / (x + 1);
+		if (x.getNum(acch).R > 0) return fct(x - 1) * x;
+		float n = 512;
+		infsim res = exp(-x + (x + 0.5) * ln(x + n) - 0.5 * ln(n));
+		for (int i = 1; i < n; i++) res = res * i / n * (x + n) / (x + i);
 		return res;
 	}
 	infsim getFctIntegralConst() {

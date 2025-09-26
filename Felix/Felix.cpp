@@ -1,4 +1,4 @@
-﻿//	v1.8.2
+﻿//	v1.9
 
 #include <iostream>
 #include "include.h"
@@ -55,7 +55,7 @@ Color penAdd(Color a, Color b) {
 	if (a.B < 0) a.B = 0;
 	return a;
 }
-Color toCol(math::complex_linear x) {
+Color toCol(math::complex x) {
 	Color c;
 	float angle = math::arg(x), absolute = math::abs(x);
 	c.A = 1;
@@ -65,17 +65,6 @@ Color toCol(math::complex_linear x) {
 	c.R = 1 - 0.5 / (0.5 + c.R * c.R * absolute);
 	c.G = 1 - 0.5 / (0.5 + c.G * c.G * absolute);
 	c.B = 1 - 0.5 / (0.5 + c.B * c.B * absolute);
-	return c;
-}
-Color toCol(math::complex_exponential x) {
-	Color c;
-	c.A = 1;
-	c.R = (math::cos(x.a) + 1) * 0.5;
-	c.G = (math::cos(x.a + 2.0943951) + 1) * 0.5;
-	c.B = (math::cos(x.a - 2.0943951) + 1) * 0.5;
-	c.R = 1 - 0.5 / (0.5 + c.R * c.R * x.r);
-	c.G = 1 - 0.5 / (0.5 + c.G * c.G * x.r);
-	c.B = 1 - 0.5 / (0.5 + c.B * c.B * x.r);
 	return c;
 }
 std::vector<float> toVecF(Color c) { return { c.R, c.G, c.B }; }
@@ -92,7 +81,7 @@ Color RGBColor(double col) {
 		1);
 }
 
-math::complex_linear plot_center = 0;
+math::complex plot_center = 0;
 long double plot_radius = 8;
 
 bool run_command(std::string c) {
@@ -267,7 +256,7 @@ bool run_command(std::string c) {
 							math::complex res;
 							for (int iX = begin; iX < end && iX < resolution; iX++) {
 								for (int iY = 0; iY < resolution; iY++) {
-									f.args[0].value = math::complex_linear(startX + step * iX, startY + step * iY);
+									f.args[0].value = math::complex(startX + step * iX, startY + step * iY);
 									res = f.return_value();
 									(*img)[iY * resolution + iX] = toVecF(penAdd((*img)[iY * resolution + iX], toCol(res)));
 									(*progress)++;
@@ -285,10 +274,10 @@ bool run_command(std::string c) {
 								startX = plot_center.R - plot_radius,
 								startY = plot_center.i - plot_radius,
 								step = 2 * plot_radius / resolution;
-							math::complex_linear res;
+							math::complex res;
 							for (int iX = begin; iX < end && iX < resolution; iX++) {
 								for (int iY = 0; iY < resolution; iY++) {
-									f.args[0].value = math::complex_linear(startX + step * iX, startY + step * iY);
+									f.args[0].value = math::complex(startX + step * iX, startY + step * iY);
 									res = 1 / (1 + math::abs(f.return_value()));
 									(*img)[iY * resolution + iX] = toVecF(penAdd((*img)[iY * resolution + iX], Color(res.R)));
 									(*progress)++;
@@ -304,7 +293,7 @@ bool run_command(std::string c) {
 						thr[i] = std::thread([](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, Color color) {
 							int iY, iYp;
 							long double start = plot_center.R - plot_radius, step = 2 * plot_radius / resolution;
-							math::complex_linear res;
+							math::complex res;
 							f.args[0].value = start + step * (begin - 1);
 							res = f.return_value();
 							iYp = ((res.R - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
@@ -386,7 +375,6 @@ bool run_command(std::string c) {
 				}
 				break;
 			}
-			default: return false;
 			}
 			go = false;
 			counter.join();
@@ -427,7 +415,7 @@ bool run_command(std::string c) {
 		}
 		if (args.size() == 2) {
 			if (args[1] == "operators") {
-				response += " => x+y -> sum\n";
+				response += " => x+y -> summation\n";
 				response += " => x-y -> subtraction\n";
 				response += " =>  -y -> opposite\n";
 				response += " => x*y -> multiplication\n";
@@ -462,6 +450,8 @@ bool run_command(std::string c) {
 				response += " =>    sinh(x)      tanh(x) = tgh(x)\n";
 				response += " =>  arcsin(x)    arctan(x) = arctg(x)\n";
 				response += " => arcsinh(x)   arctanh(x) = arctgh(x)\n";
+				response += " =>    sin1(x)\n";
+				response += " =>    cos1(x)\n";
 
 				response += "\n FOR-Like Functions\n";
 				response += " =>    S{t;begin;end}[f(t)] = Sum\n";
@@ -545,9 +535,8 @@ int main() {
 			else									std::cout << " --x-> unknown command";
 		}
 		else {
-			math::complex answer = value(parse_expr(expression), {});
-			std::cout << " -> " << math::toString((math::complex_linear)answer);
-			//std::cout << " = " << math::toString((math::complex_exponential)answer);
+			math::number answer = value(parse_expr(expression), {});
+			std::cout << " -> " << answer.toString();
 		}
 		std::cout << "\n\n";
 	}

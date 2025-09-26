@@ -1,61 +1,9 @@
 #pragma once
 #include "../include.h"
 
+#define infsimIsHere 0
+
 namespace math {
-	//	number
-	//	flexible integer
-	struct flex_uint {
-		std::vector<unsigned long long> flex;
-
-		flex_uint() {}
-		flex_uint(unsigned long long) {}
-		flex_uint(std::vector<unsigned long long> flex) {
-			this->flex = flex;
-		}
-		flex_uint(std::string) {}
-		std::string toString() {
-			return "";
-		}
-	};
-	//	signed
-	struct flex_int {
-		std::vector<unsigned long long> flex;
-		bool sign = false;
-
-		flex_int() {}
-		flex_int(long long) {}
-		flex_int(std::string) {}
-		std::string toString() {
-			std::string s = "";
-			if (sign) s = "-";
-			return s + flex_uint(this->flex).toString();
-		}
-	};
-	//	unsigned fraction
-	struct flex_ufract {
-		std::vector<unsigned long long> flex;
-
-		flex_ufract() {}
-		flex_ufract(unsigned long long) {}
-		flex_ufract(std::string) {}
-		std::string toString() {
-			return "";
-		}
-	};
-	//	flexible float point
-	struct flex_float {
-		bool		sign = false;
-		flex_int	exponent = 0;
-		flex_ufract	mantissa = 0;
-
-		flex_float() {}
-		flex_float(double) {}
-		flex_float(std::string) {}
-		std::string toString() {
-			return "";
-		}
-	};
-
 	extern const long double pi, inf;
 
 	bool sign(double);
@@ -66,38 +14,21 @@ namespace math {
 	//	complex
 	extern struct complex_exponential;
 	extern struct infsim;
-	struct fixed_point32 {
-		int64_t num = 0;
-		fixed_point32() {}
-		fixed_point32(int n) {
-			this->num = (long long)n << 32;
-		}
-		fixed_point32(long long n) {
-			this->num = n << 32;
-		}
-		fixed_point32(long double n) {
-			this->num = n * ((long long)1 << 32);
-		}
-		operator long double() {
-			return (long double)this->num / ((long long)1 << 32);
-		}
-	};
-	struct complex_linear {
+	struct complex {
 		long double R, i;
-		complex_linear() {
+		complex() {
 			this->R = 0;
 			this->i = 0;
 		}
-		complex_linear(long double R) {
+		complex(long double R) {
 			this->R = R;
 			this->i = 0;
 		}
-		complex_linear(long double R, long double i) {
+		complex(long double R, long double i) {
 			this->R = R;
 			this->i = i;
 		}
-		complex_linear(complex_exponential x);
-		complex_linear(infsim x);
+		complex(infsim x);
 		bool isZero() {
 			if (this->R == 0 && this->i == 0) return true;
 			return false;
@@ -115,62 +46,26 @@ namespace math {
 			return std::to_string(this->R) + "+" + std::to_string(this->i) + "i";
 		}
 	};
-	struct complex_exponential {
-		long double r, a;
-		complex_exponential() {
-			this->r = 0;
-			this->a = 0;
-		}
-		complex_exponential(long double x);
-		complex_exponential(long double r, long double a) {
-			this->r = r;
-			this->a = a;
-		}
-		complex_exponential(complex_linear x);
-	};
-#if 0
-	typedef complex_exponential complex;
-#else
-	typedef complex_linear complex;
-#endif
-	extern const complex_linear
+	extern const complex
 		i,
 		fctIntegralConstant;
 
-	fixed_point32 operator+(fixed_point32, fixed_point32);
-	fixed_point32 operator-(fixed_point32);
-	fixed_point32 operator-(fixed_point32, fixed_point32);
-	fixed_point32 operator*(fixed_point32, fixed_point32);
-	fixed_point32 operator<<(fixed_point32, int);
-	fixed_point32 operator>>(fixed_point32, int);
-	bool operator==(fixed_point32, fixed_point32);
+	complex getFctIntegralConstant();
 
-	complex_linear getFctIntegralConstant();
-
-	complex_linear operator+(complex_linear, complex_linear);
-	complex_linear operator-(complex_linear);
-	complex_linear operator-(complex_linear, complex_linear);
-	complex_linear operator*(complex_linear, complex_linear);
-	complex_linear operator/(complex_linear, complex_linear);
-	complex_linear operator%(complex_linear, complex_linear);
-	complex_linear operator<<(complex_linear, int);
-	complex_linear operator>>(complex_linear, int);
-	bool operator==(complex_linear, complex_linear);
-
-	complex_exponential operator+(complex_exponential, complex_exponential);
-	complex_exponential operator-(complex_exponential);
-	complex_exponential operator-(complex_exponential, complex_exponential);
-	complex_exponential operator*(complex_exponential, complex_exponential);
-	complex_exponential operator/(complex_exponential, complex_exponential);
-	complex_exponential operator%(complex_exponential, complex_exponential);
-	complex_exponential operator<<(complex_exponential, int);
-	complex_exponential operator>>(complex_exponential, int);
-	bool operator==(complex_exponential, complex_exponential);
+	complex operator+(complex, complex);
+	complex operator-(complex);
+	complex operator-(complex, complex);
+	complex operator*(complex, complex);
+	complex operator/(complex, complex);
+	complex operator%(complex, complex);
+	complex operator<<(complex, int);
+	complex operator>>(complex, int);
+	bool operator==(complex, complex);
 
 	//	functions
 	long double rand(int, std::vector<long double>);
 	long double rand(int, std::vector<complex>);
-	long double rand(int, complex_linear);
+	long double rand(int, complex);
 	long double rand(int);
 
 	//	long double
@@ -191,44 +86,25 @@ namespace math {
 
 	double factorial(double x);
 
-	//	complex_linear
-	std::string toString(complex_linear);
-
-	complex_linear floor(complex_linear);
-	complex_linear ceil(complex_linear);
-	long double abs(complex_linear);
-	long double inv_abs(complex_linear);
-	complex_linear normalize(complex_linear);
-	complex_linear mul_i(complex_linear);
-	long double arg(complex_linear);
-	bool exist(complex_linear);
-	complex_linear Re(complex_linear x);
-	complex_linear Im(complex_linear x);
-	complex_linear grid(complex_linear x);
-
-	complex_linear exp(complex_linear);
-	complex_linear ln(complex_linear);
-	complex_linear pow(complex_linear, complex_linear);
-	complex_linear sqrt(complex_linear);
-	complex_linear inv_sqrt(complex_linear);
-
-	//	complex_exponential
-	std::string toString(complex_exponential);
-	complex_exponential floor(complex_exponential);
-	long double abs(complex_exponential);
-	long double inv_abs(complex_exponential);
-	complex_exponential normalize(complex_exponential);
-	complex_exponential mul_i(complex_exponential);
-	long double arg(complex_exponential);
-	bool exist(complex_exponential);
-
-	complex_exponential exp(complex_exponential);
-	complex_exponential ln(complex_exponential);
-	complex_exponential pow(complex_exponential, complex_exponential);
-	complex_exponential sqrt(complex_exponential);
-	complex_exponential inv_sqrt(complex_exponential);
-
 	//	complex
+	complex floor(complex);
+	complex ceil(complex);
+	long double abs(complex);
+	long double inv_abs(complex);
+	complex normalize(complex);
+	complex mul_i(complex);
+	long double arg(complex);
+	bool exist(complex);
+	complex Re(complex x);
+	complex Im(complex x);
+	complex grid(complex x);
+
+	complex exp(complex);
+	complex ln(complex);
+	complex pow(complex, complex);
+	complex sqrt(complex);
+	complex inv_sqrt(complex);
+
 	complex conjugate(complex);
 
 	complex cosh(complex);
@@ -257,7 +133,7 @@ namespace math {
 	complex zeta(complex);
 
 	// infinitesimal (infsim)
-	const unsigned int accuracy = 12u;
+	const unsigned int accuracy = 8u;
 	const int acch = accuracy >> 1;
 
 	struct infsim {
@@ -292,24 +168,23 @@ namespace math {
 			for (int i = higher; i >= lower; i--) {
 				std::string numstr = this->Pol[i].toString();
 				if (numstr == "0") continue;
-				str += " + ";
+				str += "\n   + ";
 				/**/ if (i == acch + 1)		str += "inf";
 				else if (i == acch - 1)		str += "0";
 				else if (i > acch)	str += "inf^" + std::to_string(i - acch);
 				else if (i < acch)	str += "0^" + std::to_string(acch - i);
 				else {
-					str += "(" + numstr + ")\n";
+					str += "(" + numstr + ")";
 					continue;
 				}
 				if (this->Pol[i].R > 0.999999 && this->Pol[i].R < 1.000001 &&
 					this->Pol[i].i > -0.000001 && this->Pol[i].i < 0.000001) {
-					str += "\n";
 					continue;
 				}
-				str += "*(" + numstr + ")\n";
+				str += "*(" + numstr + ")";
 			}
 			if (str == "") return "ConstZero";
-			return "   " + str.substr(3);
+			return str.substr(6);
 		}
 		std::string toStringSmall() {
 			std::string str;
@@ -355,6 +230,8 @@ namespace math {
 	infsim Im(infsim x);
 	complex grid(infsim x);
 	infsim mul_i(infsim x);
+	infsim floor(infsim x);
+	infsim ceil(infsim x);
 
 	infsim exp(infsim x);
 	infsim ln_sum(infsim x);
@@ -390,5 +267,9 @@ namespace math {
 	infsim Harmonic(infsim x);
 	infsim zeta(infsim x);
 
+#if infsimIsHere
+	typedef infsim number;
+#else
 	typedef complex number;
+#endif
 }

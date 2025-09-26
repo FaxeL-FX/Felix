@@ -96,6 +96,11 @@ struct Object {
 			this->id = (this->id << 1) + (int)c;
 		this->type = ObjType::_Default;
 	}
+	Object(ObjType type, std::vector<int> arg_indexes, math::number value) {
+		this->arg_indexes = arg_indexes;
+		this->value = value;
+		this->type = type;
+	}
 	Object(ObjType type, std::vector<int> arg_indexes) {
 		this->type = type;
 		this->arg_indexes = arg_indexes;

@@ -211,6 +211,18 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 		(*objects)[objIndex].value = math::i;
 		return;
 	}
+#if infsimIsHere
+	else if (token == "inf") {
+		(*objects)[objIndex].type = ObjType::_Const;
+		(*objects)[objIndex].value = math::infinity;
+		return;
+	}
+	else if (token == "o") {
+		(*objects)[objIndex].type = ObjType::_Const;
+		(*objects)[objIndex].value = math::zero;
+		return;
+	}
+#endif
 
 	(*objects)[objIndex].name = token;
 	(*objects)[objIndex].type = nameToType(token);
@@ -365,7 +377,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 
 		case(ObjType::_floor): return math::floor(args_results[0]);
 		case(ObjType::_ceil): return math::ceil(args_results[0]);
-		case(ObjType::_round): return math::floor(args_results[0] + math::complex(0.5, 0.5));
+		case(ObjType::_round): return math::floor(args_results[0] + (math::number)(math::complex(0.5, 0.5)));
 
 		case(ObjType::_exist): return !math::exist(args_results[0]);
 		case(ObjType::_grid): return math::grid(args_results[0]);
@@ -413,20 +425,28 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		case(ObjType::_Product): {
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
-			math::complex
+			math::number
 				res = (*objects)[this->arg_indexes[3]].return_value(objects, args),
 				difference = args_results[2] - args_results[1];
+#if infsimIsHere
+			long long
+				repeats = math::floor(difference.getNum(math::acch).R);
+			math::number
+				diffPart = math::number(difference.getNum(math::acch).R - repeats, difference.getNum(math::acch).i),
+				step = math::normalize(diffPart.getNum(math::acch));
+#else
 			long long
 				repeats = math::floor(difference.R);
-			math::complex
-				diffPart = math::complex(difference.R - repeats,difference.i),
+			math::number
+				diffPart = math::number(difference.R - repeats, difference.i),
 				step = math::normalize(diffPart);
+#endif
 			long double
 				radius = math::abs(diffPart),
 				radFract = radius - math::floor(radius);
-			math::complex
-				angle1 = math::mul_i((math::complex)math::arccos(0.5 * radFract)),
-				angle2 = math::mul_i((math::complex)math::arccos(0.5 * (1 - radFract))),
+			math::number
+				angle1 = math::mul_i((math::number)math::arccos(0.5 * radFract)),
+				angle2 = math::mul_i((math::number)math::arccos(0.5 * (1 - radFract))),
 				step1 =  step * math::exp( angle1),
 				step2 =  step * math::exp(-angle1),
 				step3 = -step * math::exp( angle2),
@@ -524,7 +544,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		case(ObjType::_Return): {
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
-			int repeats = math::round(((math::complex_linear)args_results[2]).R);
+			int repeats = math::round(((math::complex)args_results[2]).R);
 			for (int i = 0; i < repeats; i++) {
 				(*args)[var_index].value = (*objects)[this->arg_indexes[3]].return_value(objects, args);
 			}
@@ -599,10 +619,12 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		args->erase(args->begin() + var_index);
 		return res;
 	}
+#if !infsimIsHere
 	if (this->type == ObjType::_rand) {
 		if (args_results.size() == 0) return math::rand(std::chrono::steady_clock::now().time_since_epoch().count() % 4096);
 		return math::rand(std::chrono::steady_clock::now().time_since_epoch().count() % 4096, args_results);
 	}
+#endif
 
 	for (auto arg : *args)
 		if (this->id == arg.id)
