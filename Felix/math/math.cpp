@@ -347,7 +347,7 @@ namespace math {
 	}
 	infsim inv(infsim x) {
 		int maxPower = accuracy - 1;
-		for (maxPower; 0 <= maxPower && x.getNum(maxPower).isZero(); maxPower--) {}
+		for (; 0 <= maxPower && x.getNum(maxPower).isZero(); maxPower--) {}
 		int invPower = acch - maxPower;
 		complex denominator = 1.0 / (x.getNum(maxPower));
 		x =  mul(x * infsim(acch + invPower, 1.0), denominator);
@@ -547,7 +547,7 @@ namespace math {
 		for (int i = 0; i < 12; i++) {
 			infsim res2 = 0;
 			for (int j = 0; j <= i; j++) {
-				res2 = res2 + (1 - 2 * (j % 2)) * factorial(i) * pow(j + 1 + zero, x) / (factorial(j) * factorial(i - j));
+				res2 = res2 + (1 - 2 * (j % 2)) * factorial(i) * pow(j + 1, x) / (factorial(j) * factorial(i - j));
 			}
 			res1 = res1 + mul(res2, pow(complex(2.0), -(i + 1)));
 		}
