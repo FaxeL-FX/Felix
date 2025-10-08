@@ -579,6 +579,23 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			args->erase(args->begin() + var_index);
 			return res;
 		}
+
+		case(ObjType::_ForwardDifference): {
+			int var_index = args->size();
+			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+			math::number res = (*objects)[this->arg_indexes[3]].return_value(objects, args);
+
+			int n = ((math::complex)(*objects)[this->arg_indexes[2]].return_value(objects, args)).R;
+			for (int k = 1; k <= n; k++) {
+				(*args)[var_index].value = (*args)[var_index].value - 1;
+				res = res + (1 - 2 * (k % 2)) * 
+					math::factorial(n) / (math::factorial(k) * math::factorial(n - k)) * 
+					(*objects)[this->arg_indexes[3]].return_value(objects, args);
+			}
+
+			args->erase(args->begin() + var_index);
+			return res;
+		}
 	}
 	}
 	if (this->type == ObjType::_Polynomial && args_results.size() > 3) {
@@ -622,7 +639,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 #if !infsimIsHere
 	if (this->type == ObjType::_rand) {
 		if (args_results.size() == 0) return math::rand(std::chrono::steady_clock::now().time_since_epoch().count() % 4096);
-		return math::rand(std::chrono::steady_clock::now().time_since_epoch().count() % 4096, args_results);
+		return math::rand(0, args_results);
 	}
 #endif
 

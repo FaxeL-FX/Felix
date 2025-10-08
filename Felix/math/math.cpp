@@ -414,17 +414,13 @@ namespace math {
 		return res + 1;
 	}
 	infsim ln_sum(infsim x) {
-		x = x - zero;
-		infsim
-			res,
-			s = -1, t = -zero * inv(x);
-		//	s = 1, t = (1 - inv(x));
-		for (int k = 1; k < 128; k++) {
+		complex c = x.getNum(acch);
+		infsim res, s = 1, t = 1 - infsim(c) / x;
+		for (int k = 1; k < 32; k++) {
 			s = s * t;
 			res = res + div(s, k);
 		}
-		//res.setNum(acch, ln(x.getNum(acch)));
-		return res + infsim(ln(x.getNum(acch)));
+		return res + infsim(ln(c));
 	}
 	infsim ln_integral(infsim x) {
 		int n = 128;
