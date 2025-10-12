@@ -15,8 +15,6 @@ enum ObjType {
 	_Integral_Defined, _Integral_Undefined,
 	_Return,
 
-
-
 	_add, _dif, _mul, _div, _pow, _fct, _mod, _uMinus,
 
 	_sqrt, _inv_sqrt,
@@ -30,7 +28,8 @@ enum ObjType {
 	_sinh, _arcsinh,
 	_coth, _arccoth,
 	_tanh, _arctanh,
-	_sin1, _cos1,
+
+	_sin1, _cos1, _Binom,
 
 	_Sum, _ForwardDifference,
 	_Product,

@@ -37,8 +37,10 @@ ObjType nameToType(std::string token) {
 	if (token == "tanh" || token == "tgh")			return ObjType::_tanh;
 	if (token == "arctan" || token == "arctg")		return ObjType::_arctan;
 	if (token == "arctanh" || token == "arctgh")	return ObjType::_arctanh;
+
 	if (token == "sin1")	return ObjType::_sin1;
 	if (token == "cos1")	return ObjType::_cos1;
+	if (token == "Binom")	return ObjType::_Binom;
 
 	if (token == "S" || token == "Sum")						return ObjType::_Sum;
 	if (token == "FDiff" || token == "ForwardDifference")	return ObjType::_ForwardDifference;
@@ -398,6 +400,8 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		case(ObjType::_log): return math::ln(args_results[1]) / math::ln(args_results[0]);
 
 		case(ObjType::_fctIntegral): return math::fctIntegral(args_results[0], args_results[1]);
+
+		case(ObjType::_Binom): return math::Binom(args_results[0], args_results[1]);
 	}
 	case(3): switch (this->type) {
 		case(ObjType::_Derivative): {

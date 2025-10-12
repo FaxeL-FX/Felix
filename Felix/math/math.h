@@ -99,38 +99,41 @@ namespace math {
 	complex Im(complex x);
 	complex grid(complex x);
 
-	complex exp(complex);
-	complex ln(complex);
-	complex pow(complex, complex);
-	complex sqrt(complex);
-	complex inv_sqrt(complex);
+	complex exp(complex x);
+	complex ln(complex x);
+	complex pow(complex x, complex y);
+	complex sqrt(complex x);
+	complex inv_sqrt(complex x);
 
-	complex conjugate(complex);
+	complex conjugate(complex x);
 
-	complex cosh(complex);
-	complex sinh(complex);
-	complex coth(complex);
-	complex tanh(complex);
-	complex arccosh(complex);
-	complex arcsinh(complex);
-	complex arccoth(complex);
-	complex arctanh(complex);
+	complex cosh(complex x);
+	complex sinh(complex x);
+	complex coth(complex x);
+	complex tanh(complex x);
+	complex arccosh(complex x);
+	complex arcsinh(complex x);
+	complex arccoth(complex x);
+	complex arctanh(complex x);
 
-	complex cos(complex);
-	complex sin(complex);
-	complex cot(complex);
-	complex tan(complex);
-	complex arccos(complex);
-	complex arcsin(complex);
-	complex arccot(complex);
-	complex arctan(complex);
-	complex sin1(complex);
-	complex cos1(complex);
+	complex cos(complex x);
+	complex sin(complex x);
+	complex cot(complex x);
+	complex tan(complex x);
+	complex arccos(complex x);
+	complex arcsin(complex x);
+	complex arccot(complex x);
+	complex arctan(complex x);
 
-	complex fct(complex);
-	complex fctIntegral(complex, complex);
-	complex Harmonic(complex);
-	complex zeta(complex);
+	complex sin1(complex x);
+	complex cos1(complex x);
+	complex Binom(complex n, complex k);
+
+	complex fct(complex x);
+	complex fctIntegral(complex x, complex n);
+	complex Harmonic(complex x);
+	complex zeta(complex x);
+
 
 	// infinitesimal (infsim)
 	const unsigned int accuracy = 8u;
@@ -260,6 +263,9 @@ namespace math {
 	infsim arctan(infsim x);
 
 	infsim sin1(infsim x);
+	infsim cos1(infsim x);
+	infsim Binom(infsim n, infsim k);
+
 	infsim fct(infsim x);
 	infsim getFctIntegralConst();
 	infsim fctIntegral(infsim x);

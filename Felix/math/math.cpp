@@ -208,18 +208,13 @@ namespace math {
 		return res + 1;
 	}
 	complex ln(complex x) { return complex(ln(abs(x)), arg(x)); }
-	complex pow(complex x, complex y) {
-		if (y == 0) return 1;
-		if (y.R < 0)	return 1 / pow(x, -y);
-		if (y.R > 1)	return x * pow(x, y - 1);
-		return exp(y * ln(x));
-	}
+	complex pow(complex x, complex y) { return exp(y * ln(x)); }
 	complex sqrt(complex x) { return exp(0.5 * ln(x)); }
 	complex inv_sqrt(complex x) { return exp(-0.5 * ln(x)); }
 
 	complex fct(complex x) {
 		if (x.R < -0.5) return -1 / (sin1(x) * fct(-1 - x));
-		if (x.R > 0) return x * fct(x - 1);
+		//if (x.R > 0) return x * fct(x - 1);
 		float n = 2048.5; // 2048.5
 		complex res = exp(-x + (x + 0.5) * ln(x + n) - 0.5 * ln(n));
 		for (int i = 1; i < n; i++) res = res * i / n * (x + n) / (x + i);
@@ -261,6 +256,7 @@ namespace math {
 	complex arcsin(complex x) { return -mul_i(arcsinh(mul_i(x))); }
 	complex arccot(complex x) { return  mul_i(arccoth(mul_i(x))); }
 	complex arctan(complex x) { return -mul_i(arctanh(mul_i(x))); }
+
 	complex sin1(complex x) {
 		x.R = fmod(x.R + 1.0, 2.0) - 1.0;
 		/**/ if (x.R > 0.5) return sin1(1 - x);
@@ -280,6 +276,10 @@ namespace math {
 			res = res * (1 - x * x / (i * i));
 		}
 		return res;
+	}
+	complex Binom(complex n, complex k) {
+		if ((n.R < k.R || k.R < 0) && k.i == 0 && k.R == floor(k.R)) return 0;
+		return fct(n) / (fct(k) * fct(n - k));
 	}
 
 	complex fctIntegral(complex x, complex N) {
@@ -481,15 +481,29 @@ namespace math {
 	infsim arcsin(infsim x) { return -mul_i(arcsinh(mul_i(x))); }
 	infsim arccot(infsim x) { return  mul_i(arccoth(mul_i(x))); }
 	infsim arctan(infsim x) { return -mul_i(arctanh(mul_i(x))); }
+
 	infsim sin1(infsim x) {
 		x.setNum(acch, fmod(x.getNum(acch).R + 1.0, 2.0) - 1.0);
 		/**/ if (x.getNum(acch).R > 0.5) return sin1(1 - x);
 		else if (x.getNum(acch).R < -0.5) return sin1(-1 - x);
 		infsim res = x;
 		for (int i = 1; i < 64; i++) {
-			res = res * (1 - x * x / (i * i));
+			res = res * (1 - div(x * x, i * i));
 		}
 		return res;
+	}
+	infsim cos1(infsim x) {
+		x.setNum(acch, fmod(x.getNum(acch).R + 1.0, 2.0) - 1.0);
+		/**/ if (x.getNum(acch).R > 0.5) return -cos1(1 - x);
+		else if (x.getNum(acch).R < -0.5) return -cos1(-1 - x);
+		infsim res = 1;
+		for (double i = 0.5; i < 64; i++) {
+			res = res * (1 - div(x * x, i * i));
+		}
+		return res;
+	}
+	infsim Binom(infsim n, infsim k) {
+		return fct(n) / (fct(k) * fct(n - k));
 	}
 
 	infsim fct(infsim x) {
