@@ -76,6 +76,7 @@ namespace math {
 
 	long double exp(long double);
 	long double ln(long double);
+	long double pow(long double, int);
 
 	long double sqrt(long double);
 	long double inv_sqrt(long double);

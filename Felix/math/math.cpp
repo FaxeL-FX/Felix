@@ -102,12 +102,8 @@ namespace math {
 	}
 
 	//	long double
-	long double floor(long double x) {
-		return std::floor(x);
-	}
-	long double ceil(long double x) {
-		return std::ceil(x);
-	}
+	long double floor(long double x) { return std::floor(x); }
+	long double ceil(long double x) { return std::ceil(x); }
 	long double sign(long double x) {
 		if (x < 0) return -1;
 		return 1;
@@ -132,6 +128,16 @@ namespace math {
 		return res;
 	}
 	long double ln(long double x) { return log(fract(x)) + 0.6931471805599453 * E(x); }
+	long double pow(long double x, int n) {
+		long double res = 1;
+		if (n > 0) for (;0 < n;n--) {
+			res *= x;
+		}
+		if (n < 0) for (; n < 0; n++) {
+			res /= x;
+		}
+		return res;
+	}
 
 	long double sqrt(long double x) { return exp(0.5 * ln(x)); }
 	long double inv_sqrt(long double x) { return exp(-0.5 * ln(x)); }
@@ -212,15 +218,6 @@ namespace math {
 	complex sqrt(complex x) { return exp(0.5 * ln(x)); }
 	complex inv_sqrt(complex x) { return exp(-0.5 * ln(x)); }
 
-	complex fct(complex x) {
-		if (x.R < -0.5) return -1 / (sin1(x) * fct(-1 - x));
-		//if (x.R > 0) return x * fct(x - 1);
-		float n = 2048.5; // 2048.5
-		complex res = exp(-x + (x + 0.5) * ln(x + n) - 0.5 * ln(n));
-		for (int i = 1; i < n; i++) res = res * i / n * (x + n) / (x + i);
-		return res;
-	}
-
 	complex Re(complex x) { return x.R; }
 	complex Im(complex x) { return x.i; }
 	complex grid(complex x) {
@@ -282,6 +279,14 @@ namespace math {
 		return fct(n) / (fct(k) * fct(n - k));
 	}
 
+	complex fct(complex x) {
+		if (x.R < -0.5) return -1 / (sin1(x) * fct(-1 - x));
+		//if (x.R > 0) return x * fct(x - 1);
+		float n = 2048.5; // 2048.5
+		complex res = exp(-x + (x + 0.5) * ln(x + n) - 0.5 * ln(n));
+		for (int i = 1; i < n; i++) res = res * i / n * (x + n) / (x + i);
+		return res;
+	}
 	complex fctIntegral(complex x, complex N) {
 		int n = 256;
 		double invN = 1 / (double)n;

@@ -584,16 +584,34 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			return res;
 		}
 
+		case(ObjType::_Derivative): {
+			int var_index = args->size();
+			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+			math::number res = (*objects)[this->arg_indexes[3]].return_value(objects, args);
+
+			double n = ((math::complex)(*objects)[this->arg_indexes[2]].return_value(objects, args)).R;
+			if (n == 0) return res;
+			double d = 4294967296, delta = math::exp(-math::ln(d) / n);
+			for (int k = 1; k <= n; k++) {
+				(*args)[var_index].value = (*args)[var_index].value - delta;
+				res = res + (1 - 2 * (k % 2)) * 
+					math::factorial(n) / (math::factorial(k) * math::factorial(n - k)) * 
+					(*objects)[this->arg_indexes[3]].return_value(objects, args);
+			}
+
+			args->erase(args->begin() + var_index);
+			return res * d;
+		}
 		case(ObjType::_ForwardDifference): {
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
 			math::number res = (*objects)[this->arg_indexes[3]].return_value(objects, args);
 
-			int n = ((math::complex)(*objects)[this->arg_indexes[2]].return_value(objects, args)).R;
+			double n = ((math::complex)(*objects)[this->arg_indexes[2]].return_value(objects, args)).R;
 			for (int k = 1; k <= n; k++) {
 				(*args)[var_index].value = (*args)[var_index].value - 1;
-				res = res + (1 - 2 * (k % 2)) * 
-					math::factorial(n) / (math::factorial(k) * math::factorial(n - k)) * 
+				res = res + (1 - 2 * (k % 2)) *
+					math::factorial(n) / (math::factorial(k) * math::factorial(n - k)) *
 					(*objects)[this->arg_indexes[3]].return_value(objects, args);
 			}
 
