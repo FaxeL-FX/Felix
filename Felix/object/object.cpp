@@ -43,7 +43,7 @@ ObjType nameToType(std::string token) {
 	if (token == "Binom")	return ObjType::_Binom;
 
 	if (token == "S" || token == "Sum")						return ObjType::_Sum;
-	if (token == "FDiff" || token == "ForwardDifference")	return ObjType::_ForwardDifference;
+	if (token == "FD" || token == "ForwardDifference")		return ObjType::_ForwardDifference;
 	if (token == "P" || token == "Product")					return ObjType::_Product;
 	if (token == "R" || token == "Return")					return ObjType::_Return;
 	if (token == "I" || token == "Integral")				return ObjType::_Integral;
@@ -68,6 +68,7 @@ ObjType nameToType(std::string token) {
 	if (token == "fctIntegral" || token == "fctI")	return ObjType::_fctIntegral;
 	if (token == "H")								return ObjType::_Harmonic;
 	if (token == "zeta")							return ObjType::_zeta;
+	if (token == "zbf")								return ObjType::_zetaByFct;
 
 
 	if (token == "rand")	return ObjType::_rand;
@@ -387,6 +388,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		case(ObjType::_gamma): return math::fct(args_results[0] - 1);
 		case(ObjType::_Harmonic): return math::Harmonic(args_results[0]);
 		case(ObjType::_zeta): return math::zeta(args_results[0]);
+		case(ObjType::_zetaByFct): return math::zetaByFct(args_results[0]);
 	}
 	case(2): switch (this->type) {
 		case(ObjType::_add): return args_results[0] + args_results[1];

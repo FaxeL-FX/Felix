@@ -332,6 +332,22 @@ namespace math {
 
 		return res1 / (1 - 2 * pow(2, x));
 	}
+	complex zetaByFct(complex x) {
+		if (x == complex(-1)) return -1;
+		if (x.R < -1) {
+			complex res = 0;
+			for (int k = 1; k < 64; k++) {
+				res = res + (2 * (k % 2) - 1) * pow(k, x);
+			}
+			return -res / (1 - 2 * pow(2, x)) * sin1(x) * fct(-x - 1);
+		}
+
+		complex res = 0;
+		for (int k = 1; k < x.R + 64; k++) {
+			res = res + zetaByFct(x - k) * (2 * (k % 2) - 1) / factorial(k + 1);
+		}
+		return res;
+	}
 
 	// infsim
 	infsim operator+(infsim x, infsim y) {

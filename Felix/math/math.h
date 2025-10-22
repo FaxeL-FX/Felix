@@ -134,6 +134,7 @@ namespace math {
 	complex fctIntegral(complex x, complex n);
 	complex Harmonic(complex x);
 	complex zeta(complex x);
+	complex zetaByFct(complex x);
 
 
 	// infinitesimal (infsim)

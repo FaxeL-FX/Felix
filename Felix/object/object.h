@@ -5,15 +5,8 @@
 enum ObjType {
 	_Error, _Default, _Const, _rand,
 
-	_Sum_List, _Product_List,
-	_Sum_FOR, _Product_FOR,
-	_flip_sign, _inverse,
-
 	_exp, _ln,
 	_Harmonic,
-
-	_Integral_Defined, _Integral_Undefined,
-	_Return,
 
 	_add, _dif, _mul, _div, _pow, _fct, _mod, _uMinus,
 
@@ -35,12 +28,13 @@ enum ObjType {
 	_Product,
 	_Integral, _Derivative, _IntegralAlongExp,
 	_Polynomial,
+	_Return,
 
 	_abs, _inv_abs, _arg, _sign, _Re, _Im, _floor, _ceil, _round,
 
 	_exist, _grid,
 
-	_gamma, _fctIntegral, _zeta,
+	_gamma, _fctIntegral, _zeta, _zetaByFct,
 };
 
 struct Variable {

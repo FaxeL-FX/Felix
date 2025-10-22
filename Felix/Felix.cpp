@@ -1,4 +1,4 @@
-﻿//	v1.9.4
+﻿//	v1.9.5
 
 #include <iostream>
 #include "include.h"
@@ -442,25 +442,28 @@ bool run_command(std::string c) {
 				response += " =>   log[y](x) -> logarithm of x to base y\n";
 
 				response += "\n Trigonometric Functions\n";
-				response += " =>     cos(x)       cot(x) = ctg(x)\n";
-				response += " =>    cosh(x)      coth(x) = ctgh(x)\n";
-				response += " =>  arccos(x)    arccot(x) = arcctg(x)\n";
-				response += " => arccosh(x)   arccoth(x) = arcctgh(x)\n";
-				response += " =>     sin(x)       tan(x) = tg(x)\n";
-				response += " =>    sinh(x)      tanh(x) = tgh(x)\n";
-				response += " =>  arcsin(x)    arctan(x) = arctg(x)\n";
-				response += " => arcsinh(x)   arctanh(x) = arctgh(x)\n";
+				response += " =>     cos(x)       cot(x)\n";
+				response += " =>    cosh(x)      coth(x)\n";
+				response += " =>  arccos(x)    arccot(x)\n";
+				response += " => arccosh(x)   arccoth(x)\n";
+				response += " =>     sin(x)       tan(x)\n";
+				response += " =>    sinh(x)      tanh(x)\n";
+				response += " =>  arcsin(x)    arctan(x)\n";
+				response += " => arcsinh(x)   arctanh(x)\n";
 				response += " =>    sin1(x)\n";
 				response += " =>    cos1(x)\n";
 
 				response += "\n FOR-Like Functions\n";
-				response += " =>    S{t;begin;end}[f(t)] = Sum\n";
-				response += " =>    P{t;begin;end}[f(t)] = Product\n";
-				response += " =>          R{t;x;n}[f(t)] = Return\n";
-				response += " =>            D{t;x}[f(t)] = Derivative\n";
-				response += " =>          I{t;a;b}[f(t)] = Integral\n";
-				response += " =>       Iexp{t;a;b}[f(t)] = IntegralAlongExp\n";
-				response += " => Poly{t;f(t);x}[a;b;...] = Polynomial\n";
+				response += " =>    S{t;begin;end}[f(t)] -> Sum\n";
+				response += " =>           FD{t;x}[f(t)] -> Forward Difference\n";
+				response += " =>         FD{t;x;n}[f(t)] -> n-th Forward Difference\n";
+				response += " =>    P{t;begin;end}[f(t)] -> Product\n";
+				response += " =>          R{t;x;n}[f(t)] -> Return\n";
+				response += " =>          I{t;a;b}[f(t)] -> Integral\n";
+				response += " =>            D{t;x}[f(t)] -> Derivative\n";
+				response += " =>          D{t;x;n}[f(t)] -> n-th Derivative\n";
+				response += " =>       Iexp{t;a;b}[f(t)] -> Integral along exp\n";
+				response += " => Poly{t;f(t);x}[a;b;...] -> Polynomial\n";
 
 				response += "\n Value Functions\n";
 				response += " =>     abs(x) -> absolute value\n";
@@ -480,7 +483,7 @@ bool run_command(std::string c) {
 				response += "\n Other Functions\n";
 				response += " =>   gamma(x) -> gamma function\n";
 				response += " =>  fctI(x,n) -> n-th integral of factorial\n";
-				response += " => rand | rand(x) | rand(x, ...)\n";
+				response += " => rand | rand(...)\n";
 				std::cout << response;
 				return true;
 			}
