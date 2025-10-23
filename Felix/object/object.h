@@ -24,7 +24,7 @@ enum ObjType {
 
 	_sin1, _cos1, _Binom,
 
-	_Sum, _ForwardDifference,
+	_Sum, _ForwardDifference, _BackwardDifference,
 	_Product,
 	_Integral, _Derivative, _IntegralAlongExp,
 	_Polynomial,

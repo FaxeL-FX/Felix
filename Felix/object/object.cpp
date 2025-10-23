@@ -44,6 +44,7 @@ ObjType nameToType(std::string token) {
 
 	if (token == "S" || token == "Sum")						return ObjType::_Sum;
 	if (token == "FD" || token == "ForwardDifference")		return ObjType::_ForwardDifference;
+	if (token == "BD" || token == "BackwardDifference")		return ObjType::_BackwardDifference;
 	if (token == "P" || token == "Product")					return ObjType::_Product;
 	if (token == "R" || token == "Return")					return ObjType::_Return;
 	if (token == "I" || token == "Integral")				return ObjType::_Integral;
@@ -419,6 +420,15 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		case(ObjType::_ForwardDifference): {
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+			math::number res = -(*objects)[this->arg_indexes[2]].return_value(objects, args);
+			(*args)[var_index].value = args_results[1] + 1;
+			res = res + (*objects)[this->arg_indexes[2]].return_value(objects, args);
+			args->erase(args->begin() + var_index);
+			return res;
+		}
+		case(ObjType::_BackwardDifference): {
+			int var_index = args->size();
+			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
 			math::number res = (*objects)[this->arg_indexes[2]].return_value(objects, args);
 			(*args)[var_index].value = args_results[1] - 1;
 			res = res - (*objects)[this->arg_indexes[2]].return_value(objects, args);
@@ -605,6 +615,22 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			return res * d;
 		}
 		case(ObjType::_ForwardDifference): {
+			int var_index = args->size();
+			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+			math::number res = (*objects)[this->arg_indexes[3]].return_value(objects, args);
+
+			double n = ((math::complex)(*objects)[this->arg_indexes[2]].return_value(objects, args)).R;
+			for (int k = 1; k <= n; k++) {
+				(*args)[var_index].value = (*args)[var_index].value + 1;
+				res = res + (1 - 2 * (k % 2)) *
+					math::factorial(n) / (math::factorial(k) * math::factorial(n - k)) *
+					(*objects)[this->arg_indexes[3]].return_value(objects, args);
+			}
+
+			args->erase(args->begin() + var_index);
+			return res * (1 - 2 * ((int)n % 2));
+		}
+		case(ObjType::_BackwardDifference): {
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
 			math::number res = (*objects)[this->arg_indexes[3]].return_value(objects, args);
