@@ -1,4 +1,4 @@
-﻿//	v1.9.6
+﻿//	v1.9.7
 
 #include <iostream>
 #include "include.h"
@@ -457,6 +457,8 @@ bool run_command(std::string c) {
 				response += " =>    S{t;begin;end}[f(t)] -> Sum\n";
 				response += " =>           FD{t;x}[f(t)] -> Forward Difference\n";
 				response += " =>         FD{t;x;n}[f(t)] -> n-th Forward Difference\n";
+				response += " =>           BD{t;x}[f(t)] -> Backward Difference\n";
+				response += " =>         BD{t;x;n}[f(t)] -> n-th Backward Difference\n";
 				response += " =>    P{t;begin;end}[f(t)] -> Product\n";
 				response += " =>          R{t;x;n}[f(t)] -> Return\n";
 				response += " =>          I{t;a;b}[f(t)] -> Integral\n";

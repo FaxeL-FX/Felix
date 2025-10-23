@@ -224,8 +224,8 @@ namespace math {
 		complex res = x - math::floor(x + complex(0.5, 0.5));
 		if (res.R < 0) res.R = -res.R;
 		if (res.i < 0) res.i = -res.i;
-		if (res.R > res.i) return res.i;
-		return res.R;
+		if (res.R > res.i) return (res.i - res.i * res.i) * 4;
+		return (res.R - res.R * res.R) * 4;
 	}
 
 	complex conjugate(complex x) { return complex(x.R, -x.i); }
