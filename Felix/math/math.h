@@ -1,7 +1,9 @@
 #pragma once
 #include "../include.h"
 
+#ifndef infsimIsHere
 #define infsimIsHere 0
+#endif
 
 namespace math {
 	extern const long double pi, inf;
