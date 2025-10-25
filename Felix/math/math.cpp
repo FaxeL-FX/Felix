@@ -171,6 +171,13 @@ namespace math {
 		if (x < -1.0) return 1.0 / res;
 		return res;
 	}
+	double Binomial(double n, double k) {
+		double res = n;
+		for (int l = 1; l <= k; l++) {
+			res *= n / l - 1;
+		}
+		return res;
+	}
 
 	//	complex
 	complex floor(complex x) { return complex(floor(x.R), floor(x.i)); }
@@ -275,7 +282,15 @@ namespace math {
 		return res;
 	}
 	complex Binom(complex n, complex k) {
-		if ((n.R < k.R || k.R < 0) && k.i == 0 && k.R == floor(k.R)) return 0;
+		if (k.i == 0 && k.R == floor(k.R)) {
+			complex res = 1;
+			if (0 <= k.R) {
+				for (int l = 0; l < k.R; l++) {
+					res = res * (n - l) / (l + 1);
+				}
+			}
+			return res;
+		}
 		return fct(n) / (fct(k) * fct(n - k));
 	}
 
@@ -315,7 +330,7 @@ namespace math {
 		return res;
 	}
 	complex zeta(complex x) {
-		if (x.R > 0) return -fct(x) * exp(-x * 1.83787706640934548356) * sin1(x * 0.5) * zeta(-x - 1);
+		if (x.R > 3) return -fct(x) * exp(-x * 1.83787706640934548356) * sin1(x * 0.5) * zeta(-x - 1);
 		if (x.R < -170) return 1;
 		int n = 64;
 		long double pow2 = 1;

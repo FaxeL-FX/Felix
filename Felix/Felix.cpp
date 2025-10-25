@@ -1,4 +1,4 @@
-﻿//	v1.10
+﻿//	v1.10.1
 
 #include <iostream>
 #include "include.h"
@@ -523,6 +523,10 @@ bool run_command(std::string c) {
 				response += " =>   gamma(x) -> gamma function\n";
 				response += " =>  fctI(x,n) -> n-th integral of factorial\n";
 				response += " => rand | rand(...)\n";
+
+				response += "\n Experimental Functions\n";
+				response += " =>   zbf(x) -> zeta(x)/x!\n";
+
 				std::cout << response;
 				return true;
 			}
