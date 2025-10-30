@@ -52,15 +52,15 @@ ObjType nameToType(std::string token) {
 	if (token == "Iexp" || token == "IntegralAlongExp")		return ObjType::_IntegralAlongExp;
 	if (token == "Poly" || token == "Polynomial")			return ObjType::_Polynomial;
 
-	if (token == "abs")		return ObjType::_abs;
-	if (token == "inv_abs") return ObjType::_inv_abs;
-	if (token == "arg")		return ObjType::_arg;
-	if (token == "sign")	return ObjType::_sign;
-	if (token == "Re")		return ObjType::_Re;
-	if (token == "Im")		return ObjType::_Im;
-	if (token == "floor")	return ObjType::_floor;
-	if (token == "ceil")	return ObjType::_ceil;
-	if (token == "round")	return ObjType::_round;
+	if (token == "abs")						return ObjType::_abs;
+	if (token == "inv_abs")					return ObjType::_inv_abs;
+	if (token == "arg")						return ObjType::_arg;
+	if (token == "sign" || token == "sgn")	return ObjType::_sign;
+	if (token == "Re")						return ObjType::_Re;
+	if (token == "Im")						return ObjType::_Im;
+	if (token == "floor")					return ObjType::_floor;
+	if (token == "ceil")					return ObjType::_ceil;
+	if (token == "round")					return ObjType::_round;
 
 	if (token == "exist")	return ObjType::_exist;
 	if (token == "grid")	return ObjType::_grid;

@@ -141,7 +141,7 @@ namespace math {
 
 
 	// infinitesimal (infsim)
-	const unsigned int accuracy = 8u;
+	const unsigned int accuracy = 16u;
 	const int acch = accuracy >> 1;
 
 	struct infsim {

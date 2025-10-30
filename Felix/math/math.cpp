@@ -189,6 +189,7 @@ namespace math {
 	}
 	long double inv_abs(complex x) { return inv_sqrt(x.R * x.R + x.i * x.i); }
 	complex normalize(complex x) {
+		if (x == 0) return 0;
 		if (x.i == 0)
 			if (x.R < 0)	return -1;
 			else			return 1;
@@ -289,7 +290,12 @@ namespace math {
 					res = res * (n - l) / (l + 1);
 				}
 			}
+			else return 0;
 			return res;
+		}
+		complex d = n - k;
+		if (d.i == 0 && d.R == floor(d.R) && k.R > n.R) {
+			return 0;
 		}
 		return fct(n) / (fct(k) * fct(n - k));
 	}

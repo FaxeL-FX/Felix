@@ -1,4 +1,4 @@
-﻿//	v1.10.1
+﻿//	v1.10.2
 
 #include <iostream>
 #include "include.h"
@@ -56,6 +56,7 @@ Color penAdd(Color a, Color b) {
 	if (a.B < 0) a.B = 0;
 	return a;
 }
+float absMul(float c, float absolute) { return c * absolute / (absolute + 1); }
 Color toCol(math::complex x) {
 	Color c;
 	float angle = math::arg(x), absolute = math::abs(x);
@@ -63,9 +64,9 @@ Color toCol(math::complex x) {
 	c.R = (math::cos(angle) + 1) * 0.5;
 	c.G = (math::cos(angle + 2.0943951) + 1) * 0.5;
 	c.B = (math::cos(angle - 2.0943951) + 1) * 0.5;
-	c.R = 1 - 0.5 / (0.5 + c.R * c.R * absolute);
-	c.G = 1 - 0.5 / (0.5 + c.G * c.G * absolute);
-	c.B = 1 - 0.5 / (0.5 + c.B * c.B * absolute);
+	c.R = absMul(c.R, absolute);
+	c.G = absMul(c.G, absolute);
+	c.B = absMul(c.B, absolute);
 	return c;
 }
 std::vector<float> toVecF(Color c) { return { c.R, c.G, c.B }; }
@@ -685,7 +686,7 @@ bool run_command(std::string c) {
 						return true;
 					}
 					case(_ForwardDifference): {
-						response += " FD{t;x}[f(t)]\n";
+						response += " FD{t;x}[f(t)] = f(t+1) - f(t)\n";
 						response += "   Правая разность функции f(t) в точке x\n";
 						response += " FD{t;x;n}[f(t)]\n";
 						response += "   n-ная правая разность функции f(t) в точке x\n";
@@ -699,7 +700,7 @@ bool run_command(std::string c) {
 						return true;
 					}
 					case(_BackwardDifference): {
-						response += " BD{t;x}[f(t)]\n";
+						response += " BD{t;x}[f(t)] = f(t) - f(t-1)\n";
 						response += "   Левая разность функции f(t) в точке x\n";
 						response += " BD{t;x;n}[f(t)]\n";
 						response += "   n-ная левая разность функции f(t) в точке x\n";
