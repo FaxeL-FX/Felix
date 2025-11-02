@@ -1,4 +1,4 @@
-﻿//	v1.10.2
+﻿//	v1.10.3
 
 #include <iostream>
 #include "include.h"
@@ -131,7 +131,8 @@ bool run_command(std::string c) {
 
 		std::string expr = "";
 		for (int i = 2 + (args[2] == "="); i < args.size(); i++) expr += args[i] + ' ';
-		f.objects = parse_expr(expr);
+		if (f.args.size() == 0) f.objects = { Object(ObjType::_Const, {}, value(parse_expr(expr), {})) };
+		else f.objects = parse_expr(expr);
 
 		for (int i = 0; i < functions_list.size(); i++)
 			if (functions_list[i].name == f.name) {

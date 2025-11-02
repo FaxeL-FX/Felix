@@ -189,7 +189,7 @@ namespace math {
 	}
 	long double inv_abs(complex x) { return inv_sqrt(x.R * x.R + x.i * x.i); }
 	complex normalize(complex x) {
-		if (x == 0) return 0;
+		if (x == 0) return 1;
 		if (x.i == 0)
 			if (x.R < 0)	return -1;
 			else			return 1;
