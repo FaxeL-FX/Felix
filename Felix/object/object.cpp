@@ -13,6 +13,7 @@ ObjType nameToType(std::string token) {
 	if (token == "^") return ObjType::_pow;
 
 	if (token == "!" || token == "fct") return ObjType::_fct;
+	if (token == "inv_fct")				return ObjType::_inv_fct;
 	
 	if (token == "exp")			return ObjType::_exp;
 	if (token == "ln")			return ObjType::_ln;
@@ -347,6 +348,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 	case(1): switch (this->type) {
 		case(ObjType::_uMinus): return -args_results[0];
 		case(ObjType::_fct): return math::fct(args_results[0]);
+		case(ObjType::_inv_fct): return math::inv_fct(args_results[0]);
 
 		case(ObjType::_exp): return math::exp(args_results[0]);
 		case(ObjType::_ln): return math::ln(args_results[0]);

@@ -1,4 +1,4 @@
-﻿//	v1.10.3
+﻿//	v1.10.4
 
 #include <iostream>
 #include "include.h"
@@ -746,6 +746,7 @@ bool run_command(std::string c) {
 int main() {
 	SetConsoleOutputCP(CP_UTF8);
 	std::string expression;
+	int count = 0;
 	for (;;) {
 		std::getline(std::cin, expression);
 		if (expression[0] == '>') {

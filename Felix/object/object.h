@@ -8,7 +8,7 @@ enum ObjType {
 	_exp, _ln,
 	_Harmonic,
 
-	_add, _dif, _mul, _div, _pow, _fct, _mod, _uMinus,
+	_add, _dif, _mul, _div, _pow, _mod, _uMinus,
 
 	_sqrt, _inv_sqrt,
 	_root, _log,
@@ -34,7 +34,9 @@ enum ObjType {
 
 	_exist, _grid,
 
-	_gamma, _fctIntegral, _zeta, _zetaByFct,
+	_fct, _inv_fct,
+	_gamma, _fctIntegral,
+	_zeta, _zetaByFct,
 };
 
 struct Variable {

@@ -134,6 +134,7 @@ namespace math {
 	complex Binom(complex n, complex k);
 
 	complex fct(complex x);
+	complex inv_fct(complex x);
 	complex fctIntegral(complex x, complex n);
 	complex Harmonic(complex x);
 	complex zeta(complex x);

@@ -302,14 +302,20 @@ namespace math {
 
 	complex fct(complex x) {
 		if (x.R < -0.5) return -1 / (sin1(x) * fct(-1 - x));
-		//if (x.R > 0) return x * fct(x - 1);
-		float n = 2048.5; // 2048.5
+		float n = 2048.5;
 		complex res = exp(-x + (x + 0.5) * ln(x + n) - 0.5 * ln(n));
-		for (int i = 1; i < n; i++) res = res * i / n * (x + n) / (x + i);
+		for (int i = 1; i < n; i++) res = res * i / (x + i) / n * (x + n);
+		return res;
+	}
+	complex inv_fct(complex x) {
+		if (x.R < -0.5) return -sin1(x) * fct(-1 - x);
+		float n = 2048.5;
+		complex res = exp(x - (x + 0.5) * ln(x + n) + 0.5 * ln(n));
+		for (int i = 1; i < n; i++) res = res * (x + i) / i * n / (x + n);
 		return res;
 	}
 	complex fctIntegral(complex x, complex N) {
-		int n = 256;
+		int n = 2048;
 		double invN = 1 / (double)n;
 		complex res, t = ln(complex(-1.0)), dt, w = 0.0;
 		dt = (ln(n) - t) * invN;
