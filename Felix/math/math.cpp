@@ -325,13 +325,6 @@ namespace math {
 			res = res + exp(-w + x * ln(w) - N * ln(ln(w))) * (exp(t + 0.5 * dt) - exp(t - 0.5 * dt));
 		}
 		return res;
-
-		/*const int n = 256;
-		complex res = fctIntegralConstant, logX = ln(x) / n;
-		for (int k = 0; k < n; k++) {
-			res = res + fct(exp(k * logX)) * (exp((k + 1) * logX) - exp(k * logX));
-		}
-		return res;*/
 	}
 	complex Harmonic(complex x) {
 		if (x.R < -0.5) return Harmonic(-x - 1) - cos1(x) / sin1(x);
@@ -560,6 +553,13 @@ namespace math {
 		float n = 512;
 		infsim res = exp(-x + (x + 0.5) * ln(x + n) - 0.5 * ln(n));
 		for (int i = 1; i < n; i++) res = res * i / n * (x + n) / (x + i);
+		return res;
+	}
+	infsim inv_fct(infsim x) {
+		if (x.getNum(acch).R < -0.5) return -sin1(x) * fct(-1 - x);
+		float n = 2048.5;
+		infsim res = exp(x - (x + 0.5) * ln(x + n) + 0.5 * ln(n));
+		for (int i = 1; i < n; i++) res = res * (x + i) / i * n / (x + n);
 		return res;
 	}
 	infsim getFctIntegralConst() {

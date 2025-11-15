@@ -177,23 +177,14 @@ namespace math {
 			for (int i = higher; i >= lower; i--) {
 				std::string numstr = this->Pol[i].toString();
 				if (numstr == "0") continue;
-				str += "\n   + ";
-				/**/ if (i == acch + 1)		str += "inf";
-				else if (i == acch - 1)		str += "0";
-				else if (i > acch)	str += "inf^" + std::to_string(i - acch);
-				else if (i < acch)	str += "0^" + std::to_string(acch - i);
-				else {
-					str += "(" + numstr + ")";
-					continue;
-				}
-				if (this->Pol[i].R > 0.999999 && this->Pol[i].R < 1.000001 &&
-					this->Pol[i].i > -0.000001 && this->Pol[i].i < 0.000001) {
-					continue;
-				}
-				str += "*(" + numstr + ")";
+				str += "\n  + (" + numstr + ")";
+				/**/ if (i == acch + 1)		str += " * inf";
+				else if (i == acch - 1)		str += " * 0";
+				else if (i > acch)	str += " * inf^" + std::to_string(i - acch);
+				else if (i < acch)	str += " * 0^" + std::to_string(acch - i);
 			}
 			if (str == "") return "ConstZero";
-			return str.substr(6);
+			return str.substr(5);
 		}
 		std::string toStringSmall() {
 			std::string str;
@@ -273,6 +264,7 @@ namespace math {
 	infsim Binom(infsim n, infsim k);
 
 	infsim fct(infsim x);
+	infsim inv_fct(infsim x);
 	infsim getFctIntegralConst();
 	infsim fctIntegral(infsim x);
 	infsim fctIntegral(infsim x, infsim y);

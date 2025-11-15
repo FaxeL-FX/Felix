@@ -450,21 +450,22 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			long long
 				repeats = math::floor(difference.getNum(math::acch).R);
 			math::number
-				diffPart = math::number(difference.getNum(math::acch).R - repeats, difference.getNum(math::acch).i),
+				diffPart = math::infsim(difference.getNum(math::acch).R - repeats + math::i * difference.getNum(math::acch).i),
 				step = math::normalize(diffPart.getNum(math::acch));
 #else
 			long long
 				repeats = math::floor(difference.R);
 			math::number
-				diffPart = math::number(difference.R - repeats, difference.i),
+				diffPart = math::complex(difference.R - repeats, difference.i),
 				step = math::normalize(diffPart);
 #endif
 			long double
 				radius = math::abs(diffPart),
 				radFract = radius - math::floor(radius);
+			int n = 1;
 			math::number
-				angle1 = math::mul_i((math::number)math::arccos(0.5 * radFract)),
-				angle2 = math::mul_i((math::number)math::arccos(0.5 * (1 - radFract))),
+				angle1 = math::mul_i((math::number)math::arccos(0.5 * radFract / n)),
+				angle2 = math::mul_i((math::number)math::arccos(0.5 * (1 - radFract) / n)),
 				step1 =  step * math::exp( angle1),
 				step2 =  step * math::exp(-angle1),
 				step3 = -step * math::exp( angle2),
@@ -477,26 +478,45 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step;
 				}
 				if (radFract != 0) {
-					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step + step1);
-					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step1 * 0.5 * (1 - radFract);
-					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step1 + step2);
-					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step2 * 0.5 * (1 - radFract);
-					(*args)[var_index].value = (*args)[var_index].value - step1;
-					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step2 * 0.5 * (1 - radFract);
-					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step2 + step1);
-					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step1 * 0.5 * (1 - radFract);
+					math::number breakpoint = (*args)[var_index].value;
 
-					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step - step1) - step2;
+					(*args)[var_index].value = breakpoint + 0.5 * (step - step2);
+					for (int k = 0; k < n; k++) {
+						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step2 + step1);
+						res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step1 * 0.5 * (1 - radFract);
+						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step1 + step2);
+						res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step2 * 0.5 * (1 - radFract);
+					}
+
+					(*args)[var_index].value = breakpoint + 0.5 * (step - step1);
+					for (int k = 0; k < n; k++) {
+						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step1 + step2);
+						res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step2 * 0.5 * (1 - radFract);
+						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step2 + step1);
+						res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step1 * 0.5 * (1 - radFract);
+					}
+
+
+					(*args)[var_index].value = breakpoint + step;
 					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step * radFract;
+					breakpoint = (*args)[var_index].value;
 
-					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step + step3);
-					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step3 * 0.5 * radFract;
-					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step3 + step4);
-					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step4 * 0.5 * radFract;
-					(*args)[var_index].value = (*args)[var_index].value - step3;
-					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step4 * 0.5 * radFract;
-					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step4 + step3);
-					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step3 * 0.5 * radFract;
+
+					(*args)[var_index].value = breakpoint + 0.5 * (step - step4);
+					for (int k = 0; k < n; k++) {
+						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step4 + step3);
+						res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step3 * 0.5 * radFract;
+						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step3 + step4);
+						res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step4 * 0.5 * radFract;
+					}
+
+					(*args)[var_index].value = breakpoint + 0.5 * (step - step3);
+					for (int k = 0; k < n; k++) {
+						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step3 + step4);
+						res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step4 * 0.5 * radFract;
+						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step4 + step3);
+						res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step3 * 0.5 * radFract;
+					}
 
 					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step3 - 1);
 				}
@@ -519,26 +539,45 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step);
 				}
 				if (radFract != 0) {
-					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step + step1);
-					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step1 * 0.5 * (1 - radFract));
-					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step1 + step2);
-					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step2 * 0.5 * (1 - radFract));
-					(*args)[var_index].value = (*args)[var_index].value - step1;
-					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step2 * 0.5 * (1 - radFract));
-					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step2 + step1);
-					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step1 * 0.5 * (1 - radFract));
+					math::number breakpoint = (*args)[var_index].value;
 
-					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step - step1) - step2;
+					(*args)[var_index].value = breakpoint + 0.5 * (step - step2);
+					for (int k = 0; k < n; k++) {
+						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step2 + step1);
+						res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step1 * 0.5 * (1 - radFract));
+						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step1 + step2);
+						res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step2 * 0.5 * (1 - radFract));
+					}
+
+					(*args)[var_index].value = breakpoint + 0.5 * (step - step1);
+					for (int k = 0; k < n; k++) {
+						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step1 + step2);
+						res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step2 * 0.5 * (1 - radFract));
+						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step2 + step1);
+						res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step1 * 0.5 * (1 - radFract));
+					}
+
+
+					(*args)[var_index].value = breakpoint + step;
 					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step * radFract);
+					breakpoint = (*args)[var_index].value;
 
-					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step + step3);
-					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step3 * 0.5 * radFract);
-					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step3 + step4);
-					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step4 * 0.5 * radFract);
-					(*args)[var_index].value = (*args)[var_index].value - step3;
-					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step4 * 0.5 * radFract);
-					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step4 + step3);
-					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step3 * 0.5 * radFract);
+
+					(*args)[var_index].value = breakpoint + 0.5 * (step - step4);
+					for (int k = 0; k < n; k++) {
+						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step4 + step3);
+						res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step3 * 0.5 * radFract);
+						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step3 + step4);
+						res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step4 * 0.5 * radFract);
+					}
+
+					(*args)[var_index].value = breakpoint + 0.5 * (step - step3);
+					for (int k = 0; k < n; k++) {
+						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step3 + step4);
+						res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step4 * 0.5 * radFract);
+						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step4 + step3);
+						res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step3 * 0.5 * radFract);
+					}
 
 					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step3 - 1);
 				}
@@ -572,7 +611,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		}
 
 		case(ObjType::_Integral): {
-			const int n = 1024;
+			const int n = 256;
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
 			math::number res = 0, dx = (args_results[2] - args_results[1]) / n;
@@ -584,7 +623,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			return res * dx;
 		}
 		case(ObjType::_IntegralAlongExp): {
-			const int n = 1024;
+			const int n = 256;
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
 			math::number res = 0, dx = (math::ln(args_results[2] / args_results[1])) / n, x = math::ln(args_results[1]), dt;
