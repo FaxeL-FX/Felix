@@ -1,17 +1,15 @@
 #include "math.h"
 namespace math {
 	//	number
-	const long double
+	const double
 		pi = 3.1415926535897932384626433832795028841971693993751058209749445923,
-		inf = 1.0 / 0.0;
+		inf = std::numeric_limits<double>::infinity();
 	const complex
-		i(0, 1),
-		fctIntegralConstant = getFctIntegralConstant();
+		i(0, 1);
 	const infsim
 		infinity(acch + 1, 1.0),
 		zero(acch - 1, 1.0),
-		lnInf = -ln_sum(infinity),
-		fctIntegralConst = getFctIntegralConst();
+		lnInf = -ln_sum(infinity);
 
 	bool sign(double x) {
 		unsigned long long i = *(unsigned long long*) & x;
@@ -57,6 +55,10 @@ namespace math {
 			if (x.R == 0) return complex(0, x.i / 0.0);
 			return complex(x.R / 0.0, x.i / 0.0);
 		}
+		if (y.R == inf)		return complex(0, 0);
+		if (y.R == -inf)	return complex(-0, 0);
+		if (y.i == inf)		return complex(0, 0);
+		if (y.i == -inf)	return complex(0, -0);
 		long double denominator = 1.0 / (y.R * y.R + y.i * y.i);
 		return complex((x.R * y.R + x.i * y.i) * denominator, (y.R * x.i - x.R * y.i) * denominator);
 	}
@@ -74,6 +76,7 @@ namespace math {
 		if (x.R == y.R && x.i == y.i) return true;
 		return false;
 	}
+	bool operator!=(complex x, complex y) { return !(x == y); }
 
 	//	functions
 	long double rand(int seed, std::vector<long double> v) {
@@ -222,7 +225,18 @@ namespace math {
 		return res + 1;
 	}
 	complex ln(complex x) { return complex(ln(abs(x)), arg(x)); }
-	complex pow(complex x, complex y) { return exp(y * ln(x)); }
+	complex pow(complex x, complex y) {
+		complex res = 1;
+		for (; 0 < y.R;) {
+			res = res * x;
+			y.R = y.R - 1;
+		}
+		for (; y.R < 0;) {
+			res = res / x;
+			y.R = y.R + 1;
+		}
+		return res * exp(y * ln(x));
+	}
 	complex sqrt(complex x) { return exp(0.5 * ln(x)); }
 	complex inv_sqrt(complex x) { return exp(-0.5 * ln(x)); }
 
@@ -294,9 +308,7 @@ namespace math {
 			return res;
 		}
 		complex d = n - k;
-		if (d.i == 0 && d.R == floor(d.R) && k.R > n.R) {
-			return 0;
-		}
+		if (d.i == 0 && d.R == floor(d.R) && k.R > n.R) return 0;
 		return fct(n) / (fct(k) * fct(n - k));
 	}
 
@@ -312,6 +324,11 @@ namespace math {
 		float n = 2048.5;
 		complex res = exp(x - (x + 0.5) * ln(x + n) + 0.5 * ln(n));
 		for (int i = 1; i < n; i++) res = res * (x + i) / i * n / (x + n);
+		return res;
+	}
+	complex gamma(complex x) {
+		complex res = exp(-0.5772156649 * x) / x;
+		for (int k = 1; k != 2048; k++) res = res * exp(x / k) / (1 + x / k);
 		return res;
 	}
 	complex fctIntegral(complex x, complex N) {
@@ -562,21 +579,9 @@ namespace math {
 		for (int i = 1; i < n; i++) res = res * (x + i) / i * n / (x + n);
 		return res;
 	}
-	infsim getFctIntegralConst() {
-		const int n = 256;
-		infsim res, a = infsim(0, pi / n), b = 8 / 256;
-		for (int k = 0; k < n; k++) {
-			infsim t = exp(k * b - (n - k) * a) + 1;
-			res = res + t * exp(-t) / ln(t) * (exp((k + 1) * b - (n - k - 1) * a) - exp(k * b - (n - k) * a));
-		}
-		return res;
-	}
-	infsim fctIntegral(infsim x) {
-		const int n = 16;
-		infsim res = fctIntegralConstant, logX = ln(x) / n;
-		for (int k = 0; k < n; k++) {
-			res = res + fct(exp(k * logX)) * (exp((k + 1) * logX) - exp(k * logX));
-		}
+	infsim gamma(infsim x) {
+		infsim res = exp(mul(x, -0.5772156649)) / x;
+		for (int k = 1; k != 256; k++) res = res * exp(div(x, k)) / (1 + div(x, k));
 		return res;
 	}
 	infsim fctIntegral(infsim x, infsim y) {

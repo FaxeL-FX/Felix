@@ -12,6 +12,17 @@ ObjType nameToType(std::string token) {
 	if (token == "%") return ObjType::_mod;
 	if (token == "^") return ObjType::_pow;
 
+	if (token == "&")	return ObjType::_and;
+	if (token == "|")	return ObjType::_or;
+	if (token == "=")	return ObjType::_equal;
+	if (token == "<")	return ObjType::_smaller;
+	if (token == ">")	return ObjType::_larger;
+	if (token == "!&")	return ObjType::_Nand;
+	if (token == "!|")	return ObjType::_Nor;
+	if (token == "!=")	return ObjType::_Nequal;
+	if (token == "<=")	return ObjType::_smallerEQ;
+	if (token == ">=")	return ObjType::_largerEQ;
+
 	if (token == "!" || token == "fct") return ObjType::_fct;
 	if (token == "inv_fct")				return ObjType::_inv_fct;
 	
@@ -65,6 +76,7 @@ ObjType nameToType(std::string token) {
 
 	if (token == "exist")	return ObjType::_exist;
 	if (token == "grid")	return ObjType::_grid;
+	if (token == "if")		return ObjType::_If;
 
 	if (token == "gamma")							return ObjType::_gamma;
 	if (token == "fctIntegral" || token == "fctI")	return ObjType::_fctIntegral;
@@ -150,7 +162,9 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 	objects->push_back(Object());
 	(*objects)[objIndex].type = ObjType::_Default;
 
-	if (token == "+" || token == "*" || token == "/" || token == "%" || token == "^") {
+	if (token == "+" || token == "*" || token == "/" || token == "%" || token == "^"
+		|| token == "&" || token == "|" || token == "=" || token == "<" || token == ">"
+		|| token == "!&" || token == "!|" || token == "!=" || token == "<=" || token == ">=") {
 		if (index <= begin || end <= index) {
 			(*objects)[objIndex].type = ObjType::_Error;
 			return;
@@ -319,6 +333,9 @@ int priority(std::string token) {
 	else if (token == "^") return 3;
 	else if (token == "!") return 2;
 	else if (token == "(" || token == "[" || token == "{" || token == ")" || token == "]" || token == "}") return 0;
+	else if (token == "=" || token == "<" || token == ">" || token == "!=" || token == "<=" || token == ">=") return 6;
+	else if (token == "&" || token == "!&") return 7;
+	else if (token == "|" || token == "!|") return 8;
 	return 1;
 }
 bool need_mul(std::string token1, std::string token2) {
@@ -388,7 +405,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		case(ObjType::_exist): return !math::exist(args_results[0]);
 		case(ObjType::_grid): return math::grid(args_results[0]);
 
-		case(ObjType::_gamma): return math::fct(args_results[0] - 1);
+		case(ObjType::_gamma): return math::gamma(args_results[0]);
 		case(ObjType::_Harmonic): return math::Harmonic(args_results[0]);
 		case(ObjType::_zeta): return math::zeta(args_results[0]);
 		case(ObjType::_zetaByFct): return math::zetaByFct(args_results[0]);
@@ -400,6 +417,38 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		case(ObjType::_div): return args_results[0] / args_results[1];
 		case(ObjType::_pow): return math::pow(args_results[0], args_results[1]);
 		case(ObjType::_mod): return args_results[0] % args_results[1];
+
+		case(ObjType::_and): return args_results[0] + args_results[1];
+		case(ObjType::_or): return args_results[0] * args_results[1];
+		case(ObjType::_equal): return args_results[0] - args_results[1];
+		case(ObjType::_smaller): {
+			if (((math::complex)args_results[0]).R < ((math::complex)args_results[1]).R) return 0;
+			return 1;
+		}
+		case(ObjType::_larger): {
+			if (((math::complex)args_results[0]).R > ((math::complex)args_results[1]).R) return 0;
+			return 1;
+		}
+		case(ObjType::_Nand): {
+			if (args_results[0] + args_results[1] == 0) return 1;
+			return 0;
+		}
+		case(ObjType::_Nor): {
+			if (args_results[0] * args_results[1] == 0) return 1;
+			return 0;
+		}
+		case(ObjType::_Nequal): {
+			if (args_results[0] == args_results[1]) return 1;
+			return 0;
+		}
+		case(ObjType::_smallerEQ): {
+			if (((math::complex)args_results[0]).R < ((math::complex)args_results[1]).R || args_results[0] == args_results[1]) return 0;
+			return 1;
+		}
+		case(ObjType::_largerEQ): {
+			if (((math::complex)args_results[0]).R > ((math::complex)args_results[1]).R || args_results[0] == args_results[1]) return 0;
+			return 1;
+		}
 
 		case(ObjType::_root): return math::pow(args_results[1], 1 / args_results[0]);
 		case(ObjType::_log): return math::ln(args_results[1]) / math::ln(args_results[0]);
@@ -437,6 +486,11 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			args->erase(args->begin() + var_index);
 			return res;
 		}
+		case(ObjType::_If): {
+			if ((*objects)[this->arg_indexes[0]].return_value(objects, args) == 0)
+				return (*objects)[this->arg_indexes[1]].return_value(objects, args);
+			return (*objects)[this->arg_indexes[2]].return_value(objects, args);
+		}
 	}
 	case(4): switch (this->type) {
 		case(ObjType::_Sum):
@@ -473,11 +527,11 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 
 			(*args)[var_index].value = (*args)[var_index].value + 0.5 * (1 - step);
 			/**/ if (this->type == ObjType::_Sum) {
-				for (int i = 0; i < (long long)radius; i++) {
+				for (int i = 0; i != (long long)radius; i++) {
 					(*args)[var_index].value = (*args)[var_index].value + step;
 					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step;
 				}
-				if (radFract != 0) {
+				if (radFract != 0 || (step != 1 && step != -1)) {
 					math::number breakpoint = (*args)[var_index].value;
 
 					(*args)[var_index].value = breakpoint + 0.5 * (step - step2);
@@ -538,7 +592,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 					(*args)[var_index].value = (*args)[var_index].value + step;
 					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step);
 				}
-				if (radFract != 0) {
+				if (radFract != 0 || (step != 1 && step != -1)) {
 					math::number breakpoint = (*args)[var_index].value;
 
 					(*args)[var_index].value = breakpoint + 0.5 * (step - step2);

@@ -1,4 +1,4 @@
-﻿//	v1.10.5
+﻿//	v1.11
 
 #include <iostream>
 #include "include.h"
@@ -520,6 +520,7 @@ bool run_command(std::string c) {
 				response += "\n Logic Functions\n";
 				response += " =>   exist(x) -> if number exist returns 0 else 1\n";
 				response += " =>    grid(x) -> if number on the grid returns 0 else (0 < ...)\n";
+				response += " => if{x}[a;b] -> if x is 0 then returns a else returns b\n";
 
 				response += "\n Other Functions\n";
 				response += " =>   gamma(x) -> gamma function\n";
@@ -532,208 +533,220 @@ bool run_command(std::string c) {
 				std::cout << response;
 				return true;
 			}
-			if (args.size() >= 3) {
-				if (args[1] == "syntax") {
-					ObjType func = nameToType(args[2]);
-					switch (func) {
-					case(_exp): {
-						response += " exp(x)\n";
-						response += "   Экспонента\n";
-						response += "   -> e^x\n";
-						response += " Пример:\n";
-						response += "   exp(1) = e = 2.718282\n";
-						response += "   exp(0) = 1\n";
-						std::cout << response;
-						return true;
-					}
-					case(_ln): {
-						response += " ln(x)\n";
-						response += "   Натуральный логарифм x\n";
-						response += "   -> log[e](x)\n";
-						std::cout << response;
-						return true;
-					}
-					case(_sqrt): {
-						response += " sqrt(x)\n";
-						response += "   Квадратный корень из x\n";
-						response += "   -> root[2](x)\n";
-						response += " Пример:\n";
-						response += "   sqrt(4) = 2\n";
-						response += "   sqrt(9) = 3\n";
-						std::cout << response;
-						return true;
-					}
-					case(_inv_sqrt): {
-						response += " inv_sqrt(x)\n";
-						response += "   Обратный квадратный корень из x\n";
-						response += "   -> 1/sqrt(x)\n";
-						std::cout << response;
-						return true;
-					}
-					case(_root): {
-						response += " root[y](x)\n";
-						response += "   Корень степени y из x\n";
-						response += "   -> x^(1/y)\n";
-						response += " Пример:\n";
-						response += "   root[3](8) = 2\n";
-						std::cout << response;
-						return true;
-					}
-					case(_log): {
-						response += " log[y](x)\n";
-						response += "   Логарифм x по основанию y\n";
-						response += "   -> ln(x)/ln(y)\n";
-						response += " Пример:\n";
-						response += "   log[2](8) = 3\n";
-						std::cout << response;
-						return true;
-					}
+		}
+		if (args.size() >= 3) {
+			if (args[1] == "syntax") {
+				ObjType func = nameToType(args[2]);
+				switch (func) {
+				case(_exp): {
+					response += " exp(x)\n";
+					response += "   Экспонента\n";
+					response += "   -> e^x\n";
+					response += " Пример:\n";
+					response += "   exp(1) = e = 2.718282\n";
+					response += "   exp(0) = 1\n";
+					std::cout << response;
+					return true;
+				}
+				case(_ln): {
+					response += " ln(x)\n";
+					response += "   Натуральный логарифм x\n";
+					response += "   -> log[e](x)\n";
+					std::cout << response;
+					return true;
+				}
+				case(_sqrt): {
+					response += " sqrt(x)\n";
+					response += "   Квадратный корень из x\n";
+					response += "   -> root[2](x)\n";
+					response += " Пример:\n";
+					response += "   sqrt(4) = 2\n";
+					response += "   sqrt(9) = 3\n";
+					std::cout << response;
+					return true;
+				}
+				case(_inv_sqrt): {
+					response += " inv_sqrt(x)\n";
+					response += "   Обратный квадратный корень из x\n";
+					response += "   -> 1/sqrt(x)\n";
+					std::cout << response;
+					return true;
+				}
+				case(_root): {
+					response += " root[y](x)\n";
+					response += "   Корень степени y из x\n";
+					response += "   -> x^(1/y)\n";
+					response += " Пример:\n";
+					response += "   root[3](8) = 2\n";
+					std::cout << response;
+					return true;
+				}
+				case(_log): {
+					response += " log[y](x)\n";
+					response += "   Логарифм x по основанию y\n";
+					response += "   -> ln(x)/ln(y)\n";
+					response += " Пример:\n";
+					response += "   log[2](8) = 3\n";
+					std::cout << response;
+					return true;
+				}
 
-					case(_sin1): {
-						response += " sin1(x)\n";
-						response += "   -> sin(πx)/π\n";
-						std::cout << response;
-						return true;
-					}
-					case(_cos1): {
-						response += " cos1(x)\n";
-						response += "   -> cos(πx)\n";
-						response += " Пример:\n";
-						response += "   можно использовать вместо (-1)^n\n";
-						response += "   cos1(0) = 1\n";
-						response += "   cos1(1) = -1\n";
-						response += "   cos1(2) = 1\n";
-						response += "   cos1(3) = -1\n";
-						std::cout << response;
-						return true;
-					}
+				case(_sin1): {
+					response += " sin1(x)\n";
+					response += "   -> sin(πx)/π\n";
+					std::cout << response;
+					return true;
+				}
+				case(_cos1): {
+					response += " cos1(x)\n";
+					response += "   -> cos(πx)\n";
+					response += " Пример:\n";
+					response += "   можно использовать вместо (-1)^n\n";
+					response += "   cos1(0) = 1\n";
+					response += "   cos1(1) = -1\n";
+					response += "   cos1(2) = 1\n";
+					response += "   cos1(3) = -1\n";
+					std::cout << response;
+					return true;
+				}
 
-					case(_Sum): {
-						response += " S{k;a;b}[f(k)]\n";
-						response += "   Сумма по k от a до b\n";
-						response += "      k -> переменная\n";
-						response += "      a -> нижний предел\n";
-						response += "      b -> верхний предел\n";
-						response += "   f(k) -> функция от переменной k\n";
-						response += " Пример:\n";
-						response += "   S{k;1;5}[k] = 1 + 2 + 3 + 4 + 5 = 15\n";
-						response += "   S{k;1;4}[k^2] = 1^2 + 2^2 + 3^2 + 4^2 = 30\n";
-						std::cout << response;
-						return true;
-					}
-					case(_Product): {
-						response += " P{k;a;b}[f(k)]\n";
-						response += "   Произведение по k от a до b\n";
-						response += "      k -> переменная\n";
-						response += "      a -> нижний предел\n";
-						response += "      b -> верхний предел\n";
-						response += "   f(k) -> функция от переменной k\n";
-						response += " Пример:\n";
-						response += "   P{k;1;4}[k] = 1 * 2 * 3 * 4 = 24\n";
-						std::cout << response;
-						return true;
-					}
-					case(_Return): {
-						response += " R{t;a;n}[f(t)]\n";
-						response += "   Итерирует функцию f(t)\n";
-						response += "      t -> переменная\n";
-						response += "      a -> начальное значение переменной t\n";
-						response += "      n -> количество итераций\n";
-						response += "   f(t) -> итерируемая функция\n";
-						response += "   R{t;a;n}[f(t)] = f(f(...f(a)...))\n";
-						response += " Пример:\n";
-						response += "   R{t;13;0}[t-5] = 13\n";
-						response += "   R{t;13;3}[t-5] = (((13-5)-5)-5) = -2\n";
-						std::cout << response;
-						return true;
-					}
-					case(_Integral): {
-						response += " I{t;a;b}[f(t)]\n";
-						response += "   Интеграл функции f(t)\n";
-						response += "      t -> переменная\n";
-						response += "      a -> нижний предел\n";
-						response += "      b -> верхний предел\n";
-						response += "   f(t) -> функция от переменной t\n";
-						response += " Пример:\n";
-						response += "   I{t;0;1}[t] = 0.5\n";
-						std::cout << response;
-						return true;
-					}
-					case(_IntegralAlongExp): {
-						response += " Iexp{t;a;b}[f(t)]\n";
-						response += "   Криволинейный интеграл функции f(t)\n";
-						response += "      t -> переменная\n";
-						response += "      a -> нижний предел\n";
-						response += "      b -> верхний предел\n";
-						response += "   f(t) -> функция от переменной t\n";
-						response += " Пример:\n";
-						response += "   Iexp{t;1;-1}[1/t] = πi\n";
-						std::cout << response;
-						return true;
-					}
-					case(_Derivative): {
-						response += " D{t;x}[f(t)]\n";
-						response += "   Производная функции f(t) в точке x\n";
-						response += " D{t;x;n}[f(t)]\n";
-						response += "   n-ная производная функции f(t) в точке x\n";
-						response += "      t -> переменная\n";
-						response += "      x -> \n";
-						response += "      n -> порядок производной\n";
-						response += "   f(t) -> функция от переменной t\n";
-						response += " Пример:\n";
-						response += "   D{t;2}[t^2] = 2t|t=2 = 4\n";
-						response += "   D{t;1;2}[t^3] = 6t|t=1 = 6\n";
-						std::cout << response;
-						return true;
-					}
-					case(_ForwardDifference): {
-						response += " FD{t;x}[f(t)] = f(t+1) - f(t)\n";
-						response += "   Правая разность функции f(t) в точке x\n";
-						response += " FD{t;x;n}[f(t)]\n";
-						response += "   n-ная правая разность функции f(t) в точке x\n";
-						response += "      t -> переменная\n";
-						response += "      x -> \n";
-						response += "      n -> порядок разности\n";
-						response += "   f(t) -> функция от переменной t\n";
-						response += " Пример:\n";
-						response += "   FD{t;2}[t^2] = (t+1)^2-t^2 = 3^2-2^2 = 5\n";
-						std::cout << response;
-						return true;
-					}
-					case(_BackwardDifference): {
-						response += " BD{t;x}[f(t)] = f(t) - f(t-1)\n";
-						response += "   Левая разность функции f(t) в точке x\n";
-						response += " BD{t;x;n}[f(t)]\n";
-						response += "   n-ная левая разность функции f(t) в точке x\n";
-						response += "      t -> переменная\n";
-						response += "      x -> \n";
-						response += "      n -> порядок разности\n";
-						response += "   f(t) -> функция от переменной t\n";
-						response += " Пример:\n";
-						response += "   BD{t;2}[t^2] = t^2-(t-1)^2 = 2^2-1^2 = 3\n";
-						std::cout << response;
-						return true;
-					}
-					case(_Polynomial): {
-						response += " Poly{t;f(t);x}[...]\n";
-						response += "    Полиноминальная аппроксимация функции f(t) в точке x\n";
-						response += "      t -> переменная\n";
-						response += "   f(t) -> функция от переменной t\n";
-						response += "      x -> \n";
-						response += "    ... -> список значений переменной t\n";
-						response += " Пример:\n";
-						response += "   >def f(x) = Poly{t;cos(t);x}[1;2;3;4;5;6]\n";
-						response += "   -> f(x) = ax^5 + bx^4 + cx^3 + ...\n";
-						std::cout << response;
-						return true;
-					}
+				case(_Sum): {
+					response += " S{k;a;b}[f(k)]\n";
+					response += "   Сумма по k от a до b\n";
+					response += "      k -> переменная\n";
+					response += "      a -> нижний предел\n";
+					response += "      b -> верхний предел\n";
+					response += "   f(k) -> функция от переменной k\n";
+					response += " Пример:\n";
+					response += "   S{k;1;5}[k] = 1 + 2 + 3 + 4 + 5 = 15\n";
+					response += "   S{k;1;4}[k^2] = 1^2 + 2^2 + 3^2 + 4^2 = 30\n";
+					std::cout << response;
+					return true;
+				}
+				case(_Product): {
+					response += " P{k;a;b}[f(k)]\n";
+					response += "   Произведение по k от a до b\n";
+					response += "      k -> переменная\n";
+					response += "      a -> нижний предел\n";
+					response += "      b -> верхний предел\n";
+					response += "   f(k) -> функция от переменной k\n";
+					response += " Пример:\n";
+					response += "   P{k;1;4}[k] = 1 * 2 * 3 * 4 = 24\n";
+					std::cout << response;
+					return true;
+				}
+				case(_Return): {
+					response += " R{t;a;n}[f(t)]\n";
+					response += "   Итерирует функцию f(t)\n";
+					response += "      t -> переменная\n";
+					response += "      a -> начальное значение переменной t\n";
+					response += "      n -> количество итераций\n";
+					response += "   f(t) -> итерируемая функция\n";
+					response += "   R{t;a;n}[f(t)] = f(f(...f(a)...))\n";
+					response += " Пример:\n";
+					response += "   R{t;13;0}[t-5] = 13\n";
+					response += "   R{t;13;3}[t-5] = (((13-5)-5)-5) = -2\n";
+					std::cout << response;
+					return true;
+				}
+				case(_Integral): {
+					response += " I{t;a;b}[f(t)]\n";
+					response += "   Интеграл функции f(t)\n";
+					response += "      t -> переменная\n";
+					response += "      a -> нижний предел\n";
+					response += "      b -> верхний предел\n";
+					response += "   f(t) -> функция от переменной t\n";
+					response += " Пример:\n";
+					response += "   I{t;0;1}[t] = 0.5\n";
+					std::cout << response;
+					return true;
+				}
+				case(_IntegralAlongExp): {
+					response += " Iexp{t;a;b}[f(t)]\n";
+					response += "   Криволинейный интеграл функции f(t)\n";
+					response += "      t -> переменная\n";
+					response += "      a -> нижний предел\n";
+					response += "      b -> верхний предел\n";
+					response += "   f(t) -> функция от переменной t\n";
+					response += " Пример:\n";
+					response += "   Iexp{t;1;-1}[1/t] = πi\n";
+					std::cout << response;
+					return true;
+				}
+				case(_Derivative): {
+					response += " D{t;x}[f(t)]\n";
+					response += "   Производная функции f(t) в точке x\n";
+					response += " D{t;x;n}[f(t)]\n";
+					response += "   n-ная производная функции f(t) в точке x\n";
+					response += "      t -> переменная\n";
+					response += "      x -> \n";
+					response += "      n -> порядок производной\n";
+					response += "   f(t) -> функция от переменной t\n";
+					response += " Пример:\n";
+					response += "   D{t;2}[t^2] = 2t|t=2 = 4\n";
+					response += "   D{t;1;2}[t^3] = 6t|t=1 = 6\n";
+					std::cout << response;
+					return true;
+				}
+				case(_ForwardDifference): {
+					response += " FD{t;x}[f(t)] = f(t+1) - f(t)\n";
+					response += "   Правая разность функции f(t) в точке x\n";
+					response += " FD{t;x;n}[f(t)]\n";
+					response += "   n-ная правая разность функции f(t) в точке x\n";
+					response += "      t -> переменная\n";
+					response += "      x -> \n";
+					response += "      n -> порядок разности\n";
+					response += "   f(t) -> функция от переменной t\n";
+					response += " Пример:\n";
+					response += "   FD{t;2}[t^2] = (t+1)^2-t^2 = 3^2-2^2 = 5\n";
+					std::cout << response;
+					return true;
+				}
+				case(_BackwardDifference): {
+					response += " BD{t;x}[f(t)] = f(t) - f(t-1)\n";
+					response += "   Левая разность функции f(t) в точке x\n";
+					response += " BD{t;x;n}[f(t)]\n";
+					response += "   n-ная левая разность функции f(t) в точке x\n";
+					response += "      t -> переменная\n";
+					response += "      x -> \n";
+					response += "      n -> порядок разности\n";
+					response += "   f(t) -> функция от переменной t\n";
+					response += " Пример:\n";
+					response += "   BD{t;2}[t^2] = t^2-(t-1)^2 = 2^2-1^2 = 3\n";
+					std::cout << response;
+					return true;
+				}
+				case(_Polynomial): {
+					response += " Poly{t;f(t);x}[...]\n";
+					response += "    Полиноминальная аппроксимация функции f(t) в точке x\n";
+					response += "      t -> переменная\n";
+					response += "   f(t) -> функция от переменной t\n";
+					response += "      x -> \n";
+					response += "    ... -> список значений переменной t\n";
+					response += " Пример:\n";
+					response += "   >def f(x) = Poly{t;cos(t);x}[1;2;3;4;5;6]\n";
+					response += "   -> f(x) = ax^5 + bx^4 + cx^3 + ...\n";
+					std::cout << response;
+					return true;
+				}
+				case(_If): {
+					response += " if{x}[a;b]\n";
+					response += "    Функция ветвления\n";
+					response += "      x -> условие (логическое выражение)\n";
+					response += "      a -> значение если условие истинно\n";
+					response += "      b -> значение если условие ложно\n";
+					response += " Пример:\n";
+					response += "   >def f(x) = if{x >= 0}[cos(x);sin(x)]   - кусочно-заданная функция\n";
+					response += "   >def f(x) = if{x = 0}[1;sin(x)/x]       - устранение разрыва у функции\n";
+					std::cout << response;
+					return true;
+				}
 
-					default: {
-						response += "  unknown function\n";
-						std::cout << response;
-						return true;
-					}
-					}
+				default: {
+					response += "  unknown function\n";
+					std::cout << response;
+					return true;
+				}
 				}
 			}
 		}

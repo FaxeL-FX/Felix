@@ -6,7 +6,7 @@
 #endif
 
 namespace math {
-	extern const long double pi, inf;
+	extern const double pi, inf;
 
 	bool sign(double);
 	int E(double);
@@ -48,9 +48,7 @@ namespace math {
 			return std::to_string(this->R) + "+" + std::to_string(this->i) + "i";
 		}
 	};
-	extern const complex
-		i,
-		fctIntegralConstant;
+	extern const complex i;
 
 	complex getFctIntegralConstant();
 
@@ -63,6 +61,7 @@ namespace math {
 	complex operator<<(complex, int);
 	complex operator>>(complex, int);
 	bool operator==(complex, complex);
+	bool operator!=(complex, complex);
 
 	//	functions
 	long double rand(int, std::vector<long double>);
@@ -135,6 +134,7 @@ namespace math {
 
 	complex fct(complex x);
 	complex inv_fct(complex x);
+	complex gamma(complex x);
 	complex fctIntegral(complex x, complex n);
 	complex Harmonic(complex x);
 	complex zeta(complex x);
@@ -212,7 +212,7 @@ namespace math {
 			return str;
 		}
 	};
-	extern const infsim infinity, zero, lnInf, fctIntegralConst;
+	extern const infsim infinity, zero, lnInf;
 
 	infsim operator+(infsim x, infsim y);
 	infsim operator-(infsim x);
@@ -265,8 +265,7 @@ namespace math {
 
 	infsim fct(infsim x);
 	infsim inv_fct(infsim x);
-	infsim getFctIntegralConst();
-	infsim fctIntegral(infsim x);
+	infsim gamma(infsim x);
 	infsim fctIntegral(infsim x, infsim y);
 	infsim Harmonic(infsim x);
 	infsim zeta(infsim x);
