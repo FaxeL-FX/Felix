@@ -87,7 +87,7 @@ namespace math {
 	long double arccos(long double);
 
 	double factorial(double x);
-	double Binomial(double n, double k);
+	double Binom(double n, double k);
 
 	//	complex
 	complex floor(complex);

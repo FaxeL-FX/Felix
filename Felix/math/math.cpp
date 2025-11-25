@@ -174,12 +174,18 @@ namespace math {
 		if (x < -1.0) return 1.0 / res;
 		return res;
 	}
-	double Binomial(double n, double k) {
-		double res = n;
-		for (int l = 1; l <= k; l++) {
-			res *= n / l - 1;
+	double Binom(double n, double k) {
+		if (k == floor(k)) {
+			double res = 1;
+			if (0 <= k) {
+				for (int l = 0; l < k; l++) {
+					res *= (n - l) / (l + 1);
+				}
+			}
+			else return 0;
+			return res;
 		}
-		return res;
+		return factorial(n) / (factorial(k) * factorial(n - k));
 	}
 
 	//	complex

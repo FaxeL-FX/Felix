@@ -701,9 +701,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			double d = 4294967296, delta = math::exp(-math::ln(d) / n);
 			for (int k = 1; k <= n; k++) {
 				(*args)[var_index].value = (*args)[var_index].value - delta;
-				res = res + (1 - 2 * (k % 2)) * 
-					math::factorial(n) / (math::factorial(k) * math::factorial(n - k)) * 
-					(*objects)[this->arg_indexes[3]].return_value(objects, args);
+				res = res + (1 - 2 * (k % 2)) * math::Binom(n, k) * (*objects)[this->arg_indexes[3]].return_value(objects, args);
 			}
 
 			args->erase(args->begin() + var_index);
@@ -717,9 +715,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			double n = ((math::complex)(*objects)[this->arg_indexes[2]].return_value(objects, args)).R;
 			for (int k = 1; k <= n; k++) {
 				(*args)[var_index].value = (*args)[var_index].value + 1;
-				res = res + (1 - 2 * (k % 2)) *
-					math::factorial(n) / (math::factorial(k) * math::factorial(n - k)) *
-					(*objects)[this->arg_indexes[3]].return_value(objects, args);
+				res = res + (1 - 2 * (k % 2)) * math::Binom(n, k) * (*objects)[this->arg_indexes[3]].return_value(objects, args);
 			}
 
 			args->erase(args->begin() + var_index);
@@ -733,9 +729,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			double n = ((math::complex)(*objects)[this->arg_indexes[2]].return_value(objects, args)).R;
 			for (int k = 1; k <= n; k++) {
 				(*args)[var_index].value = (*args)[var_index].value - 1;
-				res = res + (1 - 2 * (k % 2)) *
-					math::factorial(n) / (math::factorial(k) * math::factorial(n - k)) *
-					(*objects)[this->arg_indexes[3]].return_value(objects, args);
+				res = res + (1 - 2 * (k % 2)) * math::Binom(n, k) * (*objects)[this->arg_indexes[3]].return_value(objects, args);
 			}
 
 			args->erase(args->begin() + var_index);
