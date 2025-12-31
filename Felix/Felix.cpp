@@ -1,4 +1,4 @@
-﻿//	v1.11.1
+﻿//	v1.11.2
 
 #include <iostream>
 #include "include.h"
@@ -183,10 +183,10 @@ bool run_command(std::string c) {
 		if (args.size() < 3)	resolution = 400;
 		else					resolution = std::stoi(args[2]);
 		if (resolution < 0) resolution = -resolution;
-		if (1600 < resolution) resolution = 1600;
 		int prc = resolution + (prc_count < resolution) * (prc_count - resolution);
 		std::vector<std::vector<float>> img;
 		std::vector<std::vector<float>>* im = &img;
+		img.reserve(resolution * resolution);
 		for (int i = 0; i < resolution * resolution; i++) img.push_back({ 0, 0, 0 });
 
 		std::vector<Function> target_fncs;

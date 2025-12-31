@@ -167,16 +167,16 @@ namespace math {
 		return sqrt(2 - res) * (1 << 8);
 	}
 
-	double factorial(double x) {
-		double res = 1.0;
-		for (double k = 2.0; k <= x; k++) res *= k;
-		for (double k = -1.0; x < k; k--) res *= k;
+	long double factorial(long double x) {
+		long double res = 1.0;
+		for (long double k = 2.0; k <= x; k++) res *= k;
+		for (long double k = -1.0; x < k; k--) res *= k;
 		if (x < -1.0) return 1.0 / res;
 		return res;
 	}
-	double Binom(double n, double k) {
+	long double Binom(long double n, long double k) {
 		if (k == floor(k)) {
-			double res = 1;
+			long double res = 1;
 			if (0 <= k) {
 				for (int l = 0; l < k; l++) {
 					res *= (n - l) / (l + 1);
@@ -186,6 +186,19 @@ namespace math {
 			return res;
 		}
 		return factorial(n) / (factorial(k) * factorial(n - k));
+	}
+	std::vector<long double> zbfValues = {};
+	long double zbf(int x) {
+		if (x == -1)	return -1;
+		if (x < -1)		return 0;
+		if (x < zbfValues.size()) return zbfValues[x];
+
+		long double res = 0;
+		for (int k = 1; k <= x + 1; k++) {
+			res = res + zbf(x - k) * (2 * (k % 2) - 1) / factorial(k + 1);
+		}
+		zbfValues.push_back(res);
+		return res;
 	}
 
 	//	complex
@@ -376,20 +389,8 @@ namespace math {
 		return res1 / (1 - 2 * pow(2, x));
 	}
 	complex zetaByFct(complex x) {
-		if (x == complex(-1)) return -1;
-		if (x.R < -1) {
-			complex res = 0;
-			for (int k = 1; k < 64; k++) {
-				res = res + (2 * (k % 2) - 1) * pow(k, x);
-			}
-			return -res / (1 - 2 * pow(2, x)) * sin1(x) * fct(-x - 1);
-		}
-
-		complex res = 0;
-		for (int k = 1; k < x.R + 64; k++) {
-			res = res + zetaByFct(x - k) * (2 * (k % 2) - 1) / factorial(k + 1);
-		}
-		return res;
+		if (x.i == 0 && x.R == floor(x.R)) return zbf(x.R);
+		return zeta(x) / fct(x);
 	}
 
 	// infsim

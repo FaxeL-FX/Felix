@@ -86,8 +86,10 @@ namespace math {
 	long double sin(long double);
 	long double arccos(long double);
 
-	double factorial(double x);
-	double Binom(double n, double k);
+	long double factorial(long double x);
+	long double Binom(long double n, long double k);
+	extern std::vector<long double> zbfValues;
+	long double zbf(int x);
 
 	//	complex
 	complex floor(complex);

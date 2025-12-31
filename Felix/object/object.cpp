@@ -63,6 +63,8 @@ ObjType nameToType(std::string token) {
 	if (token == "D" || token == "Derivative")				return ObjType::_Derivative;
 	if (token == "Iexp" || token == "IntegralAlongExp")		return ObjType::_IntegralAlongExp;
 	if (token == "Poly" || token == "Polynomial")			return ObjType::_Polynomial;
+	if (token == "SumZ")									return ObjType::_SumZeta;
+	if (token == "SumFD")									return ObjType::_SumFD;
 
 	if (token == "abs")						return ObjType::_abs;
 	if (token == "inv_abs")					return ObjType::_inv_abs;
@@ -491,6 +493,45 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 				return (*objects)[this->arg_indexes[1]].return_value(objects, args);
 			return (*objects)[this->arg_indexes[2]].return_value(objects, args);
 		}
+
+		case(ObjType::_SumZeta): {
+			int var_index = args->size(), n = 256;
+			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, 0));
+
+			math::number res, integ, dx = args_results[1] / n;
+			(*args)[var_index].value = (*args)[var_index].value + dx * 0.5;
+			for (int k = 0; k < n; k++) {
+				integ = integ + (*objects)[this->arg_indexes[2]].return_value(objects, args);
+				(*args)[var_index].value = (*args)[var_index].value + dx;
+			}
+			res = integ * dx;
+
+			(*args)[var_index].value = args_results[1];
+			res = res + (*objects)[this->arg_indexes[2]].return_value(objects, args) * 0.5;
+
+			for (int k = 1; k <= 12; k++) {
+				(*args)[var_index].value = args_results[1];
+				math::number der = (*objects)[this->arg_indexes[2]].return_value(objects, args);
+				long double d = 4294967296, delta = math::exp(-math::ln(d) / k);
+				for (int l = 1; l <= k; l++) {
+					(*args)[var_index].value = (*args)[var_index].value - delta;
+					der = der + (1 - 2 * (l % 2)) * math::Binom(k, l) * (*objects)[this->arg_indexes[2]].return_value(objects, args);
+				}
+				res = res - math::zbf(k) * (der * d);
+			}
+
+			args->erase(args->begin() + var_index);
+			return res;
+		}
+		case(ObjType::_SumFD): {
+			int var_index = args->size();
+			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+
+
+
+			args->erase(args->begin() + var_index);
+			return 0;
+		}
 	}
 	case(4): switch (this->type) {
 		case(ObjType::_Sum):
@@ -669,6 +710,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
 			math::number res = 0, dx = (args_results[2] - args_results[1]) / n;
+			(*args)[var_index].value = (*args)[var_index].value + dx * 0.5;
 			for (int k = 0; k < n; k++) {
 				res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args);
 				(*args)[var_index].value = (*args)[var_index].value + dx;
@@ -698,7 +740,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 
 			double n = ((math::complex)(*objects)[this->arg_indexes[2]].return_value(objects, args)).R;
 			if (n == 0) return res;
-			double d = 4294967296, delta = math::exp(-math::ln(d) / n);
+			long double d = 4294967296, delta = math::exp(-math::ln(d) / n);
 			for (int k = 1; k <= n; k++) {
 				(*args)[var_index].value = (*args)[var_index].value - delta;
 				res = res + (1 - 2 * (k % 2)) * math::Binom(n, k) * (*objects)[this->arg_indexes[3]].return_value(objects, args);
