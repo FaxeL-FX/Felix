@@ -1,4 +1,4 @@
-﻿//	v1.11.2
+﻿//	v1.11.3
 
 #include <iostream>
 #include "include.h"
@@ -385,20 +385,26 @@ bool run_command(std::string c) {
 		}
 
 		if (grid) {
-			for (int i = 1; i < 2 * plot_radius; i++) {
+			for (int i = 1; i <= 2 * plot_radius; i++) {
 				long double x = math::floor(plot_center.R - plot_radius) + i;
 				int iX = ((x - plot_center.R) / plot_radius + 1) * 0.5 * resolution;
 				for (int j = 0; j < resolution; j++) {
-					if (x == 0) img[j * resolution + iX] = toVecF(penAdd(img[j * resolution + iX], Color(0.5)));
-					else		img[j * resolution + iX] = toVecF(penAdd(img[j * resolution + iX], Color(0.25)));
+					int index = j * resolution + iX;
+					if (index < resolution * resolution) {
+						if (x == 0) img[index] = toVecF(penAdd(img[index], Color(0.5)));
+						else		img[index] = toVecF(penAdd(img[index], Color(0.25)));
+					}
 				}
 			}
-			for (int i = 1; i < 2 * plot_radius; i++) {
+			for (int i = 1; i <= 2 * plot_radius; i++) {
 				long double y = math::floor(plot_center.i - plot_radius) + i;
 				int iY = ((y - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
 				for (int j = 0; j < resolution; j++) {
-					if (y == 0) img[iY * resolution + j] = toVecF(penAdd(img[iY * resolution + j], Color(0.5)));
-					else		img[iY * resolution + j] = toVecF(penAdd(img[iY * resolution + j], Color(0.25)));
+					int index = iY * resolution + j;
+					if (index < resolution * resolution) {
+						if (y == 0) img[index] = toVecF(penAdd(img[index], Color(0.5)));
+						else		img[index] = toVecF(penAdd(img[index], Color(0.25)));
+					}
 				}
 			}
 		}
@@ -764,7 +770,7 @@ int main() {
 		std::getline(std::cin, expression);
 		if (expression[0] == '>') {
 			if (run_command(expression.substr(1)))	std::cout << " ----> done";
-			else									std::cout << " --x-> unknown command";
+			else									std::cout << " --X-> unknown command";
 		}
 		else {
 			math::number answer = value(parse_expr(expression), {});

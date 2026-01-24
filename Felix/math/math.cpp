@@ -202,8 +202,8 @@ namespace math {
 	}
 
 	//	complex
-	complex floor(complex x) { return complex(floor(x.R), floor(x.i)); }
-	complex ceil(complex x) { return complex(ceil(x.R), ceil(x.i)); }
+	complex floor(complex x) { return complex(floor(x.R), 0); }
+	complex ceil(complex x) { return complex(ceil(x.R), 0); }
 	long double abs(complex x) {
 		if (x.i == 0) return sign(x.R) * x.R;
 		if (x.R == 0) return sign(x.i) * x.i;
@@ -245,6 +245,7 @@ namespace math {
 	}
 	complex ln(complex x) { return complex(ln(abs(x)), arg(x)); }
 	complex pow(complex x, complex y) {
+		if (abs(y) == inf) return exp(y * ln(x));
 		complex res = 1;
 		for (; 0 < y.R;) {
 			res = res * x;
@@ -509,7 +510,7 @@ namespace math {
 	}
 	infsim ln(infsim x) {
 		int maxPower = accuracy - 1;
-		for (maxPower; 0 <= maxPower && x.getNum(maxPower).isZero(); maxPower--) {}
+		for (; 0 <= maxPower && x.getNum(maxPower).isZero(); maxPower--) {}
 		int maxPowerVal = maxPower - acch;
 		x = infsim(acch - maxPowerVal, 1.0) * x;
 		//return mul(lnInf, maxPowerVal) + ln_integral(x);
@@ -538,7 +539,7 @@ namespace math {
 	infsim arccoth(infsim x) { return arctanh(1 / x); }
 	infsim arctanh(infsim x) { return -0.5 * ln((1 - x) / (1 + x)); }
 
-	infsim cos(infsim x) { return      cosh(mul_i(x)); }
+	infsim cos(infsim x) { return        cosh(mul_i(x)); }
 	infsim sin(infsim x) { return -mul_i(sinh(mul_i(x))); }
 	infsim cot(infsim x) { return  mul_i(coth(mul_i(x))); }
 	infsim tan(infsim x) { return -mul_i(tanh(mul_i(x))); }

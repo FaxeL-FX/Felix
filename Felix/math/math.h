@@ -174,8 +174,8 @@ namespace math {
 		std::string toString() {
 			std::string str = "";
 			int lower = 0, higher = accuracy - 1;
-			for (higher; 0 <= higher && this->getNum(higher).isZero(); higher--) {}
-			for (lower; lower < accuracy && this->getNum(lower).isZero(); lower++) {}
+			for (; 0 <= higher && this->getNum(higher).isZero(); higher--) {}
+			for (; lower < accuracy && this->getNum(lower).isZero(); lower++) {}
 			for (int i = higher; i >= lower; i--) {
 				std::string numstr = this->Pol[i].toString();
 				if (numstr == "0") continue;
@@ -191,7 +191,7 @@ namespace math {
 		std::string toStringSmall() {
 			std::string str;
 			int index = accuracy - 1;
-			for (index; 0 <= index && this->getNum(index).isZero(); index--) {}
+			for (; 0 <= index && this->getNum(index).isZero(); index--) {}
 			if (index > acch)		return "inf";
 			if (index < acch)		return "0";
 			return this->Pol[index].toString();
@@ -199,8 +199,8 @@ namespace math {
 		std::string toStringLatex() {
 			std::string str = "";
 			int lower = 0, higher = accuracy - 1;
-			for (higher; 0 <= higher && this->getNum(higher).isZero(); higher--) {}
-			for (lower; lower < accuracy && this->getNum(lower).isZero(); lower++) {}
+			for (; 0 <= higher && this->getNum(higher).isZero(); higher--) {}
+			for (; lower < accuracy && this->getNum(lower).isZero(); lower++) {}
 			for (int i = higher; i >= lower; i--) {
 				if (i < higher)		str += "+";
 				/**/ if (i == acch)		str += "1\\cdot";
