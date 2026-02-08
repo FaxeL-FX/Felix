@@ -139,6 +139,23 @@ std::string parse_token(std::string expr) {
 			break;
 		}
 	}
+
+	if (2 < expr.length()) {
+		/**/ if (expr[0] == '!') {
+			switch (expr[1]) {
+			case('='):
+			case('&'):
+			case('|'):
+				return expr.substr(0, 2);
+			}
+		}
+		else if (expr[0] == '<' || expr[0] == '>') {
+			if (expr[1] == '=') {
+				return expr.substr(0, 2);
+			}
+		}
+	}
+
 	return expr.substr(0, i);
 }
 void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, int begin, int end) {
