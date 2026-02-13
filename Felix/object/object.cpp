@@ -723,22 +723,25 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		}
 
 		case(ObjType::_Integral): {
-			const int n = 256;
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+
+			const int n = 16 * (1 + math::abs(args_results[2] - args_results[1]));
 			math::number res = 0, dx = (args_results[2] - args_results[1]) / n;
 			(*args)[var_index].value = (*args)[var_index].value + dx * 0.5;
 			for (int k = 0; k < n; k++) {
 				res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args);
 				(*args)[var_index].value = (*args)[var_index].value + dx;
 			}
+
 			args->erase(args->begin() + var_index);
 			return res * dx;
 		}
 		case(ObjType::_IntegralAlongExp): {
-			const int n = 256;
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+
+			const int n = 512 * (1 + math::abs(math::ln(args_results[2] / args_results[1])));
 			math::number res = 0, dx = (math::ln(args_results[2] / args_results[1])) / n, x = math::ln(args_results[1]), dt;
 			for (int k = 0; k < n; k++) {
 				dt = math::exp(x + dx) - math::exp(x);
@@ -746,6 +749,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 				x = x + dx;
 				(*args)[var_index].value = math::exp(x);
 			}
+
 			args->erase(args->begin() + var_index);
 			return res;
 		}
