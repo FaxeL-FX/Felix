@@ -1,4 +1,4 @@
-﻿//	v1.12.1
+﻿//	v1.12.2
 
 #include <iostream>
 #include "include.h"
@@ -180,7 +180,7 @@ bool run_command(std::string c) {
 		int resolution = 400;	// bmp/gif
 		int frames = 24;		// gif
 		uint32_t delay = 5;		// gif
-		math::complex start_value = 0, end_value = 1;	// parameter
+		math::number start_value = 0, end_value = 1;	// parameter
 
 		for (int i = 2; i < args.size(); i++) {
 			/**/ if (args[i] == "noGrid") grid = false;
@@ -243,7 +243,7 @@ bool run_command(std::string c) {
 			args[1] = args[1].substr(args[1].find_first_of(";,") + 1);
 		}
 
-		auto render_graph = [&](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, Color color, math::complex parameter)
+		auto render_graph = [&](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, Color color, math::number parameter)
 			{
 				int iY, iYp;
 				long double start = plot_center.R - plot_radius, step = 2 * plot_radius / resolution;
@@ -279,7 +279,7 @@ bool run_command(std::string c) {
 					(*progress) += resolution;
 				}
 			};
-		auto render_eq = [&](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, Color color, math::complex parameter)
+		auto render_eq = [&](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, Color color, math::number parameter)
 			{
 				long double
 					startX = plot_center.R - plot_radius,
@@ -316,7 +316,7 @@ bool run_command(std::string c) {
 					}
 				}
 			};
-		auto render_complex = [&](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, Color color, math::complex parameter)
+		auto render_complex = [&](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, Color color, math::number parameter)
 			{
 				long double
 					startX = plot_center.R - plot_radius,
@@ -354,14 +354,14 @@ bool run_command(std::string c) {
 				}
 			};
 
-		std::function<void(std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, Color color, math::complex parameter)> 
+		std::function<void(std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, Color color, math::number parameter)>
 			render_function = render_graph;
 		/**/ if (eq)	render_function = render_eq;
 		else if (cmplx) render_function = render_complex;
 
 		double colorNum = 0;
 		Color col(1);
-		math::complex p = start_value;
+		math::number p = start_value;
 		std::vector<uint8_t> image;
 		image.resize(resolution * resolution * 4);
 
@@ -392,7 +392,7 @@ bool run_command(std::string c) {
 				if (f.args.size() == 0) return false;
 				std::vector<std::thread> thr(prc);
 				for (int i = 0; i < prc; i++) {
-					thr[i] = std::thread([&](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, Color color, math::complex parameter) {
+					thr[i] = std::thread([&](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, Color color, math::number parameter) {
 						render_function(img, begin, end, resolution, f, progress, color, parameter);
 						}, im, i * resolution / prc, (i + 1) * resolution / prc, resolution, f, pr, col, p);
 				}

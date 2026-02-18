@@ -605,7 +605,7 @@ namespace math {
 		return res;
 	}
 	infsim Harmonic(infsim x) {
-		if (x.getNum(acch).R < -0.5) return Harmonic(-x - 1) - pi * cot(pi * x);
+		if (x.getNum(acch).R < -0.5) return Harmonic(-x - 1) - cos1(x) / sin1(x);
 		int n = 64;
 		infsim res = ln(1 + x / n);
 		for (int k = 1; k <= n; k++)
