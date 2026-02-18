@@ -1,4 +1,4 @@
-﻿//	v1.12
+﻿//	v1.12.1
 
 #include <iostream>
 #include "include.h"
@@ -176,18 +176,38 @@ bool run_command(std::string c) {
 	if (args[0] == "print") {
 		bool grid = true, cmplx = false, eq = false, gif = false, one_thread = false;
 		if (args.size() < 2) return false;
-		for (int i = 3; i < args.size(); i++) {
+
+		int resolution = 400;	// bmp/gif
+		int frames = 24;		// gif
+		uint32_t delay = 5;		// gif
+		math::complex start_value = 0, end_value = 1;	// parameter
+
+		for (int i = 2; i < args.size(); i++) {
 			/**/ if (args[i] == "noGrid") grid = false;
 			else if (args[i] == "c") cmplx = true;
 			else if (args[i] == "eq") eq = true;
 			else if (args[i] == "gif") gif = true;
 			else if (args[i] == "one_thread") one_thread = true;
+
+			else if (args[i].substr(0, 4) == "res=") {	// substr(length)
+				resolution = std::stoi(args[i].substr(4));
+				if (resolution < 0)	resolution = -resolution;
+			}
+			else if (args[i].substr(0, 7) == "frames=") {
+				frames = std::stoi(args[i].substr(7));
+				if (resolution < 0)	frames = -frames;
+			}
+			else if (args[i].substr(0, 6) == "delay=") {
+				delay = std::stoi(args[i].substr(6));
+			}
+			else if (args[i].substr(0, 8) == "p_start=") {
+				start_value = value(parse_expr(args[i].substr(8)), {});
+			}
+			else if (args[i].substr(0, 6) == "p_end=") {
+				end_value = value(parse_expr(args[i].substr(6)), {});
+			}
 		}
 
-		int resolution;
-		if (args.size() < 3)	resolution = 400;
-		else					resolution = std::stoi(args[2]);
-		if (resolution < 0)		resolution = -resolution;
 		int prc = prc_count;
 		if (prc > resolution) prc = resolution;
 		if (one_thread) prc = 1;
@@ -229,15 +249,15 @@ bool run_command(std::string c) {
 				long double start = plot_center.R - plot_radius, step = 2 * plot_radius / resolution;
 				math::complex res;
 				f.args[0].value = start + step * (begin - 1);
+				if (gif && f.args.size() == 2) {
+					f.args[1].value = parameter;
+				}
 				res = f.return_value();
 				iYp = ((res.R - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
 				if (resolution <= iYp) iYp = resolution - 1;
 				if (iYp < 0) iYp = 0;
 				for (int iX = begin; iX < end && iX < resolution; iX++) {
 					f.args[0].value = start + step * iX;
-					if (gif && f.args.size() == 2) {
-						f.args[1].value = parameter;
-					}
 					res = f.return_value();
 					iY = ((res.R - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
 					if (resolution <= iY) iY = resolution - 1;
@@ -341,17 +361,15 @@ bool run_command(std::string c) {
 
 		double colorNum = 0;
 		Color col(1);
-		const int p_n = 24;
-		math::complex p;
+		math::complex p = start_value;
 		std::vector<uint8_t> image;
 		image.resize(resolution * resolution * 4);
 
 		GifWriter writer = {};
-		uint32_t delay = 10;
-		GifBegin(&writer, "graph.gif", resolution, resolution, delay);
+		if (gif) GifBegin(&writer, "graph.gif", resolution, resolution, delay);
 
-		for (int frame = 0; frame <= p_n; frame++) {
-			p = (double)frame / p_n;
+		for (int frame = 0; frame <= frames; frame++) {
+			p = start_value * (1 - (double)frame / frames) + end_value * ((double)frame / frames);
 			for (int i = 0; i < resolution * resolution; i++) img[i] = { 0, 0, 0 };
 
 			for (auto f : target_fncs) {
@@ -426,8 +444,9 @@ bool run_command(std::string c) {
 			}
 			GifWriteFrame(&writer, image.data(), resolution, resolution, delay);
 		}
-		BMPWriter::write_image(img, resolution, (char*)"graph.bmp");
-		GifEnd(&writer);
+		
+		if (gif) GifEnd(&writer);
+		else BMPWriter::write_image(img, resolution, (char*)"graph.bmp");
 		return true;
 	}
 	if (args[0] == "help") {
