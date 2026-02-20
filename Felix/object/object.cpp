@@ -66,15 +66,16 @@ ObjType nameToType(std::string token) {
 	if (token == "SumZ")									return ObjType::_SumZeta;
 	if (token == "SumFD")									return ObjType::_SumFD;
 
-	if (token == "abs")						return ObjType::_abs;
-	if (token == "inv_abs")					return ObjType::_inv_abs;
-	if (token == "arg")						return ObjType::_arg;
-	if (token == "sign" || token == "sgn")	return ObjType::_sign;
-	if (token == "Re")						return ObjType::_Re;
-	if (token == "Im")						return ObjType::_Im;
-	if (token == "floor")					return ObjType::_floor;
-	if (token == "ceil")					return ObjType::_ceil;
-	if (token == "round")					return ObjType::_round;
+	if (token == "abs")								return ObjType::_abs;
+	if (token == "inv_abs")							return ObjType::_inv_abs;
+	if (token == "arg")								return ObjType::_arg;
+	if (token == "sign" || token == "sgn")			return ObjType::_sign;
+	if (token == "Re")								return ObjType::_Re;
+	if (token == "Im")								return ObjType::_Im;
+	if (token == "floor")							return ObjType::_floor;
+	if (token == "ceil")							return ObjType::_ceil;
+	if (token == "round")							return ObjType::_round;
+	if (token == "normalize" || token == "norm")	return ObjType::_normalize;
 
 	if (token == "exist")	return ObjType::_exist;
 	if (token == "grid")	return ObjType::_grid;
@@ -416,6 +417,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		case(ObjType::_sign): return math::normalize(args_results[0]);
 		case(ObjType::_Re): return Re(args_results[0]);
 		case(ObjType::_Im): return Im(args_results[0]);
+		case(ObjType::_normalize): return math::normalize(args_results[0]);
 
 		case(ObjType::_floor): return math::floor(args_results[0]);
 		case(ObjType::_ceil): return math::ceil(args_results[0]);

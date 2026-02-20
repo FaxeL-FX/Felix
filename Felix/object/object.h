@@ -30,7 +30,7 @@ enum ObjType {
 	_Polynomial, _Return,
 	_SumZeta, _SumFD,
 
-	_abs, _inv_abs, _arg, _sign, _Re, _Im, _floor, _ceil, _round,
+	_abs, _inv_abs, _arg, _sign, _Re, _Im, _floor, _ceil, _round, _normalize,
 
 	_exist, _grid,
 	_and, _or, _equal, _smaller, _larger,
