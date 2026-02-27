@@ -90,6 +90,8 @@ namespace math {
 	long double Binom(long double n, long double k);
 	extern std::vector<long double> zbfValues;
 	long double zbf(int x);
+	extern std::vector<long double> zetaZeros;
+	long double zetaZero(int n);
 
 	//	complex
 	complex floor(complex);
@@ -141,6 +143,8 @@ namespace math {
 	complex Harmonic(complex x);
 	complex zeta(complex x);
 	complex zetaByFct(complex x);
+
+	complex USumN(complex x, complex n);
 
 
 	// infinitesimal (infsim)

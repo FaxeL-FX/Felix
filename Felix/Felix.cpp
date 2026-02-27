@@ -1,4 +1,4 @@
-﻿//	v1.12.3
+﻿//	v1.12.4
 
 #include <iostream>
 #include "include.h"
@@ -559,6 +559,7 @@ bool run_command(std::string c) {
 				response += " =>   floor(x)\n";
 				response += " =>    ceil(x)\n";
 				response += " =>   round(x)\n";
+				response += " =>    norm(x) | normalize(x)\n";
 
 				response += "\n Logic Functions\n";
 				response += " =>   exist(x) -> if number exist returns 0 else 1\n";

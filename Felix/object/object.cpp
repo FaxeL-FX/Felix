@@ -64,7 +64,7 @@ ObjType nameToType(std::string token) {
 	if (token == "Iexp" || token == "IntegralAlongExp")		return ObjType::_IntegralAlongExp;
 	if (token == "Poly" || token == "Polynomial")			return ObjType::_Polynomial;
 	if (token == "SumZ")									return ObjType::_SumZeta;
-	if (token == "SumFD")									return ObjType::_SumFD;
+	if (token == "USumN" || token == "UndefSumN")			return ObjType::_UndefSumN;
 
 	if (token == "abs")								return ObjType::_abs;
 	if (token == "inv_abs")							return ObjType::_inv_abs;
@@ -87,8 +87,9 @@ ObjType nameToType(std::string token) {
 	if (token == "zeta")							return ObjType::_zeta;
 	if (token == "zbf")								return ObjType::_zetaByFct;
 
+	if (token == "zetaZero") return ObjType::_zetaZero;
 
-	if (token == "rand")	return ObjType::_rand;
+	if (token == "rand") return ObjType::_rand;
 
 	return ObjType::_Default;
 }
@@ -421,7 +422,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 
 		case(ObjType::_floor): return math::floor(args_results[0]);
 		case(ObjType::_ceil): return math::ceil(args_results[0]);
-		case(ObjType::_round): return math::floor(args_results[0] + (math::number)(math::complex(0.5, 0.5)));
+		case(ObjType::_round): return math::floor(args_results[0] + (math::number)math::complex(0.5, 0.5));
 
 		case(ObjType::_exist): return !math::exist(args_results[0]);
 		case(ObjType::_grid): return math::grid(args_results[0]);
@@ -430,6 +431,8 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		case(ObjType::_Harmonic): return math::Harmonic(args_results[0]);
 		case(ObjType::_zeta): return math::zeta(args_results[0]);
 		case(ObjType::_zetaByFct): return math::zetaByFct(args_results[0]);
+
+		case(ObjType::_zetaZero): return math::zetaZero(((math::complex)args_results[0]).R);
 	}
 	case(2): switch (this->type) {
 		case(ObjType::_add): return args_results[0] + args_results[1];
@@ -477,6 +480,8 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		case(ObjType::_fctIntegral): return math::fctIntegral(args_results[0], args_results[1]);
 
 		case(ObjType::_Binom): return math::Binom(args_results[0], args_results[1]);
+
+		case(ObjType::_UndefSumN): return math::USumN(args_results[0], args_results[1]);
 	}
 	case(3): switch (this->type) {
 		case(ObjType::_Derivative): {
@@ -541,15 +546,6 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 
 			args->erase(args->begin() + var_index);
 			return res;
-		}
-		case(ObjType::_SumFD): {
-			int var_index = args->size();
-			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
-
-
-
-			args->erase(args->begin() + var_index);
-			return 0;
 		}
 	}
 	case(4): switch (this->type) {

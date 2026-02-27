@@ -28,7 +28,7 @@ enum ObjType {
 	_Product,
 	_Integral, _Derivative, _IntegralAlongExp,
 	_Polynomial, _Return,
-	_SumZeta, _SumFD,
+	_SumZeta, _UndefSumN,
 
 	_abs, _inv_abs, _arg, _sign, _Re, _Im, _floor, _ceil, _round, _normalize,
 
@@ -40,6 +40,8 @@ enum ObjType {
 	_fct, _inv_fct,
 	_gamma, _fctIntegral,
 	_zeta, _zetaByFct,
+
+	_zetaZero,
 };
 
 struct Variable {
