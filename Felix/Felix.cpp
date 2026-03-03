@@ -1,4 +1,4 @@
-﻿//	v1.12.4
+﻿//	v1.12.5
 
 #include <iostream>
 #include "include.h"
@@ -547,7 +547,6 @@ bool run_command(std::string c) {
 				response += " =>            D{t;x}[f(t)] -> Derivative\n";
 				response += " =>          D{t;x;n}[f(t)] -> n-th Derivative\n";
 				response += " =>       Iexp{t;a;b}[f(t)] -> Integral along exp\n";
-				response += " => Poly{t;f(t);x}[a;b;...] -> Polynomial\n";
 
 				response += "\n Value Functions\n";
 				response += " =>     abs(x) -> absolute value\n";
@@ -572,7 +571,9 @@ bool run_command(std::string c) {
 				response += " => rand | rand(...)\n";
 
 				response += "\n Experimental Functions\n";
-				response += " =>   zbf(x) -> zeta(x)/x!\n";
+				response += " => Poly{t;f(t);x}[a;b;...] -> Polynomial\n";
+				response += " =>                  zbf(x) -> zeta(x)/x!\n";
+				response += " =>              USumN(x,n) -> Undefined sum of x^n\n";
 
 				std::cout << response;
 				return true;
@@ -805,6 +806,7 @@ int main() {
 	std::string expression;
 	int count = 0;
 	for (;;) {
+		std::cout << " ";
 		std::getline(std::cin, expression);
 		if (expression[0] == '>') {
 			if (run_command(expression.substr(1)))	std::cout << " ----> done";

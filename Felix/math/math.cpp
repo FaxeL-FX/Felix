@@ -478,21 +478,26 @@ namespace math {
 		return res;
 	}
 	complex zeta(complex x) {
-		if (x.R > 3) return -fct(x) * exp(-x * 1.83787706640934548356) * sin1(x * 0.5) * zeta(-x - 1);
-		if (x.R < -170) return 1;
-		int n = 64;
+		if (x == 0) return -0.5;
+		if (-0.5 < x.R) return -fct(x) * exp(-x * 1.83787706640934548356) * sin1(x * 0.5) * zeta(-x - 1);
+		int n = 512;
 		long double pow2 = 1;
 		complex res1 = 0;
-
+#if 0
 		for (int i = 0; i < n; i++) {
 			complex res2 = 0;
 			for (int j = 0; j <= i; j++) {
-				res2 = res2 + (1 - 2 * (j % 2)) * factorial(i) / factorial(i - j) * pow(j + 1, x) / factorial(j);
+				res2 = res2 + (1 - 2 * (j % 2)) * Binom(i, j) * pow(j + 1, x);
 			}
 			pow2 *= 0.5;
 			res1 = res1 + res2 * pow2;
 		}
-
+#else
+		for (int i = 0; i < n; i++) {
+			res1 = res1 + (1 - 2 * (i % 2)) * pow(i + 1, x);
+		}
+		res1 = res1 + 0.5 * (1 - 2 * (n % 2)) * pow(n + 1, x);
+#endif
 		return res1 / (1 - 2 * pow(2, x));
 	}
 	complex zetaByFct(complex x) {
@@ -501,10 +506,13 @@ namespace math {
 	}
 
 	complex USumN(complex x, complex n) {
-		if (x.R < 1) return USumN(x + 1, n) - pow(x + 1, n);
 		complex res;
+		for (; x.R < 1;) {
+			x = x + 1;
+			res = res - pow(x, n);
+		}
 		if (0 <= n.R) {
-			res = pow(x, n + 1) / (n + 1) + pow(x, n) * 0.5;
+			res = res + pow(x, n + 1) / (n + 1) + pow(x, n) * 0.5;
 			if (n.i == 0 && floor(n.R) == n.R) {
 				for (int k = 1; k <= n.R;) {
 					res = res - zetaByFct(k) * fct(n) / fct(n - k) * pow(x, n - k);
@@ -513,7 +521,7 @@ namespace math {
 				return res;
 			}
 			else {
-				for (int k = 1; k <= n.R;) {
+				for (int k = 1; k <= n.R + 8;) {
 					res = res - zetaByFct(k) * fct(n) / fct(n - k) * pow(x, n - k);
 					k += 2;
 				}
@@ -522,8 +530,8 @@ namespace math {
 		}
 		else {
 			int m = 64;
-			if (n == -1)	res = ln(x + m + 0.5);
-			else			res = pow(x + m + 0.5, n + 1) / (n + 1);
+			if (n == -1)	res = res + ln(x + m + 0.5);
+			else			res = res + pow(x + m + 0.5, n + 1) / (n + 1);
 			for (int k = 1; k <= m; k++) res = res - pow(x + k, n);
 			return res;
 		}
