@@ -406,21 +406,25 @@ namespace math {
 		x.R = fmod(x.R + 1.0, 2.0) - 1.0;
 		/**/ if (x.R > 0.5) return sin1(1 - x);
 		else if (x.R < -0.5) return sin1(-1 - x);
-		complex res = x;
-		for (int i = 1; i < 64; i++) {
+		return sin(pi * x) / pi;
+
+		/*complex res = x;
+		for (int i = 1; i < 4096; i++) {
 			res = res * (1 - x * x / (i * i));
 		}
-		return res;
+		return res;*/
 	}
 	complex cos1(complex x) {
 		x.R = fmod(x.R + 1.0, 2.0) - 1.0;
 		/**/ if (x.R > 0.5) return -cos1(1 - x);
 		else if (x.R < -0.5) return -cos1(-1 - x);
-		complex res = 1;
+		return cos(pi * x);
+
+		/*complex res = 1;
 		for (double i = 0.5; i < 64; i++) {
 			res = res * (1 - x * x / (i * i));
 		}
-		return res;
+		return res; */
 	}
 	complex Binom(complex n, complex k) {
 		if (k.i == 0 && k.R == floor(k.R)) {
@@ -440,8 +444,14 @@ namespace math {
 
 	complex fct(complex x) {
 		if (x.R < -0.5) return -1 / (sin1(x) * fct(-1 - x));
-		float n = 2048.5;
-		complex res = exp(-x + (x + 0.5) * ln(x + n) - 0.5 * ln(n));
+		if (abs(x) == inf) return exp(x);
+		complex res = 1;
+		for (;1 <= x.R;) {
+			res = res * x;
+			x = x - 1;
+		}
+		float n = 128.5;
+		res = res * exp(-x + (x + 0.5) * ln(x + n) - 0.5 * ln(n));
 		for (int i = 1; i < n; i++) res = res * i / (x + i) / n * (x + n);
 		return res;
 	}
@@ -479,11 +489,11 @@ namespace math {
 	}
 	complex zeta(complex x) {
 		if (x == 0) return -0.5;
-		if (-0.5 < x.R) return -fct(x) * exp(-x * 1.83787706640934548356) * sin1(x * 0.5) * zeta(-x - 1);
-		int n = 512;
-		long double pow2 = 1;
+		if (-0.5 < x.R) return -fct(x) * pow(2 * pi, -x) * sin1(x * 0.5) * zeta(-x - 1);
+		int n = 128;
 		complex res1 = 0;
 #if 0
+		long double pow2 = 1;
 		for (int i = 0; i < n; i++) {
 			complex res2 = 0;
 			for (int j = 0; j <= i; j++) {
@@ -498,7 +508,7 @@ namespace math {
 		}
 		res1 = res1 + 0.5 * (1 - 2 * (n % 2)) * pow(n + 1, x);
 #endif
-		return res1 / (1 - 2 * pow(2, x));
+		return res1 / (1 - pow(2, x + 1));
 	}
 	complex zetaByFct(complex x) {
 		if (x.i == 0 && x.R == floor(x.R)) return zbf(x.R);

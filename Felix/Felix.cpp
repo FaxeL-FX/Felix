@@ -1,4 +1,4 @@
-﻿//	v1.12.5
+﻿//	v1.12.6
 
 #include <iostream>
 #include "include.h"
