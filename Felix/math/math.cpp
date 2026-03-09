@@ -70,7 +70,7 @@ namespace math {
 		}
 		for (int i = 0; i < n / 64; i++) x = x * ((unsigned long long)1 << 63) * 2;
 		return x * ((unsigned long long)1 << n % 64);
-	}																						//	need to change for "flex_float" instead "long double"
+	}
 	complex operator>>(complex x, int n) { return x << -n; }
 	bool operator==(complex x, complex y) {
 		if (x.R == y.R && x.i == y.i) return true;
@@ -342,10 +342,10 @@ namespace math {
 	}
 
 	complex exp(complex x) {
-		if (x.R < -709) return 0;
+		//if (x.R < -709) return 0;
 		complex res = x >> 64;
 		if (res.R < 0) res = -res;
-		for (int i = 0; i < 64; i++) res = (res << 1) + res * res;
+		for (int i = 0; i < 64; i++) res = res * 2 + res * res;
 		if (x.R < 0) return 1 / (res + 1);
 		return res + 1;
 	}
@@ -450,7 +450,7 @@ namespace math {
 			res = res * x;
 			x = x - 1;
 		}
-		float n = 128.5;
+		float n = 512.5;
 		res = res * exp(-x + (x + 0.5) * ln(x + n) - 0.5 * ln(n));
 		for (int i = 1; i < n; i++) res = res * i / (x + i) / n * (x + n);
 		return res;
@@ -705,21 +705,13 @@ namespace math {
 		x.setNum(acch, fmod(x.getNum(acch).R + 1.0, 2.0) - 1.0);
 		/**/ if (x.getNum(acch).R > 0.5) return sin1(1 - x);
 		else if (x.getNum(acch).R < -0.5) return sin1(-1 - x);
-		infsim res = x;
-		for (int i = 1; i < 64; i++) {
-			res = res * (1 - div(x * x, i * i));
-		}
-		return res;
+		return sin(pi * x) / pi;
 	}
 	infsim cos1(infsim x) {
 		x.setNum(acch, fmod(x.getNum(acch).R + 1.0, 2.0) - 1.0);
 		/**/ if (x.getNum(acch).R > 0.5) return -cos1(1 - x);
 		else if (x.getNum(acch).R < -0.5) return -cos1(-1 - x);
-		infsim res = 1;
-		for (double i = 0.5; i < 64; i++) {
-			res = res * (1 - div(x * x, i * i));
-		}
-		return res;
+		return cos(pi * x);
 	}
 	infsim Binom(infsim n, infsim k) {
 		return fct(n) / (fct(k) * fct(n - k));
@@ -766,15 +758,26 @@ namespace math {
 		return res;
 	}
 	infsim zeta(infsim x) {
-		if (x.getNum(acch).R > 0) return -pow(2 * pi, -x) * sin1(x * 0.5) * fct(x) * zeta(-x - 1);
+		if (-1 == x.getNum(acch)) return -fct(x) * pow(2 * pi, -x) * sin1(x * 0.5) * zeta(-x - 1);
+		if (0 < x.getNum(acch).R) return -fct(x) * pow(2 * pi, -x) * sin1(x * 0.5) * zeta(-x - 1);
+		int n = 128;
 		infsim res1 = 0;
-		for (int i = 0; i < 12; i++) {
+#if 0
+		long double pow2 = 1;
+		for (int i = 0; i < n; i++) {
 			infsim res2 = 0;
 			for (int j = 0; j <= i; j++) {
-				res2 = res2 + (1 - 2 * (j % 2)) * factorial(i) * pow(j + 1, x) / (factorial(j) * factorial(i - j));
+				res2 = res2 + (1 - 2 * (j % 2)) * Binom(i, j) * pow(j + 1, x);
 			}
-			res1 = res1 + mul(res2, pow(complex(2.0), -(i + 1)));
+			pow2 *= 0.5;
+			res1 = res1 + res2 * pow2;
 		}
+#else
+		for (int i = 0; i < n; i++) {
+			res1 = res1 + (1 - 2 * (i % 2)) * pow(i + 1, x);
+		}
+		res1 = res1 + 0.5 * (1 - 2 * (n % 2)) * pow(n + 1, x);
+#endif
 		return res1 / (1 - pow(2, x + 1));
 	}
 }

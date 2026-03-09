@@ -1,4 +1,4 @@
-﻿//	v1.12.6
+﻿//	v1.12.7
 
 #include <iostream>
 #include "include.h"
@@ -207,6 +207,8 @@ bool run_command(std::string c) {
 				end_value = value(parse_expr(args[i].substr(6)), {});
 			}
 		}
+
+		if (!gif) frames = 0;
 
 		int prc = prc_count;
 		if (prc > resolution) prc = resolution;
@@ -810,7 +812,7 @@ int main() {
 		std::getline(std::cin, expression);
 		if (expression[0] == '>') {
 			if (run_command(expression.substr(1)))	std::cout << " ----> done";
-			else									std::cout << " --X-> unknown command";
+			else									std::cout << " --X-> failed";
 		}
 		else {
 			math::number answer = value(parse_expr(expression), {});
