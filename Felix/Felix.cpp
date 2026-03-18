@@ -1,4 +1,4 @@
-﻿//	v1.12.7
+﻿//	v1.12.8
 
 #include <iostream>
 #include "include.h"
@@ -63,9 +63,9 @@ Color toCol(math::complex x) {
 	Color c;
 	float angle = math::arg(x), absolute = math::abs(x);
 	c.A = 1;
-	c.R = (math::cos(angle) + 1) * 0.5;
-	c.G = (math::cos(angle + 2.0943951) + 1) * 0.5;
-	c.B = (math::cos(angle - 2.0943951) + 1) * 0.5;
+	c.R = (std::cos(angle) + 1) * 0.5;
+	c.G = (std::cos(angle + 2.0943951) + 1) * 0.5;
+	c.B = (std::cos(angle - 2.0943951) + 1) * 0.5;
 	c.R = absMul(c.R, absolute);
 	c.G = absMul(c.G, absolute);
 	c.B = absMul(c.B, absolute);

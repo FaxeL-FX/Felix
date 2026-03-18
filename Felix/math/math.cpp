@@ -80,18 +80,18 @@ namespace math {
 
 	//	functions
 	long double rand(int seed, std::vector<long double> v) {
-		long double res = cos(seed);
+		long double res = std::cos((float)seed);
 		for (int i = 1; i <= 16; i++)
 			for (auto n : v)
-				res = res + sin(n) + res - 16 * floor(res * 0.0625);
+				res = res + std::sin(n) + res - 16 * floor(res * 0.0625);
 		res = fmod(res, 1.0);
 		return res;
 	}
 	long double rand(int seed, std::vector<complex> v) {
-		long double res = cos(seed);
+		long double res = std::cos((float)seed);
 		for (int i = 1; i <= 16; i++)
 			for (auto n : v)
-				res = res + sin(((complex)n).R) + res - 16 * floor(res * 0.0625);
+				res = res + std::sin(((complex)n).R) + res - 16 * floor(res * 0.0625);
 		res = fmod(res, 1.0);
 		return res;
 	}
@@ -378,30 +378,6 @@ namespace math {
 
 	complex conjugate(complex x) { return complex(x.R, -x.i); }
 
-	complex cosh(complex x) { return (exp(x) + exp(-x)) * 0.5; }
-	complex sinh(complex x) { return (exp(x) - exp(-x)) * 0.5; }
-	complex coth(complex x) {
-		complex positive = exp(x), negative = exp(-x);
-		return (positive + negative) / (positive - negative);
-	}
-	complex tanh(complex x) {
-		complex positive = exp(x), negative = exp(-x);
-		return (positive - negative) / (positive + negative);
-	}
-	complex arccosh(complex x) { return ln(x + sqrt(x * x - 1)); }
-	complex arcsinh(complex x) { return ln(x + sqrt(x * x + 1)); }
-	complex arccoth(complex x) { return arctanh(1 / x); }
-	complex arctanh(complex x) { return -0.5 * ln((1 - x) / (1 + x)); }
-
-	complex cos(complex x) { return        cosh(mul_i(x)); }
-	complex sin(complex x) { return -mul_i(sinh(mul_i(x))); }
-	complex cot(complex x) { return  mul_i(coth(mul_i(x))); }
-	complex tan(complex x) { return -mul_i(tanh(mul_i(x))); }
-	complex arccos(complex x) { return -mul_i(arccosh(x)); }
-	complex arcsin(complex x) { return -mul_i(arcsinh(mul_i(x))); }
-	complex arccot(complex x) { return  mul_i(arccoth(mul_i(x))); }
-	complex arctan(complex x) { return -mul_i(arctanh(mul_i(x))); }
-
 	complex sin1(complex x) {
 		x.R = fmod(x.R + 1.0, 2.0) - 1.0;
 		/**/ if (x.R > 0.5) return sin1(1 - x);
@@ -531,7 +507,7 @@ namespace math {
 				return res;
 			}
 			else {
-				for (int k = 1; k <= n.R + 8;) {
+				for (int k = 1; k < n.R + 16;) {
 					res = res - zetaByFct(k) * fct(n) / fct(n - k) * pow(x, n - k);
 					k += 2;
 				}
@@ -613,7 +589,7 @@ namespace math {
 		return res.R;
 	}
 	infsim mul_i(infsim x) {
-		for (int i = 0; i < accuracy; i++) x.setNum(i, x.getNum(i) * math::i);
+		for (int i = 0; i < accuracy; i++) x.setNum(i, mul_i(x.getNum(i)));
 		return x;
 	}
 	infsim floor(infsim x) {
@@ -676,30 +652,6 @@ namespace math {
 	}
 	infsim sqrt(infsim x) { return exp(0.5 * ln(x)); }
 	infsim inv_sqrt(infsim x) { return exp(-0.5 * ln(x)); }
-
-	infsim cosh(infsim x) { return (exp(x) + exp(-x)) * 0.5; }
-	infsim sinh(infsim x) { return (exp(x) - exp(-x)) * 0.5; }
-	infsim coth(infsim x) {
-		infsim positive = exp(x), negative = exp(-x);
-		return (positive + negative) / (positive - negative);
-	}
-	infsim tanh(infsim x) {
-		infsim positive = exp(x), negative = exp(-x);
-		return (positive - negative) / (positive + negative);
-	}
-	infsim arccosh(infsim x) { return ln(x + sqrt(x * x - 1)); }
-	infsim arcsinh(infsim x) { return ln(x + sqrt(x * x + 1)); }
-	infsim arccoth(infsim x) { return arctanh(1 / x); }
-	infsim arctanh(infsim x) { return -0.5 * ln((1 - x) / (1 + x)); }
-
-	infsim cos(infsim x) { return        cosh(mul_i(x)); }
-	infsim sin(infsim x) { return -mul_i(sinh(mul_i(x))); }
-	infsim cot(infsim x) { return  mul_i(coth(mul_i(x))); }
-	infsim tan(infsim x) { return -mul_i(tanh(mul_i(x))); }
-	infsim arccos(infsim x) { return -mul_i(arccosh(x)); }
-	infsim arcsin(infsim x) { return -mul_i(arcsinh(mul_i(x))); }
-	infsim arccot(infsim x) { return  mul_i(arccoth(mul_i(x))); }
-	infsim arctan(infsim x) { return -mul_i(arctanh(mul_i(x))); }
 
 	infsim sin1(infsim x) {
 		x.setNum(acch, fmod(x.getNum(acch).R + 1.0, 2.0) - 1.0);
@@ -779,5 +731,37 @@ namespace math {
 		res1 = res1 + 0.5 * (1 - 2 * (n % 2)) * pow(n + 1, x);
 #endif
 		return res1 / (1 - pow(2, x + 1));
+	}
+
+	infsim USumN(infsim x, infsim n) {
+		infsim res;
+		for (; x.getNum(acch).R < 1;) {
+			x = x + 1;
+			res = res - pow(x, n);
+		}
+		if (0 <= n.getNum(acch).R) {
+			res = res + pow(x, n + 1) / (n + 1) + pow(x, n) * 0.5;
+			if (n.getNum(acch).i == 0 && floor(n.getNum(acch).R) == n.getNum(acch).R) {
+				for (int k = 1; k <= n.getNum(acch).R;) {
+					res = res - mul(fct(n) / fct(n - k) * pow(x, n - k), zetaByFct(k));
+					k += 2;
+				}
+				return res;
+			}
+			else {
+				for (int k = 1; k < n.getNum(acch).R + 16;) {
+					res = res - mul(fct(n) / fct(n - k) * pow(x, n - k), zetaByFct(k));
+					k += 2;
+				}
+				return res;
+			}
+		}
+		else {
+			int m = 64;
+			if (n == -1)	res = res + ln(x + m + 0.5);
+			else			res = res + pow(x + m + 0.5, n + 1) / (n + 1);
+			for (int k = 1; k <= m; k++) res = res - pow(x + k, n);
+			return res;
+		}
 	}
 }

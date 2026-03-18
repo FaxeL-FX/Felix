@@ -114,24 +114,6 @@ namespace math {
 
 	complex conjugate(complex x);
 
-	complex cosh(complex x);
-	complex sinh(complex x);
-	complex coth(complex x);
-	complex tanh(complex x);
-	complex arccosh(complex x);
-	complex arcsinh(complex x);
-	complex arccoth(complex x);
-	complex arctanh(complex x);
-
-	complex cos(complex x);
-	complex sin(complex x);
-	complex cot(complex x);
-	complex tan(complex x);
-	complex arccos(complex x);
-	complex arcsin(complex x);
-	complex arccot(complex x);
-	complex arctan(complex x);
-
 	complex sin1(complex x);
 	complex cos1(complex x);
 	complex Binom(complex n, complex k);
@@ -148,7 +130,7 @@ namespace math {
 
 
 	// infinitesimal (infsim)
-	const unsigned int accuracy = 16u;
+	const unsigned int accuracy = 32u;
 	const int acch = accuracy >> 1;
 
 	struct infsim {
@@ -247,24 +229,6 @@ namespace math {
 	infsim sqrt(infsim x);
 	infsim inv_sqrt(infsim x);
 
-	infsim cosh(infsim x);
-	infsim sinh(infsim x);
-	infsim coth(infsim x);
-	infsim tanh(infsim x);
-	infsim arccosh(infsim x);
-	infsim arcsinh(infsim x);
-	infsim arccoth(infsim x);
-	infsim arctanh(infsim x);
-
-	infsim cos(infsim x);
-	infsim sin(infsim x);
-	infsim cot(infsim x);
-	infsim tan(infsim x);
-	infsim arccos(infsim x);
-	infsim arcsin(infsim x);
-	infsim arccot(infsim x);
-	infsim arctan(infsim x);
-
 	infsim sin1(infsim x);
 	infsim cos1(infsim x);
 	infsim Binom(infsim n, infsim k);
@@ -276,9 +240,35 @@ namespace math {
 	infsim Harmonic(infsim x);
 	infsim zeta(infsim x);
 
+	infsim USumN(infsim x, infsim n);
+
 #if infsimIsHere
 	typedef infsim number;
 #else
 	typedef complex number;
 #endif
+
+	template <typename NumT> NumT cosh(NumT x) { return (exp(x) + exp(-x)) * 0.5; }
+	template <typename NumT> NumT sinh(NumT x) { return (exp(x) - exp(-x)) * 0.5; }
+	template <typename NumT> NumT coth(NumT x) {
+		NumT positive = exp(x), negative = exp(-x);
+		return (positive + negative) / (positive - negative);
+	}
+	template <typename NumT> NumT tanh(NumT x) {
+		NumT positive = exp(x), negative = exp(-x);
+		return (positive - negative) / (positive + negative);
+	}
+	template <typename NumT> NumT arccosh(NumT x) { return ln(x + sqrt(x * x - 1)); }
+	template <typename NumT> NumT arcsinh(NumT x) { return ln(x + sqrt(x * x + 1)); }
+	template <typename NumT> NumT arccoth(NumT x) { return arctanh(1 / x); }
+	template <typename NumT> NumT arctanh(NumT x) { return -0.5 * ln((1 - x) / (1 + x)); }
+
+	template <typename NumT> NumT cos(NumT x) { return        cosh(mul_i(x)); }
+	template <typename NumT> NumT sin(NumT x) { return -mul_i(sinh(mul_i(x))); }
+	template <typename NumT> NumT cot(NumT x) { return  mul_i(coth(mul_i(x))); }
+	template <typename NumT> NumT tan(NumT x) { return -mul_i(tanh(mul_i(x))); }
+	template <typename NumT> NumT arccos(NumT x) { return -mul_i(arccosh(x)); }
+	template <typename NumT> NumT arcsin(NumT x) { return -mul_i(arcsinh(mul_i(x))); }
+	template <typename NumT> NumT arccot(NumT x) { return  mul_i(arccoth(mul_i(x))); }
+	template <typename NumT> NumT arctan(NumT x) { return -mul_i(arctanh(mul_i(x))); }
 }

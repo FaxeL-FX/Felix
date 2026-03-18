@@ -533,7 +533,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			(*args)[var_index].value = args_results[1];
 			res = res + (*objects)[this->arg_indexes[2]].return_value(objects, args) * 0.5;
 
-			for (int k = 1; k <= 12; k++) {
+			for (int k = 1; k < 20;) {
 				(*args)[var_index].value = args_results[1];
 				math::number der = (*objects)[this->arg_indexes[2]].return_value(objects, args);
 				long double d = 4294967296, delta = math::exp(-math::ln(d) / k);
@@ -542,6 +542,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 					der = der + (1 - 2 * (l % 2)) * math::Binom(k, l) * (*objects)[this->arg_indexes[2]].return_value(objects, args);
 				}
 				res = res - math::zbf(k) * (der * d);
+				k += 2;
 			}
 
 			args->erase(args->begin() + var_index);
