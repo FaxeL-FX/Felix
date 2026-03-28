@@ -188,16 +188,23 @@ namespace math {
 		return factorial(n) / (factorial(k) * factorial(n - k));
 	}
 	std::vector<long double> zbfValues = {};
+	std::mutex zbfMutex;
 	long double zbf(int x) {
 		if (x == -1)	return -1;
 		if (x < -1)		return 0;
-		if (x < zbfValues.size()) return zbfValues[x];
+		{
+			std::lock_guard<std::mutex> l{ zbfMutex };
+			if (x < zbfValues.size()) return zbfValues[x];
+		}
 
 		long double res = 0;
 		for (int k = 1; k <= x + 1; k++) {
 			res = res + zbf(x - k) * (2 * (k % 2) - 1) / factorial(k + 1);
 		}
-		zbfValues.push_back(res);
+		{
+			std::lock_guard<std::mutex> l{ zbfMutex };
+			zbfValues.push_back(res);
+		}
 		return res;
 	}
 	std::vector<long double> zetaZeros = {
@@ -507,7 +514,7 @@ namespace math {
 				return res;
 			}
 			else {
-				for (int k = 1; k < n.R + 16;) {
+				for (int k = 1; k < n.R + 8;) {
 					res = res - zetaByFct(k) * fct(n) / fct(n - k) * pow(x, n - k);
 					k += 2;
 				}

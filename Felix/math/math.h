@@ -260,7 +260,7 @@ namespace math {
 	}
 	template <typename NumT> NumT arccosh(NumT x) { return ln(x + sqrt(x * x - 1)); }
 	template <typename NumT> NumT arcsinh(NumT x) { return ln(x + sqrt(x * x + 1)); }
-	template <typename NumT> NumT arccoth(NumT x) { return arctanh(1 / x); }
+	template <typename NumT> NumT arccoth(NumT x) { return -0.5 * ln((x - 1) / (x + 1)); }
 	template <typename NumT> NumT arctanh(NumT x) { return -0.5 * ln((1 - x) / (1 + x)); }
 
 	template <typename NumT> NumT cos(NumT x) { return        cosh(mul_i(x)); }
