@@ -72,10 +72,7 @@ namespace math {
 		return x * ((unsigned long long)1 << n % 64);
 	}
 	complex operator>>(complex x, int n) { return x << -n; }
-	bool operator==(complex x, complex y) {
-		if (x.R == y.R && x.i == y.i) return true;
-		return false;
-	}
+	bool operator==(complex x, complex y) { return x.R == y.R && x.i == y.i; }
 	bool operator!=(complex x, complex y) { return !(x == y); }
 
 	//	functions

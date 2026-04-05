@@ -64,7 +64,8 @@ ObjType nameToType(std::string token) {
 	if (token == "Iexp" || token == "IntegralAlongExp")		return ObjType::_IntegralAlongExp;
 	if (token == "Poly" || token == "Polynomial")			return ObjType::_Polynomial;
 	if (token == "SumZ")									return ObjType::_SumZeta;
-	if (token == "USumN" || token == "UndefSumN")			return ObjType::_UndefSumN;
+	if (token == "USumN")									return ObjType::_UndefSumN;
+	if (token == "UIntN")									return ObjType::_UndefIntegralN;
 
 	if (token == "abs")								return ObjType::_abs;
 	if (token == "inv_abs")							return ObjType::_inv_abs;
@@ -482,6 +483,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		case(ObjType::_Binom): return math::Binom(args_results[0], args_results[1]);
 
 		case(ObjType::_UndefSumN): return math::USumN(args_results[0], args_results[1]);
+		case(ObjType::_UndefIntegralN): return math::UIntN(args_results[0], args_results[1]);
 	}
 	case(3): switch (this->type) {
 		case(ObjType::_Derivative): {

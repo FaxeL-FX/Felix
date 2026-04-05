@@ -28,7 +28,7 @@ enum ObjType {
 	_Product,
 	_Integral, _Derivative, _IntegralAlongExp,
 	_Polynomial, _Return,
-	_SumZeta, _UndefSumN,
+	_SumZeta, _UndefSumN, _UndefIntegralN,
 
 	_abs, _inv_abs, _arg, _sign, _Re, _Im, _floor, _ceil, _round, _normalize,
 

@@ -271,4 +271,9 @@ namespace math {
 	template <typename NumT> NumT arcsin(NumT x) { return -mul_i(arcsinh(mul_i(x))); }
 	template <typename NumT> NumT arccot(NumT x) { return  mul_i(arccoth(mul_i(x))); }
 	template <typename NumT> NumT arctan(NumT x) { return -mul_i(arctanh(mul_i(x))); }
+
+	template <typename NumT> NumT UIntN(NumT x, NumT n) {
+		if (n == NumT{ -1 }) return ln(x);
+		return pow(x, n + 1) / (n + 1);
+	}
 }
