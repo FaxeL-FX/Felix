@@ -80,6 +80,7 @@ ObjType nameToType(std::string token) {
 
 	if (token == "exist")	return ObjType::_exist;
 	if (token == "grid")	return ObjType::_grid;
+	if (token == "axis")	return ObjType::_axis;
 	if (token == "if")		return ObjType::_If;
 
 	if (token == "gamma")							return ObjType::_gamma;
@@ -87,6 +88,8 @@ ObjType nameToType(std::string token) {
 	if (token == "H")								return ObjType::_Harmonic;
 	if (token == "zeta")							return ObjType::_zeta;
 	if (token == "zbf")								return ObjType::_zetaByFct;
+	if (token == "Ei")								return ObjType::_ExpIntegral;
+	if (token == "Li")								return ObjType::_LogIntegral;
 
 	if (token == "zetaZero") return ObjType::_zetaZero;
 
@@ -427,11 +430,14 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 
 		case(ObjType::_exist): return !math::exist(args_results[0]);
 		case(ObjType::_grid): return math::grid(args_results[0]);
+		case(ObjType::_axis): return math::axis(args_results[0]);
 
 		case(ObjType::_gamma): return math::gamma(args_results[0]);
 		case(ObjType::_Harmonic): return math::Harmonic(args_results[0]);
 		case(ObjType::_zeta): return math::zeta(args_results[0]);
 		case(ObjType::_zetaByFct): return math::zetaByFct(args_results[0]);
+		case(ObjType::_ExpIntegral): return math::Ei(args_results[0]);
+		case(ObjType::_LogIntegral): return math::Li(args_results[0]);
 
 		case(ObjType::_zetaZero): return math::zetaZero(((math::complex)args_results[0]).R);
 	}

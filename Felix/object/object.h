@@ -32,7 +32,7 @@ enum ObjType {
 
 	_abs, _inv_abs, _arg, _sign, _Re, _Im, _floor, _ceil, _round, _normalize,
 
-	_exist, _grid,
+	_exist, _grid, _axis,
 	_and, _or, _equal, _smaller, _larger,
 	_Nand, _Nor, _Nequal, _smallerEQ, _largerEQ,
 	_If,
@@ -40,6 +40,7 @@ enum ObjType {
 	_fct, _inv_fct,
 	_gamma, _fctIntegral,
 	_zeta, _zetaByFct,
+	_ExpIntegral, _LogIntegral,
 
 	_zetaZero,
 };

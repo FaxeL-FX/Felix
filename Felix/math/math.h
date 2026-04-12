@@ -105,6 +105,7 @@ namespace math {
 	complex Re(complex x);
 	complex Im(complex x);
 	complex grid(complex x);
+	complex axis(complex x);
 
 	complex exp(complex x);
 	complex ln(complex x);
@@ -276,4 +277,13 @@ namespace math {
 		if (n == NumT{ -1 }) return ln(x);
 		return pow(x, n + 1) / (n + 1);
 	}
+	template <typename NumT> NumT Ei(NumT x) {
+		NumT res = 0.5772156649, u = 1;
+		for (int k = 1; k < 256; k++) {
+			u = u * x / k;
+			res = res + u / k;
+		}
+		return res;
+	}
+	template <typename NumT> NumT Li(NumT x) { return ln(ln(x)) + Ei(ln(x)); }
 }

@@ -379,6 +379,11 @@ namespace math {
 		if (res.R > res.i) return (res.i - res.i * res.i) * 4;
 		return (res.R - res.R * res.R) * 4;
 	}
+	complex axis(complex x) {
+		if (x.R < 0) x.R = -x.R;
+		if (x.i < 0) x.i = -x.i;
+		return std::min(x.R, x.i);
+	}
 
 	complex conjugate(complex x) { return complex(x.R, -x.i); }
 
