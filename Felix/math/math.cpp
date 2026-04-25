@@ -724,24 +724,19 @@ namespace math {
 		if (-1 == x.getNum(acch)) return -fct(x) * pow(2 * pi, -x) * sin1(x * 0.5) * zeta(-x - 1);
 		if (0 < x.getNum(acch).R) return -fct(x) * pow(2 * pi, -x) * sin1(x * 0.5) * zeta(-x - 1);
 		int n = 128;
-		infsim res1 = 0;
-#if 0
-		long double pow2 = 1;
-		for (int i = 0; i < n; i++) {
-			infsim res2 = 0;
-			for (int j = 0; j <= i; j++) {
-				res2 = res2 + (1 - 2 * (j % 2)) * Binom(i, j) * pow(j + 1, x);
-			}
-			pow2 *= 0.5;
-			res1 = res1 + res2 * pow2;
+		infsim res = 0;
+#if 1
+		for (int k = 1; k <= n; k++) {
+			res = res + pow(k, x);
 		}
+		return res - pow(n + 0.5, x + 1) / (x + 1);
 #else
 		for (int i = 0; i < n; i++) {
-			res1 = res1 + (1 - 2 * (i % 2)) * pow(i + 1, x);
+			res = res + (1 - 2 * (i % 2)) * pow(i + 1, x);
 		}
-		res1 = res1 + 0.5 * (1 - 2 * (n % 2)) * pow(n + 1, x);
+		res = res + 0.5 * (1 - 2 * (n % 2)) * pow(n + 1, x);
+		return res / (1 - pow(2, x + 1));
 #endif
-		return res1 / (1 - pow(2, x + 1));
 	}
 
 	infsim USumN(infsim x, infsim n) {
@@ -760,7 +755,7 @@ namespace math {
 				return res;
 			}
 			else {
-				for (int k = 1; k < n.getNum(acch).R + 16;) {
+				for (int k = 1; k < n.getNum(acch).R + 8;) {
 					res = res - mul(fct(n) / fct(n - k) * pow(x, n - k), zetaByFct(k));
 					k += 2;
 				}
