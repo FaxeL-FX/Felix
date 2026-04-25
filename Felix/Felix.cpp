@@ -1,4 +1,4 @@
-﻿//	v1.12.11
+﻿//	v1.12.12
 
 #include <iostream>
 #include "include.h"
@@ -183,7 +183,7 @@ bool run_command(std::string c) {
 		math::number start_value = 0, end_value = 1;	// parameter
 
 		for (int i = 2; i < args.size(); i++) {
-			/**/ if (args[i] == "noGrid") grid = false;
+			/**/ if (args[i] == "no_grid") grid = false;
 			else if (args[i] == "c") cmplx = true;
 			else if (args[i] == "eq") eq = true;
 			else if (args[i] == "gif") gif = true;
