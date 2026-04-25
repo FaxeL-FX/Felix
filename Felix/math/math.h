@@ -16,21 +16,24 @@ namespace math {
 	//	complex
 	extern struct complex_exponential;
 	extern struct infsim;
+	using real = long double;
 	struct complex {
-		long double R, i;
+		real R, i;
+
 		complex() {
 			this->R = 0;
 			this->i = 0;
 		}
-		complex(long double R) {
+		complex(real R) {
 			this->R = R;
 			this->i = 0;
 		}
-		complex(long double R, long double i) {
+		complex(real R, real i) {
 			this->R = R;
 			this->i = i;
 		}
 		complex(infsim x);
+
 		bool isZero() {
 			if (this->R == 0 && this->i == 0) return true;
 			return false;
@@ -46,6 +49,32 @@ namespace math {
 
 			if (i < 0) return std::to_string(this->R) + std::to_string(this->i) + "i";
 			return std::to_string(this->R) + "+" + std::to_string(this->i) + "i";
+		}
+
+		void operator +=(complex& x) {
+			this->R += x.R;
+			this->i += x.i;
+		}
+		void operator -=(complex& x) {
+			this->R -= x.R;
+			this->i -= x.i;
+		}
+		void operator *=(complex& y) {
+			real 
+				new_R = this->R * y.R - this->i * y.i,
+				new_i = this->R * y.i + this->i * y.R;
+			this->R = new_R;
+			this->i = new_i;
+		}
+		void inverse() {
+			real denominator = this->R * this->R + this->i * this->i;
+			this->R /= denominator;
+			this->i /= denominator;
+			this->i = -this->i;
+		}
+		void operator /=(complex y) {
+			y.inverse();
+			*this *= y;
 		}
 	};
 	extern const complex i;

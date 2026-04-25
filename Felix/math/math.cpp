@@ -453,7 +453,7 @@ namespace math {
 		return res;
 	}
 	complex fctIntegral(complex x, complex N) {
-		int n = 2048;
+		int n = 1024;
 		double invN = 1 / (double)n;
 		complex res, t = ln(complex(-1.0)), dt, w = 0.0;
 		dt = (ln(n) - t) * invN;
@@ -507,8 +507,8 @@ namespace math {
 			res = res - pow(x, n);
 		}
 		if (0 <= n.R) {
-			res = res + pow(x, n + 1) / (n + 1) + pow(x, n) * 0.5;
 			if (n.i == 0 && floor(n.R) == n.R) {
+				res = res + pow(x, n + 1) / (n + 1) + pow(x, n) * 0.5;
 				for (int k = 1; k <= n.R;) {
 					res = res - zetaByFct(k) * fct(n) / fct(n - k) * pow(x, n - k);
 					k += 2;
@@ -516,10 +516,17 @@ namespace math {
 				return res;
 			}
 			else {
+#if 1
+				res = res + pow(x, n + 1) / (n + 1) + pow(x, n) * 0.5;
 				for (int k = 1; k < n.R + 8;) {
 					res = res - zetaByFct(k) * fct(n) / fct(n - k) * pow(x, n - k);
 					k += 2;
 				}
+#else
+				for (int k = 0; k < n.R + 8; k++) {
+					res = res - zeta(n - k) * Binom(n, k) * pow(x, k);
+				}
+#endif
 				return res;
 			}
 		}
