@@ -1,4 +1,4 @@
-﻿//	v1.12.12
+﻿//	v1.12.13
 
 #include <iostream>
 #include "include.h"
@@ -178,10 +178,11 @@ bool run_command(std::string c) {
 		if (args.size() < 2) return false;
 
 		int resolution = 400;	// bmp/gif
-		int frames = 24;		// gif
+		int frames = 64;		// gif
 		uint32_t delay = 5;		// gif
 		math::number start_value = 0, end_value = 1;	// parameter
 
+		// render options flags
 		for (int i = 2; i < args.size(); i++) {
 			/**/ if (args[i] == "no_grid") grid = false;
 			else if (args[i] == "c") cmplx = true;
@@ -195,7 +196,8 @@ bool run_command(std::string c) {
 			}
 			else if (args[i].substr(0, 7) == "frames=") {
 				frames = std::stoi(args[i].substr(7));
-				if (resolution < 0)	frames = -frames;
+				if (frames < 0)	frames = -frames;
+				if (frames < 1)	frames = 1;
 			}
 			else if (args[i].substr(0, 6) == "delay=") {
 				delay = std::stoi(args[i].substr(6));
@@ -207,15 +209,13 @@ bool run_command(std::string c) {
 				end_value = value(parse_expr(args[i].substr(6)), {});
 			}
 		}
-
-		if (!gif) frames = 0;
+		if (!gif) frames = 1;
 
 		int prc = prc_count;
 		if (prc > resolution) prc = resolution;
 		if (one_thread) prc = 1;
 
 		std::vector<std::vector<float>> img;
-		std::vector<std::vector<float>>* im = &img;
 		img.reserve(resolution * resolution);
 		for (int i = 0; i < resolution * resolution; i++) img.push_back({ 0, 0, 0 });
 
@@ -245,7 +245,16 @@ bool run_command(std::string c) {
 			args[1] = args[1].substr(args[1].find_first_of(";,") + 1);
 		}
 
-		auto render_graph = [&](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, Color color, math::number parameter)
+		// render functions
+		auto render_graph = [&](
+			std::vector<std::vector<float>>& img,
+			int begin,
+			int end,
+			int resolution,
+			Function f,
+			int& progress,
+			Color color,
+			math::number parameter)
 			{
 				int iY, iYp;
 				long double start = plot_center.R - plot_radius, step = 2 * plot_radius / resolution;
@@ -275,13 +284,21 @@ bool run_command(std::string c) {
 					}
 					if (down < up) down++;
 					for (int j = down; j <= up && j < resolution; j++) {
-						(*img)[j * resolution + iX] = toVecF(penAdd((*img)[j * resolution + iX], fncColor(color, res.i)));
+						img[j * resolution + iX] = toVecF(penAdd(img[j * resolution + iX], fncColor(color, res.i)));
 					}
 					iYp = iY;
-					(*progress) += resolution;
+					progress += resolution;
 				}
 			};
-		auto render_eq = [&](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, Color color, math::number parameter)
+		auto render_eq = [&](
+			std::vector<std::vector<float>>& img,
+			int begin,
+			int end,
+			int resolution,
+			Function f,
+			int& progress,
+			Color color,
+			math::number parameter)
 			{
 				long double
 					startX = plot_center.R - plot_radius,
@@ -313,12 +330,20 @@ bool run_command(std::string c) {
 							break;
 						}
 						res = 1 / (1 + math::abs(f.return_value()));
-						(*img)[iY * resolution + iX] = toVecF(penAdd((*img)[iY * resolution + iX], Color(res.R)));
-						(*progress)++;
+						img[iY * resolution + iX] = toVecF(penAdd(img[iY * resolution + iX], Color(res.R)));
+						progress++;
 					}
 				}
 			};
-		auto render_complex = [&](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, Color color, math::number parameter)
+		auto render_complex = [&](
+			std::vector<std::vector<float>>& img,
+			int begin,
+			int end,
+			int resolution,
+			Function f,
+			int& progress,
+			Color color,
+			math::number parameter)
 			{
 				long double
 					startX = plot_center.R - plot_radius,
@@ -350,19 +375,25 @@ bool run_command(std::string c) {
 							break;
 						}
 						res = f.return_value();
-						(*img)[iY * resolution + iX] = toVecF(penAdd((*img)[iY * resolution + iX], toCol(res)));
-						(*progress)++;
+						img[iY * resolution + iX] = toVecF(penAdd(img[iY * resolution + iX], toCol(res)));
+						progress++;
 					}
 				}
 			};
 
-		std::function<void(std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, Color color, math::number parameter)>
+		std::function<void(
+			std::vector<std::vector<float>>& img,
+			int begin,
+			int end,
+			int resolution,
+			Function f,
+			int& progress,
+			Color color,
+			math::number parameter)>
 			render_function = render_graph;
 		/**/ if (eq)	render_function = render_eq;
 		else if (cmplx) render_function = render_complex;
 
-		double colorNum = 0;
-		Color col(1);
 		math::number p = start_value;
 		std::vector<uint8_t> image;
 		image.resize(resolution * resolution * 4);
@@ -370,60 +401,67 @@ bool run_command(std::string c) {
 		GifWriter writer = {};
 		if (gif) GifBegin(&writer, "graph.gif", resolution, resolution, delay);
 
-		for (int frame = 0; frame <= frames; frame++) {
+		int progress = 0;
+		bool go = true;
+		auto counter_lambda = [&]() {
+			int max_steps = resolution * resolution * frames;
+			std::cout << " render [" << std::to_string(100.0).substr(1) << "%]\b\b";
+			while (go) {
+				float percent = 100 + 100 * (float)progress / max_steps;
+				std::cout << "\b\b\b\b\b\b\b\b\b" << std::to_string(percent).substr(1);
+			}
+			std::cout << "\b\b\b\b\b\b\b\b\b\bcomplete     \n";
+		};
+		std::thread counter = std::thread(counter_lambda);
+
+		for (int frame = 0; frame < frames; frame++) {
 			p = start_value * (1 - (double)frame / frames) + end_value * ((double)frame / frames);
 			for (int i = 0; i < resolution * resolution; i++) img[i] = { 0, 0, 0 };
 
+			double colorNum = 0;
+			Color col(1);
 			for (auto f : target_fncs) {
 				if (target_fncs.size() > 1) {
 					col = RGBColor(colorNum);
 				}
 
-				int progress = 0, * pr = &progress, * resol = &resolution;
-				bool go = true, * g = &go;
-				std::thread counter = std::thread([](int* progress, int* resolution, bool* go) {
-					int max_steps = (*resolution) * (*resolution);
-					std::cout << " render [" << std::to_string(100.0).substr(1) << "%]\b\b";
-					while (*go) {
-						float percent = 100 + 100 * (float)(*progress) / max_steps;
-						std::cout << "\b\b\b\b\b\b\b\b\b" << std::to_string(percent).substr(1);
-					}
-					std::cout << "\b\b\b\b\b\b\b\b\b\bcomplete     \n";
-					}, pr, resol, g);
-
 				if (f.args.size() == 0) return false;
 				std::vector<std::thread> thr(prc);
 				for (int i = 0; i < prc; i++) {
-					thr[i] = std::thread([&](std::vector<std::vector<float>>* img, int begin, int end, int resolution, Function f, int* progress, Color color, math::number parameter) {
-						render_function(img, begin, end, resolution, f, progress, color, parameter);
-						}, im, i * resolution / prc, (i + 1) * resolution / prc, resolution, f, pr, col, p);
+					auto thr_fn = [&](
+						int begin,
+						int end,
+						Function f,
+						Color color,
+						math::number parameter) {
+							render_function(img, begin, end, resolution, f, progress, color, parameter);
+					};
+					thr[i] = std::thread(thr_fn, i * resolution / prc, (i + 1) * resolution / prc, f, col, p);
 				}
 				for (int i = 0; i < prc; i++) thr[i].join();
 
-				go = false;
-				counter.join();
 				colorNum++;
 			}
 			if (grid) {
 				for (int i = 1; i <= 2 * plot_radius; i++) {
-					long double x = math::floor(plot_center.R - plot_radius) + i;
+					long double x = std::floor(plot_center.R - plot_radius) + i;
 					int iX = ((x - plot_center.R) / plot_radius + 1) * 0.5 * resolution;
 					for (int j = 0; j < resolution; j++) {
 						int index = j * resolution + iX;
 						if (index < resolution * resolution) {
-							if (x == 0) img[index] = toVecF(penAdd(img[index], Color(0.5)));
-							else		img[index] = toVecF(penAdd(img[index], Color(0.25)));
+							if (x == 0) img[index] = toVecF(penAdd(img[index], Color(0.25)));
+							else		img[index] = toVecF(penAdd(img[index], Color(0.125)));
 						}
 					}
 				}
 				for (int i = 1; i <= 2 * plot_radius; i++) {
-					long double y = math::floor(plot_center.i - plot_radius) + i;
+					long double y = std::floor(plot_center.i - plot_radius) + i;
 					int iY = ((y - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
 					for (int j = 0; j < resolution; j++) {
 						int index = iY * resolution + j;
 						if (index < resolution * resolution) {
-							if (y == 0) img[index] = toVecF(penAdd(img[index], Color(0.5)));
-							else		img[index] = toVecF(penAdd(img[index], Color(0.25)));
+							if (y == 0) img[index] = toVecF(penAdd(img[index], Color(0.25)));
+							else		img[index] = toVecF(penAdd(img[index], Color(0.125)));
 						}
 					}
 				}
@@ -446,6 +484,9 @@ bool run_command(std::string c) {
 			}
 			GifWriteFrame(&writer, image.data(), resolution, resolution, delay);
 		}
+
+		go = false;
+		counter.join();
 		
 		if (gif) GifEnd(&writer);
 		else BMPWriter::write_image(img, resolution, (char*)"graph.bmp");

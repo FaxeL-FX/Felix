@@ -247,7 +247,7 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 	}
 	else if (token == "e") {
 		(*objects)[objIndex].type = ObjType::_Const;
-		(*objects)[objIndex].value = math::exp(1);
+		(*objects)[objIndex].value = math::exp(math::complex(1));
 		return;
 	}
 	else if (token == "i") {
@@ -384,7 +384,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 
 	switch (arg_indexes.size()) {
 	case(0): switch (this->type) {
-		case(ObjType::_Error): return math::exp(3000);
+		case(ObjType::_Error): return math::inf;
 		case(ObjType::_Const): return this->value;
 	}
 	case(1): switch (this->type) {
@@ -417,7 +417,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		case(ObjType::_cos1): return math::cos1(args_results[0]);
 
 		case(ObjType::_abs): return math::abs(args_results[0]);
-		case(ObjType::_inv_abs): return math::inv_abs(args_results[0]);
+		case(ObjType::_inv_abs): return 1 / math::abs(args_results[0]);
 		case(ObjType::_arg): return math::arg(args_results[0]);
 		case(ObjType::_sign): return math::normalize(args_results[0]);
 		case(ObjType::_Re): return Re(args_results[0]);
@@ -544,7 +544,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			for (int k = 1; k < 20;) {
 				(*args)[var_index].value = args_results[1];
 				math::number der = (*objects)[this->arg_indexes[2]].return_value(objects, args);
-				long double d = 4294967296, delta = math::exp(-math::ln(d) / k);
+				math::real d = 4294967296, delta = std::exp(-std::log(d) / k);
 				for (int l = 1; l <= k; l++) {
 					(*args)[var_index].value = (*args)[var_index].value - delta;
 					der = der + (1 - 2 * (l % 2)) * math::Binom(k, l) * (*objects)[this->arg_indexes[2]].return_value(objects, args);
@@ -567,24 +567,24 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 				difference = args_results[2] - args_results[1];
 #if infsimIsHere
 			long long
-				repeats = math::floor(difference.getNum(math::acch).R);
+				repeats = std::floor(difference.getNum(math::acch).R);
 			math::number
 				diffPart = math::infsim(difference.getNum(math::acch).R - repeats + math::i * difference.getNum(math::acch).i),
 				step = math::normalize(diffPart.getNum(math::acch));
 #else
 			long long
-				repeats = math::floor(difference.R);
+				repeats = std::floor(difference.R);
 			math::number
 				diffPart = math::complex(difference.R - repeats, difference.i),
 				step = math::normalize(diffPart);
 #endif
-			long double
+			math::real
 				radius = math::abs(diffPart),
-				radFract = radius - math::floor(radius);
+				radFract = radius - std::floor(radius);
 			int n = 1;
 			math::number
-				angle1 = math::mul_i((math::number)math::arccos(0.5 * radFract / n)),
-				angle2 = math::mul_i((math::number)math::arccos(0.5 * (1 - radFract) / n)),
+				angle1 = math::mul_i((math::number)std::acos(0.5 * radFract / n)),
+				angle2 = math::mul_i((math::number)std::acos(0.5 * (1 - radFract) / n)),
 				step1 =  step * math::exp( angle1),
 				step2 =  step * math::exp(-angle1),
 				step3 = -step * math::exp( angle2),
@@ -720,7 +720,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		case(ObjType::_Return): {
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
-			int repeats = math::round(((math::complex)args_results[2]).R);
+			int repeats = std::round(((math::complex)args_results[2]).R);
 			for (int i = 0; i < repeats; i++) {
 				(*args)[var_index].value = (*objects)[this->arg_indexes[3]].return_value(objects, args);
 			}
@@ -764,25 +764,29 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		case(ObjType::_Derivative): {
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
-			math::number res = (*objects)[this->arg_indexes[3]].return_value(objects, args);
 
-			double n = ((math::complex)(*objects)[this->arg_indexes[2]].return_value(objects, args)).R;
-			if (n == 0) return res;
-			long double d = 4294967296, delta = math::exp(-math::ln(d) / n);
-			for (int k = 1; k <= n; k++) {
-				(*args)[var_index].value = (*args)[var_index].value - delta;
+			math::number
+				res = 0,
+				n = (*objects)[this->arg_indexes[2]].return_value(objects, args);
+			math::real
+				iter = ((math::complex)n).R,
+				delta = 0.0000000001,
+				delta_root = std::pow(delta, 1 / iter);
+			(*args)[var_index].value = (*args)[var_index].value + n * delta_root * 0.5;
+			for (int k = 0; k <= iter; k++) {
 				res = res + (1 - 2 * (k % 2)) * math::Binom(n, k) * (*objects)[this->arg_indexes[3]].return_value(objects, args);
+				(*args)[var_index].value = (*args)[var_index].value - delta_root;
 			}
 
 			args->erase(args->begin() + var_index);
-			return res * d;
+			return res / delta;
 		}
 		case(ObjType::_ForwardDifference): {
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
 			math::number res = (*objects)[this->arg_indexes[3]].return_value(objects, args);
 
-			double n = ((math::complex)(*objects)[this->arg_indexes[2]].return_value(objects, args)).R;
+			math::real n = ((math::complex)(*objects)[this->arg_indexes[2]].return_value(objects, args)).R;
 			for (int k = 1; k <= n; k++) {
 				(*args)[var_index].value = (*args)[var_index].value + 1;
 				res = res + (1 - 2 * (k % 2)) * math::Binom(n, k) * (*objects)[this->arg_indexes[3]].return_value(objects, args);
@@ -796,7 +800,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
 			math::number res = (*objects)[this->arg_indexes[3]].return_value(objects, args);
 
-			double n = ((math::complex)(*objects)[this->arg_indexes[2]].return_value(objects, args)).R;
+			math::real n = ((math::complex)(*objects)[this->arg_indexes[2]].return_value(objects, args)).R;
 			for (int k = 1; k <= n; k++) {
 				(*args)[var_index].value = (*args)[var_index].value - 1;
 				res = res + (1 - 2 * (k % 2)) * math::Binom(n, k) * (*objects)[this->arg_indexes[3]].return_value(objects, args);

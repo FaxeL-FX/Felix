@@ -11,6 +11,32 @@ namespace math {
 		zero(acch - 1, 1.0),
 		lnInf = -ln_sum(infinity);
 
+	bool sign(double x) {
+		unsigned long long i = *(unsigned long long*) & x;
+		return i >> 63;
+	}
+	int E(double x) {
+		unsigned long long i = *(unsigned long long*) & x;
+		return (int)((i >> 52) % 2048) - 1023;
+	}
+	unsigned long long M(double x) {
+		unsigned long long i = *(unsigned long long*) & x;
+		return i % ((unsigned long long)1 << 52);
+	}
+	double fract(double x) {
+		return (double)M(x) / ((unsigned long long)1 << 52);
+	}
+
+	complex getFctIntegralConstant() {
+		const int n = 256;
+		complex res, a = complex(0, pi / n), b = 8 / 256;
+		for (int k = 0; k < n; k++) {
+			complex t = exp(k * b - (n - k) * a) + 1;
+			res = res + t * exp(-t) / ln(t) * (exp((k + 1) * b - (n - k - 1) * a) - exp(k * b - (n - k) * a));
+		}
+		return res;
+	}
+
 	//	complex
 	complex::complex(infsim x) {
 		this->R = x.getNum(acch).R;
@@ -37,35 +63,117 @@ namespace math {
 		return complex((x.R * y.R + x.i * y.i) * denominator, (y.R * x.i - x.R * y.i) * denominator);
 	}
 	complex operator%(complex x, complex y) { return x - y * floor(x / y); }
+	complex operator<<(complex x, int n) {
+		if (n < 0) {
+			for (int i = 0; i < -n / 64; i++) x = x / ((unsigned long long)1 << 63) * 0.5;
+			return x / ((unsigned long long)1 << -n % 64);
+		}
+		for (int i = 0; i < n / 64; i++) x = x * ((unsigned long long)1 << 63) * 2;
+		return x * ((unsigned long long)1 << n % 64);
+	}
+	complex operator>>(complex x, int n) { return x << -n; }
 	bool operator==(complex x, complex y) { return x.R == y.R && x.i == y.i; }
 	bool operator!=(complex x, complex y) { return !(x == y); }
 
-	//	FUNCTIONS
-
-	//	real
-	real rand(int seed, std::vector<complex> v) {
-		real res = std::cos((float)seed);
+	//	functions
+	long double rand(int seed, std::vector<long double> v) {
+		long double res = std::cos((float)seed);
 		for (int i = 1; i <= 16; i++)
 			for (auto n : v)
-				res = res + std::sin(((complex)n).R) + res - 16 * std::floor(res * 0.0625);
+				res = res + std::sin(n) + res - 16 * floor(res * 0.0625);
 		res = fmod(res, 1.0);
 		return res;
 	}
-	real rand(int n) {
-		std::vector<complex> v = { n };
+	long double rand(int seed, std::vector<complex> v) {
+		long double res = std::cos((float)seed);
+		for (int i = 1; i <= 16; i++)
+			for (auto n : v)
+				res = res + std::sin(((complex)n).R) + res - 16 * floor(res * 0.0625);
+		res = fmod(res, 1.0);
+		return res;
+	}
+	long double rand(int seed, complex z) {
+		std::vector<long double> v = { z.R, z.i };
+		return rand(seed, v);
+	}
+	long double rand(int n) {
+		std::vector<long double> v = { (long double)n };
 		return rand(n, v);
 	}
 
-	real factorial(real x) {
-		real res = 1.0;
-		for (real k = 2.0; k <= x; k++) res *= k;
-		for (real k = -1.0; x < k; k--) res *= k;
+	//	long double
+	long double floor(long double x) { return std::floor(x); }
+	long double ceil(long double x) { return std::ceil(x); }
+	long double sign(long double x) {
+		if (x < 0) return -1;
+		return 1;
+	}
+	long double round(long double x) {
+		return (long long)(x + 0.5);
+	}
+
+	long double exp(long double x) {
+		long double res = x / ((unsigned long long)1 << 32);
+		if (res < 0) res = -res;
+		for (int i = 0; i < 32; i++) res = 2 * res + res * res;
+		if (x < 0) return 1 / (res + 1);
+		return res + 1;
+	}
+	long double log(long double x) {
+		long double res = 0, part = 1;
+		for (int k = 1; k < 32; k++) {
+			part = part * (1 - x);
+			res = res + (1 - part) / (k * ((unsigned long long)1 << k));
+		}
+		return res;
+	}
+	long double ln(long double x) { return log(fract(x)) + 0.6931471805599453 * E(x); }
+	long double pow(long double x, int n) {
+		long double res = 1;
+		if (n > 0) for (;0 < n;n--) {
+			res *= x;
+		}
+		if (n < 0) for (; n < 0; n++) {
+			res /= x;
+		}
+		return res;
+	}
+
+	long double sqrt(long double x) { return exp(0.5 * ln(x)); }
+	long double inv_sqrt(long double x) { return exp(-0.5 * ln(x)); }
+
+	long double cos(long double x) {
+		long double res = x / ((unsigned long long)1 << 16);
+		res = 2 - res * res;
+		for (int i = 0; i < 16; i++) res = res * res - 2;
+		return res * 0.5;
+	}
+	long double sin(long double x) {
+		long double res = x, sqr;
+		for (int i = 1; i <= 32; i++) {
+			sqr = x / (pi * i);
+			res *= 1 - sqr * sqr;
+		}
+		return res * exp(-sqr * sqr * 32);
+	}
+	long double arccos(long double x) {
+		if (x == 1) return 0;
+		if (x < 0) return pi - arccos(-x);
+		long double res = sqrt((x + 1) * 2);
+		for (int i = 1; i < 8; i++) res = sqrt(2 + res);
+		return sqrt(2 - res) * (1 << 8);
+	}
+
+	long double factorial(long double x) {
+		long double res = 1.0;
+		for (long double k = 2.0; k <= x; k++) res *= k;
+		for (long double k = -1.0; x < k; k--) res *= k;
 		if (x < -1.0) return 1.0 / res;
 		return res;
 	}
-	real Binom(real n, real k) {
-		if (k == std::floor(k)) {
-			real res = 1;
+	long double Binom(long double n, long double k) {
+		if (k == floor(k)) {
+			long double res = 1;
 			if (0 <= k) {
 				for (int l = 0; l < k; l++) {
 					res *= (n - l) / (l + 1);
@@ -76,9 +184,9 @@ namespace math {
 		}
 		return factorial(n) / (factorial(k) * factorial(n - k));
 	}
-	std::vector<real> zbfValues = {};
+	std::vector<long double> zbfValues = {};
 	std::mutex zbfMutex;
-	real zbf(int x) {
+	long double zbf(int x) {
 		if (x == -1)	return -1;
 		if (x < -1)		return 0;
 		{
@@ -86,7 +194,7 @@ namespace math {
 			if (x < zbfValues.size()) return zbfValues[x];
 		}
 
-		real res = 0;
+		long double res = 0;
 		for (int k = 1; k <= x + 1; k++) {
 			res = res + zbf(x - k) * (2 * (k % 2) - 1) / factorial(k + 1);
 		}
@@ -96,7 +204,7 @@ namespace math {
 		}
 		return res;
 	}
-	std::vector<real> zetaZeros = {
+	std::vector<long double> zetaZeros = {
 		14.134725141734693790457251983562470270784257115699243175685567460149,
 		21.022039638771554992628479593896902777334340524902781754629520403587,
 		25.010857580145688763213790992562821818659549672557996672496542006745,
@@ -198,19 +306,20 @@ namespace math {
 		233.69340417890830064070449473256978817953722775456583636301480873894,
 		236.52422966581620580247550795566297868952949521218912370091896098781,
 	};
-	real zetaZero(int n) {
+	long double zetaZero(int n) {
 		if (0 <= n && n < zetaZeros.size()) return zetaZeros[n];
 		return 0;
 	}
 
 	//	complex
-	complex floor(complex x) { return complex(std::floor(x.R), 0); }
-	complex ceil(complex x) { return complex(std::ceil(x.R), 0); }
-	real abs(complex x) {
-		if (x.i == 0) return std::abs(x.R);
-		if (x.R == 0) return std::abs(x.i);
-		return std::sqrt(x.R * x.R + x.i * x.i);
+	complex floor(complex x) { return complex(floor(x.R), 0); }
+	complex ceil(complex x) { return complex(ceil(x.R), 0); }
+	long double abs(complex x) {
+		if (x.i == 0) return sign(x.R) * x.R;
+		if (x.R == 0) return sign(x.i) * x.i;
+		return sqrt(x.R * x.R + x.i * x.i);
 	}
+	long double inv_abs(complex x) { return inv_sqrt(x.R * x.R + x.i * x.i); }
 	complex normalize(complex x) {
 		if (x == 0) return 1;
 		if (x.i == 0)
@@ -219,13 +328,17 @@ namespace math {
 		if (x.R == 0)
 			if (x.i < 0)	return -i;
 			else			return i;
-		return x / std::sqrt(x.R * x.R + x.i * x.i);
+		return x * inv_sqrt(x.R * x.R + x.i * x.i);
 	}
 	complex mul_i(complex x) { return complex(-x.i, x.R); }
-	real arg(complex x) {
-		real cosine = normalize(x).R;
-		if (x.i < 0) return -std::acos(cosine);
-		return std::acos(cosine);
+	long double arg(complex x) {
+		long double cosine;
+		if (x.i == 0)
+			if (x.R < 0)	cosine = -1;
+			else			cosine = 1;
+		else				cosine = normalize(x).R;
+		if (x.i < 0) return -arccos(cosine);
+		return arccos(cosine);
 	}
 	bool exist(complex x) {
 		if (x.R == x.R && x.i == x.i) return true;
@@ -233,12 +346,14 @@ namespace math {
 	}
 
 	complex exp(complex x) {
-		complex res{ std::cos(x.i), std::sin(x.i) };
-		res.R *= std::exp(x.R);
-		res.i *= std::exp(x.R);
-		return res;
+		//if (x.R < -709) return 0;
+		complex res = x >> 64;
+		if (res.R < 0) res = -res;
+		for (int i = 0; i < 64; i++) res = res * 2 + res * res;
+		if (x.R < 0) return 1 / (res + 1);
+		return res + 1;
 	}
-	complex ln(complex x) { return complex(std::log(abs(x)), arg(x)); }
+	complex ln(complex x) { return complex(ln(abs(x)), arg(x)); }
 	complex pow(complex x, complex y) {
 		if (abs(y) == inf) return exp(y * ln(x));
 		complex res = 1;
@@ -250,41 +365,54 @@ namespace math {
 			res = res / x;
 			y.R = y.R + 1;
 		}
-		if (y == 0) return res;
 		return res * exp(y * ln(x));
 	}
 	complex sqrt(complex x) { return exp(0.5 * ln(x)); }
 	complex inv_sqrt(complex x) { return exp(-0.5 * ln(x)); }
 
-	real Re(complex x) { return x.R; }
-	real Im(complex x) { return x.i; }
-	real grid(complex x) {
+	complex Re(complex x) { return x.R; }
+	complex Im(complex x) { return x.i; }
+	complex grid(complex x) {
 		complex res = x - math::floor(x + complex(0.5, 0.5));
 		if (res.R < 0) res.R = -res.R;
 		if (res.i < 0) res.i = -res.i;
 		if (res.R > res.i) return (res.i - res.i * res.i) * 4;
 		return (res.R - res.R * res.R) * 4;
 	}
-	real axis(complex x) {
+	complex axis(complex x) {
 		if (x.R < 0) x.R = -x.R;
 		if (x.i < 0) x.i = -x.i;
 		return std::min(x.R, x.i);
 	}
 
+	complex conjugate(complex x) { return complex(x.R, -x.i); }
+
 	complex sin1(complex x) {
 		x.R = fmod(x.R + 1.0, 2.0) - 1.0;
-		/**/ if (x.R >  0.5) return sin1(1 - x);
+		/**/ if (x.R > 0.5) return sin1(1 - x);
 		else if (x.R < -0.5) return sin1(-1 - x);
 		return sin(pi * x) / pi;
+
+		/*complex res = x;
+		for (int i = 1; i < 4096; i++) {
+			res = res * (1 - x * x / (i * i));
+		}
+		return res;*/
 	}
 	complex cos1(complex x) {
 		x.R = fmod(x.R + 1.0, 2.0) - 1.0;
-		/**/ if (x.R >  0.5) return -cos1(1 - x);
+		/**/ if (x.R > 0.5) return -cos1(1 - x);
 		else if (x.R < -0.5) return -cos1(-1 - x);
 		return cos(pi * x);
+
+		/*complex res = 1;
+		for (double i = 0.5; i < 64; i++) {
+			res = res * (1 - x * x / (i * i));
+		}
+		return res; */
 	}
 	complex Binom(complex n, complex k) {
-		if (k.i == 0 && k.R == std::floor(k.R)) {
+		if (k.i == 0 && k.R == floor(k.R)) {
 			complex res = 1;
 			if (0 <= k.R) {
 				for (int l = 0; l < k.R; l++) {
@@ -295,7 +423,7 @@ namespace math {
 			return res;
 		}
 		complex d = n - k;
-		if (d.i == 0 && d.R == std::floor(d.R) && k.R > n.R) return 0;
+		if (d.i == 0 && d.R == floor(d.R) && k.R > n.R) return 0;
 		return fct(n) / (fct(k) * fct(n - k));
 	}
 
@@ -307,15 +435,15 @@ namespace math {
 			res = res * x;
 			x = x - 1;
 		}
-		real n = 512.5;
-		res = res * exp(-x + (x + 0.5) * ln(x + n) - 0.5 * std::log(n));
+		float n = 512.5;
+		res = res * exp(-x + (x + 0.5) * ln(x + n) - 0.5 * ln(n));
 		for (int i = 1; i < n; i++) res = res * i / (x + i) / n * (x + n);
 		return res;
 	}
 	complex inv_fct(complex x) {
 		if (x.R < -0.5) return -sin1(x) * fct(-1 - x);
 		float n = 2048.5;
-		complex res = exp(x - (x + 0.5) * ln(x + n) + 0.5 * std::log(n));
+		complex res = exp(x - (x + 0.5) * ln(x + n) + 0.5 * ln(n));
 		for (int i = 1; i < n; i++) res = res * (x + i) / i * n / (x + n);
 		return res;
 	}
@@ -328,7 +456,7 @@ namespace math {
 		int n = 1024;
 		double invN = 1 / (double)n;
 		complex res, t = ln(complex(-1.0)), dt, w = 0.0;
-		dt = (std::log(n) - t) * invN;
+		dt = (ln(n) - t) * invN;
 		for (int i = 0; i < n; i++) {
 			t = t + dt;
 			w = exp(t) + 1.0;
@@ -345,14 +473,25 @@ namespace math {
 		return res;
 	}
 	complex zeta(complex x) {
+		//if (x == 0) return -0.5;
 		if (0 < x.R) return -fct(x) * pow(2 * pi, -x) * sin1(x * 0.5) * zeta(-x - 1);
 		int n = 128;
 		complex res = 0;
-		for (int k = 1; k <= n; k++) res += pow(k, x);
+#if 1
+		for (int k = 1; k <= n; k++) {
+			res = res + pow(k, x);
+		}
 		return res - pow(n + 0.5, x + 1) / (x + 1);
+#else
+		for (int i = 0; i < n; i++) {
+			res = res + (1 - 2 * (i % 2)) * pow(i + 1, x);
+		}
+		res = res + 0.5 * (1 - 2 * (n % 2)) * pow(n + 1, x);
+		return res / (1 - pow(2, x + 1));
+#endif
 	}
 	complex zetaByFct(complex x) {
-		if (x.i == 0 && x.R == std::floor(x.R)) return zbf(x.R);
+		if (x.i == 0 && x.R == floor(x.R)) return zbf(x.R);
 		return zeta(x) / fct(x);
 	}
 
@@ -363,7 +502,7 @@ namespace math {
 			res = res - pow(x, n);
 		}
 		if (0 <= n.R) {
-			if (n.i == 0 && std::floor(n.R) == n.R) {
+			if (n.i == 0 && floor(n.R) == n.R) {
 				res = res + pow(x, n + 1) / (n + 1) + pow(x, n) * 0.5;
 				for (int k = 1; k <= n.R;) {
 					res = res - zetaByFct(k) * fct(n) / fct(n - k) * pow(x, n - k);
@@ -435,6 +574,12 @@ namespace math {
 		for (int i = 0; i < accuracy; i++) x.setNum(i, x.getNum(i) / y);
 		return x;
 	}
+	infsim operator<<(infsim x, int n) {
+		if (n < 0)	for (int i = 0; i < accuracy; i++) x.setNum(i, x.getNum(i) >> -n);
+		else		for (int i = 0; i < accuracy; i++) x.setNum(i, x.getNum(i) << n);
+		return x;
+	}
+	infsim operator>>(infsim x, int n) { return x << -n; }
 
 
 	infsim Re(infsim x) {
@@ -468,9 +613,9 @@ namespace math {
 	}
 
 	infsim exp(infsim x) {
-		infsim res = x * std::pow(2.0, -64);
+		infsim res = x >> 64;
 		if (res.getNum(acch).R < 0) res = -res;
-		for (int i = 0; i < 64; i++) res = (res * 2) + res * res;
+		for (int i = 0; i < 64; i++) res = (res << 1) + res * res;
 		if (x.getNum(acch).R < 0) return 1 / (res + 1);
 		return res + 1;
 	}
@@ -512,17 +657,8 @@ namespace math {
 		return mul(lnInf, maxPowerVal) + ln_sum(x);
 	}
 	infsim pow(infsim x, infsim y) {
-		if (abs(y.getNum(acch)) == inf) return exp(y * ln(x));
-		infsim res = 1;
-		for (; 0 < y.getNum(acch).R;) {
-			res = res * x;
-			y.setNum(acch, y.getNum(acch) - 1);
-		}
-		for (; y.getNum(acch).R < 0;) {
-			res = res / x;
-			y.setNum(acch, y.getNum(acch) + 1);
-		}
-		if (y == 0) return res;
+		if (y.getNum(acch).R >= 1) return pow(x, y - 1) * x;
+		if (y.getNum(acch).R < 0) return pow(x, y + 1) / x;
 		return exp(y * ln(x));
 	}
 	infsim sqrt(infsim x) { return exp(0.5 * ln(x)); }
@@ -548,14 +684,14 @@ namespace math {
 		if (x.getNum(acch).R <= -1) return fct(x + 1) / (x + 1);
 		if (x.getNum(acch).R > 0) return fct(x - 1) * x;
 		float n = 512;
-		infsim res = exp(-x + (x + 0.5) * ln(x + n) - 0.5 * std::log(n));
+		infsim res = exp(-x + (x + 0.5) * ln(x + n) - 0.5 * ln(n));
 		for (int i = 1; i < n; i++) res = res * i / n * (x + n) / (x + i);
 		return res;
 	}
 	infsim inv_fct(infsim x) {
 		if (x.getNum(acch).R < -0.5) return -sin1(x) * fct(-1 - x);
 		float n = 2048.5;
-		infsim res = exp(x - (x + 0.5) * ln(x + n) + 0.5 * std::log(n));
+		infsim res = exp(x - (x + 0.5) * ln(x + n) + 0.5 * ln(n));
 		for (int i = 1; i < n; i++) res = res * (x + i) / i * n / (x + n);
 		return res;
 	}
@@ -588,10 +724,18 @@ namespace math {
 		if (0 < x.getNum(acch).R) return -fct(x) * pow(2 * pi, -x) * sin1(x * 0.5) * zeta(-x - 1);
 		int n = 128;
 		infsim res = 0;
+#if 1
 		for (int k = 1; k <= n; k++) {
 			res = res + pow(k, x);
 		}
 		return res - pow(n + 0.5, x + 1) / (x + 1);
+#else
+		for (int i = 0; i < n; i++) {
+			res = res + (1 - 2 * (i % 2)) * pow(i + 1, x);
+		}
+		res = res + 0.5 * (1 - 2 * (n % 2)) * pow(n + 1, x);
+		return res / (1 - pow(2, x + 1));
+#endif
 	}
 
 	infsim USumN(infsim x, infsim n) {
@@ -602,7 +746,7 @@ namespace math {
 		}
 		if (0 <= n.getNum(acch).R) {
 			res = res + pow(x, n + 1) / (n + 1) + pow(x, n) * 0.5;
-			if (n.getNum(acch).i == 0 && std::floor(n.getNum(acch).R) == n.getNum(acch).R) {
+			if (n.getNum(acch).i == 0 && floor(n.getNum(acch).R) == n.getNum(acch).R) {
 				for (int k = 1; k <= n.getNum(acch).R;) {
 					res = res - mul(fct(n) / fct(n - k) * pow(x, n - k), zetaByFct(k));
 					k += 2;

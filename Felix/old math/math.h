@@ -8,9 +8,15 @@
 namespace math {
 	extern const double pi, inf;
 
-	struct infsim;
-	using real = long double;
+	bool sign(double);
+	int E(double);
+	unsigned long long M(double);
+	double fract(double);
+
 	//	complex
+	extern struct complex_exponential;
+	extern struct infsim;
+	using real = long double;
 	struct complex {
 		real R, i;
 
@@ -69,47 +75,70 @@ namespace math {
 	};
 	extern const complex i;
 
+	complex getFctIntegralConstant();
+
 	complex operator+(complex, complex);
 	complex operator-(complex);
 	complex operator-(complex, complex);
 	complex operator*(complex, complex);
 	complex operator/(complex, complex);
 	complex operator%(complex, complex);
+	complex operator<<(complex, int);
+	complex operator>>(complex, int);
 	bool operator==(complex, complex);
 	bool operator!=(complex, complex);
 
+	//	functions
+	long double rand(int, std::vector<long double>);
+	long double rand(int, std::vector<complex>);
+	long double rand(int, complex);
+	long double rand(int);
 
-	//	FUNCTIONS
+	//	long double
+	long double floor(long double);
+	long double ceil(long double);
+	long double sign(long double);
+	long double round(long double);
 
-	//	real
-	real rand(int, std::vector<complex>);
-	real rand(int);
+	long double exp(long double);
+	long double ln(long double);
+	long double pow(long double, int);
 
-	real factorial(real x);
-	real Binom(real n, real k);
-	extern std::vector<real> zbfValues;
-	real zbf(int x);
-	extern std::vector<real> zetaZeros;
-	real zetaZero(int n);
+	long double sqrt(long double);
+	long double inv_sqrt(long double);
+
+	long double cos(long double);
+	long double sin(long double);
+	long double arccos(long double);
+
+	long double factorial(long double x);
+	long double Binom(long double n, long double k);
+	extern std::vector<long double> zbfValues;
+	long double zbf(int x);
+	extern std::vector<long double> zetaZeros;
+	long double zetaZero(int n);
 
 	//	complex
-	complex floor(complex x);
-	complex ceil(complex x);
-	real abs(complex x);
-	complex normalize(complex x);
-	complex mul_i(complex x);
-	real arg(complex x);
-	bool exist(complex x);
-	real Re(complex x);
-	real Im(complex x);
-	real grid(complex x);
-	real axis(complex x);
+	complex floor(complex);
+	complex ceil(complex);
+	long double abs(complex);
+	long double inv_abs(complex);
+	complex normalize(complex);
+	complex mul_i(complex);
+	long double arg(complex);
+	bool exist(complex);
+	complex Re(complex x);
+	complex Im(complex x);
+	complex grid(complex x);
+	complex axis(complex x);
 
 	complex exp(complex x);
 	complex ln(complex x);
 	complex pow(complex x, complex y);
 	complex sqrt(complex x);
 	complex inv_sqrt(complex x);
+
+	complex conjugate(complex x);
 
 	complex sin1(complex x);
 	complex cos1(complex x);
@@ -157,8 +186,8 @@ namespace math {
 		std::string toString() {
 			std::string str = "";
 			int lower = 0, higher = accuracy - 1;
-			for (; 0 <= higher && this->getNum(higher) == 0; higher--) {}
-			for (; lower < accuracy && this->getNum(lower) == 0; lower++) {}
+			for (; 0 <= higher && this->getNum(higher).isZero(); higher--) {}
+			for (; lower < accuracy && this->getNum(lower).isZero(); lower++) {}
 			for (int i = higher; i >= lower; i--) {
 				std::string numstr = this->Pol[i].toString();
 				if (numstr == "0") continue;
@@ -174,7 +203,7 @@ namespace math {
 		std::string toStringSmall() {
 			std::string str;
 			int index = accuracy - 1;
-			for (; 0 <= index && this->getNum(index) == 0; index--) {}
+			for (; 0 <= index && this->getNum(index).isZero(); index--) {}
 			if (index > acch)		return "inf";
 			if (index < acch)		return "0";
 			return this->Pol[index].toString();
@@ -182,8 +211,8 @@ namespace math {
 		std::string toStringLatex() {
 			std::string str = "";
 			int lower = 0, higher = accuracy - 1;
-			for (; 0 <= higher && this->getNum(higher) == 0; higher--) {}
-			for (; lower < accuracy && this->getNum(lower) == 0; lower++) {}
+			for (; 0 <= higher && this->getNum(higher).isZero(); higher--) {}
+			for (; lower < accuracy && this->getNum(lower).isZero(); lower++) {}
 			for (int i = higher; i >= lower; i--) {
 				if (i < higher)		str += "+";
 				/**/ if (i == acch)		str += "1\\cdot";
@@ -207,6 +236,8 @@ namespace math {
 	infsim operator/(infsim x, infsim y);
 	infsim mul(infsim x, complex y);
 	infsim div(infsim x, complex y);
+	infsim operator<<(infsim x, int n);
+	infsim operator>>(infsim x, int n);
 
 
 	infsim Re(infsim x);
