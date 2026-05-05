@@ -1,4 +1,4 @@
-﻿//	v1.12.13
+﻿//	v1.12.14
 
 #include <iostream>
 #include "include.h"
@@ -256,7 +256,7 @@ bool run_command(std::string c) {
 			Color color,
 			math::number parameter)
 			{
-				int iY, iYp;
+				long long iY, iYp;
 				long double start = plot_center.R - plot_radius, step = 2 * plot_radius / resolution;
 				math::complex res;
 				f.args[0].value = start + step * (begin - 1);
@@ -267,13 +267,13 @@ bool run_command(std::string c) {
 				iYp = ((res.R - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
 				if (resolution <= iYp) iYp = resolution - 1;
 				if (iYp < 0) iYp = 0;
-				for (int iX = begin; iX < end && iX < resolution; iX++) {
+				for (long long iX = begin; iX < end && iX < resolution; iX++) {
 					f.args[0].value = start + step * iX;
 					res = f.return_value();
 					iY = ((res.R - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
 					if (resolution <= iY) iY = resolution - 1;
 					if (iY < 0) iY = 0;
-					int up, down;
+					long long up, down;
 					if (iYp > iY) {
 						up = iYp;
 						down = iY;
@@ -283,7 +283,7 @@ bool run_command(std::string c) {
 						down = iYp;
 					}
 					if (down < up) down++;
-					for (int j = down; j <= up && j < resolution; j++) {
+					for (long long j = down; j <= up && j < resolution; j++) {
 						img[j * resolution + iX] = toVecF(penAdd(img[j * resolution + iX], fncColor(color, res.i)));
 					}
 					iYp = iY;
