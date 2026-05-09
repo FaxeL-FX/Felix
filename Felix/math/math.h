@@ -6,10 +6,10 @@
 #endif
 
 namespace math {
-	extern const double pi, inf;
+	using real = long double;
+	extern const real pi, inf;
 
 	struct infsim;
-	using real = long double;
 	//	complex
 	struct complex {
 		real R, i;
@@ -124,6 +124,10 @@ namespace math {
 	complex zetaByFct(complex x);
 
 	complex USumN(complex x, complex n);
+
+	complex Integral(complex(*f)(complex), complex a, complex b);
+	complex Integral(complex(*f)(complex), complex(*path)(real));
+	complex Derivative(complex(*f)(complex), complex x);
 
 
 	// infinitesimal (infsim)

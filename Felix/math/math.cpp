@@ -1,9 +1,9 @@
 #include "math.h"
 namespace math {
 	//	number
-	const double
+	const real
 		pi = 3.1415926535897932384626433832795028841971693993751058209749445923,
-		inf = std::numeric_limits<double>::infinity();
+		inf = std::numeric_limits<long double>::infinity();
 	const complex
 		i(0, 1);
 	const infsim
@@ -242,11 +242,11 @@ namespace math {
 	complex pow(complex x, complex y) {
 		if (abs(y) == inf) return exp(y * ln(x));
 		complex res = 1;
-		for (; 0 < y.R;) {
+		if (y.R != y.R - 1) for (; 0 < y.R;) {
 			res = res * x;
 			y.R = y.R - 1;
 		}
-		for (; y.R < 0;) {
+		if (y.R != y.R + 1) for (; y.R < 0;) {
 			res = res / x;
 			y.R = y.R + 1;
 		}
@@ -300,16 +300,18 @@ namespace math {
 	}
 
 	complex fct(complex x) {
+		if (x.R == inf) return inf;
+		if (x.R == -inf) return 0;
+		if (abs(x.i) == inf) return 0;
 		if (x.R < -0.5) return -1 / (sin1(x) * fct(-1 - x));
-		if (abs(x) == inf) return exp(x);
 		complex res = 1;
-		for (;1 <= x.R;) {
-			res = res * x;
+		if (x != x - 1) for (;1 <= x.R;) {
+			res *= x;
 			x = x - 1;
 		}
 		real n = 512.5;
-		res = res * exp(-x + (x + 0.5) * ln(x + n) - 0.5 * std::log(n));
-		for (int i = 1; i < n; i++) res = res * i / (x + i) / n * (x + n);
+		res *= exp(-x + (x + 0.5) * ln(x + n) - 0.5 * std::log(n));
+		for (long long i = 1; i < n; i++) res *= i / (x + i) / n * (x + n);
 		return res;
 	}
 	complex inv_fct(complex x) {
@@ -393,6 +395,33 @@ namespace math {
 			for (int k = 1; k <= m; k++) res = res - pow(x + k, n);
 			return res;
 		}
+	}
+
+	complex Integral(complex(*f)(complex), complex a, complex b) {
+		const long long n = 16 * (1 + abs(b - a));
+		complex
+			res = 0,
+			dx = (b - a) / n,
+			x = a + dx * 0.5;
+		for (int k = 0; k < n; k++) {
+			res += f(x);
+			x += dx;
+		}
+		return res * dx;
+	}
+	complex Integral(complex(*f)(complex), complex(*path)(real)) {
+		const long long n = 512;
+		const real dt = 1.0 / n;
+		complex res = 0;
+		for (real k = dt * 0.5; k < 1.0;) {
+			res += f(path(k)) * (path(k + dt * 0.5) - path(k - dt * 0.5));
+			k += dt;
+		}
+		return res;
+	}
+	complex Derivative(complex(*f)(complex), complex x) {
+		const real dx = 1.0 / 4096;
+		return (f(x + dx) - f(x - dx)) / (2 * dx);
 	}
 
 	// infsim

@@ -1,4 +1,4 @@
-﻿//	v1.12.14
+﻿//	v1.12.15
 
 #include <iostream>
 #include "include.h"
@@ -58,10 +58,10 @@ Color penAdd(Color a, Color b) {
 	if (a.B < 0) a.B = 0;
 	return a;
 }
-float absMul(float c, float absolute) { return c * absolute / (absolute + 1); }
+float absMul(float c, float absolute) { return std::pow(absolute, 1.333 / (c + 0.333)); }
 Color toCol(math::complex x) {
 	Color c;
-	float angle = math::arg(x), absolute = math::abs(x);
+	float angle = math::arg(x), absolute = math::abs(x) / (math::abs(x) + 1.0);
 	c.A = 1;
 	c.R = (std::cos(angle) + 1) * 0.5;
 	c.G = (std::cos(angle + 2.0943951) + 1) * 0.5;
