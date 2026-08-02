@@ -97,31 +97,152 @@ ObjType nameToType(std::string token) {
 
 	return ObjType::_Default;
 }
+static std::string typeToName(ObjType token) {
+	if (token == ObjType::_add) return "+";
+	if (token == ObjType::_mul) return "*";
+	if (token == ObjType::_div) return "/";
+	if (token == ObjType::_mod) return "%";
+	if (token == ObjType::_pow) return "^";
 
-std::vector<Object> parse_expr(std::string expr) {
-	if (expr.length() == 0) return { Object("_Const", {}, 0) };
-	std::vector<std::string> tokens;
-	while (expr.length() > 0) {
-		std::string token = parse_token(expr);
-		if (token[0] != ' ') tokens.push_back(token);
-		expr = expr.substr(token.length());
-	}
-	//for (auto t : tokens) std::cout << t << "\n";
+	if (token == ObjType::_and) return "&";
+	if (token == ObjType::_or) return "|";
+	if (token == ObjType::_equal) return "=";
+	if (token == ObjType::_smaller) return "<";
+	if (token == ObjType::_larger) return ">";
+	if (token == ObjType::_Nand) return "!&";
+	if (token == ObjType::_Nor) return "!|";
+	if (token == ObjType::_Nequal) return "!=";
+	if (token == ObjType::_smallerEQ) return "<=";
+	if (token == ObjType::_largerEQ) return ">=";
 
-	for (int i = 1; i < tokens.size(); i++)
-		if (need_mul(tokens[i - 1], tokens[i]))
-			tokens.insert(tokens.begin() + i, "*");
+	if (token == ObjType::_fct) return "!";
+	if (token == ObjType::_inv_fct) return "inv_fct";
 
-	std::vector<Object> objects;
-	parse_obj(&objects, tokens, 0, tokens.size() - 1);
-	for (int i = 0; i < objects.size(); i++) {
-		objects[i].id = 0;
-		for (char c : objects[i].name)
-			objects[i].id = (objects[i].id << 1) + (int)c;
-	}
+	if (token == ObjType::_exp) return "exp";
+	if (token == ObjType::_ln) return "ln";
+	if (token == ObjType::_sqrt) return "sqrt";
+	if (token == ObjType::_inv_sqrt) return "inv_sqrt";
+	if (token == ObjType::_root) return "root";
+	if (token == ObjType::_log) return "log";
 
-	return objects;
+	if (token == ObjType::_cos) return "cos";
+	if (token == ObjType::_cosh) return "cosh";
+	if (token == ObjType::_arccos) return "arccos";
+	if (token == ObjType::_arccosh) return "arccosh";
+	if (token == ObjType::_sin) return "sin";
+	if (token == ObjType::_sinh) return "sinh";
+	if (token == ObjType::_arcsin) return "arcsin";
+	if (token == ObjType::_arcsinh) return "arcsinh";
+	if (token == ObjType::_cot) return "cot";
+	if (token == ObjType::_coth) return "coth";
+	if (token == ObjType::_arccot) return "arccot";
+	if (token == ObjType::_arccoth) return "arccoth";
+	if (token == ObjType::_tan) return "tan";
+	if (token == ObjType::_tanh) return "tanh";
+	if (token == ObjType::_arctan) return "arctan";
+	if (token == ObjType::_arctanh) return "arctanh";
+
+	if (token == ObjType::_sin1) return "sin1";
+	if (token == ObjType::_cos1) return "cos1";
+	if (token == ObjType::_Binom) return "Binom";
+
+	if (token == ObjType::_Sum) return "S";
+	if (token == ObjType::_ForwardDifference) return "FD";
+	if (token == ObjType::_BackwardDifference) return "BD";
+	if (token == ObjType::_Product) return "P";
+	if (token == ObjType::_Return) return "R";
+	if (token == ObjType::_Integral) return "I";
+	if (token == ObjType::_Derivative) return "D";
+	if (token == ObjType::_IntegralAlongExp) return "Iexp";
+	if (token == ObjType::_Polynomial) return "Poly";
+	if (token == ObjType::_SumZeta) return "SumZ";
+	if (token == ObjType::_UndefSumN) return "USumN";
+	if (token == ObjType::_UndefIntegralN) return "UIntN";
+
+	if (token == ObjType::_abs) return "abs";
+	if (token == ObjType::_inv_abs) return "inv_abs";
+	if (token == ObjType::_arg) return "arg";
+	if (token == ObjType::_sign) return "sgn";
+	if (token == ObjType::_Re) return "Re";
+	if (token == ObjType::_Im) return "Im";
+	if (token == ObjType::_floor) return "floor";
+	if (token == ObjType::_ceil) return "ceil";
+	if (token == ObjType::_round) return "round";
+	if (token == ObjType::_normalize) return "norm";
+
+	if (token == ObjType::_exist) return "exist";
+	if (token == ObjType::_grid) return "grid";
+	if (token == ObjType::_axis) return "axis";
+	if (token == ObjType::_If) return "if";
+
+	if (token == ObjType::_gamma) return "gamma";
+	if (token == ObjType::_fctIntegral) return "fctI";
+	if (token == ObjType::_Harmonic) return "H";
+	if (token == ObjType::_zeta) return "zeta";
+	if (token == ObjType::_zetaByFct) return "zbf";
+	if (token == ObjType::_ExpIntegral) return "Ei";
+	if (token == ObjType::_LogIntegral) return "Li";
+
+	if (token == ObjType::_zetaZero) return "zetaZero";
+
+	if (token == ObjType::_rand) return "rand";
+
+	return "?";
 }
+
+char antibr(char b) {
+	switch (b) {
+	case('('): return ')';
+	case('['): return ']';
+	case('{'): return '}';
+	case(')'): return '(';
+	case(']'): return '[';
+	case('}'): return '{';
+	default: return b;
+	}
+}
+int brackets(std::vector<std::string> tokens, int bracket_index, bool forward) {
+	char antibracket = antibr(tokens[bracket_index][0]);
+	if (forward)
+		for (int index = bracket_index + 1; 0 <= index && index < tokens.size(); index++) {
+			if (tokens[index][0] == antibracket) return index;
+			if (tokens[index] == "(" || tokens[index] == "[" || tokens[index] == "{")
+				index = brackets(tokens, index, forward);
+		}
+	else
+		for (int index = bracket_index - 1; 0 <= index && index < tokens.size(); index--) {
+			if (tokens[index][0] == antibracket) return index;
+			if (tokens[index] == ")" || tokens[index] == "]" || tokens[index] == "}")
+				index = brackets(tokens, index, forward);
+		}
+	return bracket_index;
+}
+int priority(std::string token) {
+	if (token == "+" || token == "-") return 5;
+	else if (token == "*" || token == "/" || token == "%") return 4;
+	else if (token == "^") return 3;
+	else if (token == "!") return 2;
+	else if (token == "(" || token == "[" || token == "{" || token == ")" || token == "]" || token == "}") return 0;
+	else if (token == "=" || token == "<" || token == ">" || token == "!=" || token == "<=" || token == ">=") return 6;
+	else if (token == "&" || token == "!&") return 7;
+	else if (token == "|" || token == "!|") return 8;
+	return 1;
+}
+bool need_mul(std::string token1, std::string token2) {
+	//	+ - * / ^
+	if (priority(token1) > 2 || priority(token2) > 2) return false;
+
+	if (token1 == "(" || token1 == "[" || token1 == "{" || token1 == ";" || token1 == ",") return false;
+	if (token2 == ")" || token2 == "]" || token2 == "}" || token2 == ";" || token2 == "," || token2 == "!") return false;
+	// fnc[]() | fnc{}[]
+	if (token1 == "]" && token2 == "(" || token1 == "}" && token2 == "[") return false;
+	//	fnc()
+	token1[0] = std::tolower(token1[0]);
+	if (('a' <= token1[0] && token1[0] <= 'z' || token1[0] == '_') && (token2 == "(" || token2 == "[" || token2 == "{")) return false;
+
+	return true;
+}
+
 std::string parse_token(std::string expr) {
 	if (expr.length() == 0) return " ";
 	int type = 0, i = 1;	//	types: 0->any , 1->number , 2->word
@@ -324,58 +445,29 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 		}
 	}
 }
-
-int brackets(std::vector<std::string> tokens, int bracket_index, bool forward) {
-	char antibracket = antibr(tokens[bracket_index][0]);
-	if (forward)
-		for (int index = bracket_index + 1; 0 <= index && index < tokens.size(); index++) {
-			if (tokens[index][0] == antibracket) return index;
-			if (tokens[index] == "(" || tokens[index] == "[" || tokens[index] == "{")
-				index = brackets(tokens, index, forward);
-		}
-	else
-		for (int index = bracket_index - 1; 0 <= index && index < tokens.size(); index--) {
-			if (tokens[index][0] == antibracket) return index;
-			if (tokens[index] == ")" || tokens[index] == "]" || tokens[index] == "}")
-				index = brackets(tokens, index, forward);
-		}
-	return bracket_index;
-}
-char antibr(char b) {
-	switch (b) {
-	case('('): return ')';
-	case('['): return ']';
-	case('{'): return '}';
-	case(')'): return '(';
-	case(']'): return '[';
-	case('}'): return '{';
-	default: return b;
+std::vector<Object> parse_expr(std::string expr) {
+	if (expr.length() == 0) return { Object("_Const", {}, 0) };
+	std::vector<std::string> tokens;
+	while (expr.length() > 0) {
+		std::string token = parse_token(expr);
+		if (token[0] != ' ') tokens.push_back(token);
+		expr = expr.substr(token.length());
 	}
-}
-int priority(std::string token) {
-	if (token == "+" || token == "-") return 5;
-	else if (token == "*" || token == "/" || token == "%") return 4;
-	else if (token == "^") return 3;
-	else if (token == "!") return 2;
-	else if (token == "(" || token == "[" || token == "{" || token == ")" || token == "]" || token == "}") return 0;
-	else if (token == "=" || token == "<" || token == ">" || token == "!=" || token == "<=" || token == ">=") return 6;
-	else if (token == "&" || token == "!&") return 7;
-	else if (token == "|" || token == "!|") return 8;
-	return 1;
-}
-bool need_mul(std::string token1, std::string token2) {
-	//	+ - * / ^
-	if (priority(token1) > 2 || priority(token2) > 2) return false;
+	//for (auto t : tokens) std::cout << t << "\n";
 
-	if (token1 == "(" || token1 == "[" || token1 == "{" || token1 == ";" || token1 == ",") return false;
-	if (token2 == ")" || token2 == "]" || token2 == "}" || token2 == ";" || token2 == "," || token2 == "!") return false;
-	// fnc[]() | fnc{}[]
-	if (token1 == "]" && token2 == "(" || token1 == "}" && token2 == "[") return false;
-	//	fnc()
-	token1[0] = std::tolower(token1[0]);
-	if (('a' <= token1[0] && token1[0] <= 'z' || token1[0] == '_') && (token2 == "(" || token2 == "[" || token2 == "{")) return false;
+	for (int i = 1; i < tokens.size(); i++)
+		if (need_mul(tokens[i - 1], tokens[i]))
+			tokens.insert(tokens.begin() + i, "*");
 
-	return true;
+	std::vector<Object> objects;
+	parse_obj(&objects, tokens, 0, tokens.size() - 1);
+	for (int i = 0; i < objects.size(); i++) {
+		objects[i].id = 0;
+		for (char c : objects[i].name)
+			objects[i].id = (objects[i].id << 1) + (int)c;
+	}
+
+	return objects;
 }
 
 math::number Object::return_value(std::vector<Object>* objects, std::vector<Variable>* args) {
@@ -581,6 +673,10 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			math::real
 				radius = math::abs(diffPart),
 				radFract = radius - std::floor(radius);
+
+			if (radius != radius) return radius;
+			if (radius == math::inf) return 0;
+
 			int n = 1;
 			math::number
 				angle1 = math::mul_i((math::number)std::acos(0.5 * radFract / n)),
@@ -745,16 +841,18 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			return res * dx;
 		}
 		case(ObjType::_IntegralAlongExp): {
+			if (args_results[1] == args_results[2]) return 0;
+
 			int var_index = args->size();
 			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
 
 			const int n = 512 * (1 + math::abs(math::ln(args_results[2] / args_results[1])));
-			math::number res = 0, dx = (math::ln(args_results[2] / args_results[1])) / n, x = math::ln(args_results[1]), dt;
+			math::number res = 0, dx = (math::ln(args_results[2] / args_results[1])) / n, x = math::ln(args_results[1]) + 0.5 * dx, dt;
 			for (int k = 0; k < n; k++) {
-				dt = math::exp(x + dx) - math::exp(x);
+				(*args)[var_index].value = math::exp(x);
+				dt = math::exp(x + 0.5 * dx) - math::exp(x - 0.5 * dx);
 				res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * dt;
 				x = x + dx;
-				(*args)[var_index].value = math::exp(x);
 			}
 
 			args->erase(args->begin() + var_index);
@@ -871,6 +969,20 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 math::number value(std::vector<Object> objects, std::vector<Variable> args) {
 	return objects[0].return_value(&objects, &args);
 }
+
 math::number Function::return_value() {
 	return value(this->objects, this->args);
+}
+
+static std::string printObj(std::string str, std::vector<Object> &objects, int index) {
+	if (objects.size() <= index) return "?";
+
+	if (objects[index].arg_indexes.size() == 0) {
+
+	}
+
+	return "?";
+}
+std::string Function::toString() {
+	return printObj("", this->objects, 0);
 }

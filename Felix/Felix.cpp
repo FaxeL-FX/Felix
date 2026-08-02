@@ -1,4 +1,4 @@
-﻿//	v1.12.15
+﻿//	v1.12.16
 
 #include <iostream>
 #include "include.h"
@@ -58,10 +58,16 @@ Color penAdd(Color a, Color b) {
 	if (a.B < 0) a.B = 0;
 	return a;
 }
-float absMul(float c, float absolute) { return std::pow(absolute, 1.333 / (c + 0.333)); }
+float absMul(float c, math::real absolute) {
+	float t;
+	if (absolute > 1.0) t = 1.0 - 0.5 / std::pow(absolute, 0.25);
+	else				t = 0.5 * std::pow(absolute, 0.25);
+	return (1.0 - 2.0 * c) * t * t + 2.0 * c * t;
+}
 Color toCol(math::complex x) {
 	Color c;
-	float angle = math::arg(x), absolute = math::abs(x) / (math::abs(x) + 1.0);
+	float angle = math::arg(x);
+	math::real absolute = math::abs(x);
 	c.A = 1;
 	c.R = (std::cos(angle) + 1) * 0.5;
 	c.G = (std::cos(angle + 2.0943951) + 1) * 0.5;
@@ -157,9 +163,9 @@ bool run_command(std::string c) {
 			if (f.args.size() > 0) {
 				std::cout << "(";
 				for (auto a : f.args) std::cout << a.name << ",";
-				std::cout << "\b)";
+				std::cout << "\b) = " << f.toString() << "\n";
 			}
-			std::cout << " [ID:" << f.id << "]\n";
+			else std::cout << " = " << f.return_value().toString() << "\n";
 		}
 		return true;
 	}
@@ -399,7 +405,8 @@ bool run_command(std::string c) {
 		image.resize(resolution * resolution * 4);
 
 		GifWriter writer = {};
-		if (gif) GifBegin(&writer, "graph.gif", resolution, resolution, delay);
+		int32_t bit_depth = 8;
+		if (gif) GifBegin(&writer, "graph.gif", resolution, resolution, delay, bit_depth);
 
 		int progress = 0;
 		bool go = true;
@@ -414,7 +421,7 @@ bool run_command(std::string c) {
 		};
 		std::thread counter = std::thread(counter_lambda);
 
-		for (int frame = 0; frame < frames; frame++) {
+		for (int frame = 0; frame <= frames; frame++) {
 			p = start_value * (1 - (double)frame / frames) + end_value * ((double)frame / frames);
 			for (int i = 0; i < resolution * resolution; i++) img[i] = { 0, 0, 0 };
 
@@ -482,7 +489,7 @@ bool run_command(std::string c) {
 					a = 255;
 				}
 			}
-			GifWriteFrame(&writer, image.data(), resolution, resolution, delay);
+			GifWriteFrame(&writer, image.data(), resolution, resolution, delay, bit_depth);
 		}
 
 		go = false;

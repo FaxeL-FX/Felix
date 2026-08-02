@@ -30,31 +30,34 @@ namespace math {
 
 		std::string toString() {
 			double R = this->R, i = this->i;
-			if (-0.000001 < this->R && this->R < 0.000001) R = 0.0;
-			if (-0.000001 < this->i && this->i < 0.000001) i = 0.0;
+			//if (-0.000001 < this->R && this->R < 0.000001) R = 0.0;
+			//if (-0.000001 < this->i && this->i < 0.000001) i = 0.0;
 
-			if (R == 0.0 && this->i == 0.0) return "0";
-			if (R == 0.0) return std::to_string(this->i) + "i";
-			if (i == 0.0) return std::to_string(this->R);
+			//if (R == 0.0 && this->i == 0.0) return "0";
+			if (i == 0.0) return std::format("{:.20f}", this->R);
+			if (R == 0.0) return std::format("{:.20f}", this->i) + "i";
 
-			if (i < 0) return std::to_string(this->R) + std::to_string(this->i) + "i";
-			return std::to_string(this->R) + "+" + std::to_string(this->i) + "i";
+			if (i < 0) return std::format("{:.20f}", this->R) + std::format("{:.20f}", this->i) + "i";
+			return std::format("{:.20f}", this->R) + "+" + std::format("{:.20f}", this->i) + "i";
 		}
 
-		void operator +=(complex& x) {
+		complex& operator +=(complex& x) {
 			this->R += x.R;
 			this->i += x.i;
+			return *this;
 		}
-		void operator -=(complex& x) {
+		complex& operator -=(complex& x) {
 			this->R -= x.R;
 			this->i -= x.i;
+			return *this;
 		}
-		void operator *=(complex& y) {
+		complex& operator *=(complex& y) {
 			real 
 				new_R = this->R * y.R - this->i * y.i,
 				new_i = this->R * y.i + this->i * y.R;
 			this->R = new_R;
 			this->i = new_i;
+			return *this;
 		}
 		void inverse() {
 			real denominator = this->R * this->R + this->i * this->i;
@@ -62,9 +65,10 @@ namespace math {
 			this->i /= denominator;
 			this->i = -this->i;
 		}
-		void operator /=(complex y) {
+		complex& operator /=(complex y) {
 			y.inverse();
 			*this *= y;
+			return *this;
 		}
 	};
 	extern const complex i;
@@ -168,9 +172,9 @@ namespace math {
 				if (numstr == "0") continue;
 				str += "\n  + (" + numstr + ")";
 				/**/ if (i == acch + 1)		str += " * inf";
-				else if (i == acch - 1)		str += " * 0";
+				else if (i == acch - 1)		str += " * o";
 				else if (i > acch)	str += " * inf^" + std::to_string(i - acch);
-				else if (i < acch)	str += " * 0^" + std::to_string(acch - i);
+				else if (i < acch)	str += " * o^" + std::to_string(acch - i);
 			}
 			if (str == "") return "ConstZero";
 			return str.substr(5);

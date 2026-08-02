@@ -124,6 +124,7 @@ struct Function {
 	std::vector<Object> objects;
 
 	math::number return_value();
+	std::string toString();
 
 	Function() {}
 	Function(int id, std::string name, std::vector<Variable> args, std::vector<Object> objects) {

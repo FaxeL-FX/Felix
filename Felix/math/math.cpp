@@ -9,7 +9,7 @@ namespace math {
 	const infsim
 		infinity(acch + 1, 1.0),
 		zero(acch - 1, 1.0),
-		lnInf = -ln_sum(infinity);
+		lnInf = 710;
 
 	//	complex
 	complex::complex(infsim x) {
@@ -22,7 +22,10 @@ namespace math {
 	complex operator-(complex x, complex y) { return complex(x.R - y.R, x.i - y.i); }
 	complex operator*(complex x, complex y) { return complex(x.R * y.R - x.i * y.i, x.R * y.i + x.i * y.R); }
 	complex operator/(complex x, complex y) {
-		if (x == y) return 1;
+		if (abs(x) == abs(y)) {
+			x = normalize(x);
+			y = normalize(y);
+		}
 		if (x == 0) return 0;
 		if (0 == y) {
 			if (x.i == 0) return complex(x.R / 0.0);
@@ -33,7 +36,7 @@ namespace math {
 		if (y.R == -inf)	return complex(-0, 0);
 		if (y.i == inf)		return complex(0, 0);
 		if (y.i == -inf)	return complex(0, -0);
-		long double denominator = 1.0 / (y.R * y.R + y.i * y.i);
+		real denominator = 1.0 / (y.R * y.R + y.i * y.i);
 		return complex((x.R * y.R + x.i * y.i) * denominator, (y.R * x.i - x.R * y.i) * denominator);
 	}
 	complex operator%(complex x, complex y) { return x - y * floor(x / y); }
@@ -219,7 +222,17 @@ namespace math {
 		if (x.R == 0)
 			if (x.i < 0)	return -i;
 			else			return i;
-		return x / std::sqrt(x.R * x.R + x.i * x.i);
+		if (abs(x) == inf) {
+			if (x.R == inf) {
+				if (x.i < 0)	return (1 - i) * std::sqrt(0.5);
+				else			return (1 + i) * std::sqrt(0.5);
+			}
+			else {
+				if (x.i < 0)	return (-1 - i) * std::sqrt(0.5);
+				else			return (-1 + i) * std::sqrt(0.5);
+			}
+		}
+		return x * (1.0 / std::sqrt(x.R * x.R + x.i * x.i));
 	}
 	complex mul_i(complex x) { return complex(-x.i, x.R); }
 	real arg(complex x) {
@@ -238,9 +251,18 @@ namespace math {
 		res.i *= std::exp(x.R);
 		return res;
 	}
-	complex ln(complex x) { return complex(std::log(abs(x)), arg(x)); }
+	complex ln(complex x) {
+		//if (abs(x) == inf) return complex(710, arg(x));
+		//if (abs(x) == 0.0) return complex(-710, arg(x));
+		return complex(std::log(abs(x)), arg(x));
+	}
 	complex pow(complex x, complex y) {
 		if (abs(y) == inf) return exp(y * ln(x));
+		if (x == 0) {
+			if (y.R < 0) return inf;
+			if (0 < y.R) return 0;
+		}
+
 		complex res = 1;
 		if (y.R != y.R - 1) for (; 0 < y.R;) {
 			res = res * x;
@@ -251,9 +273,13 @@ namespace math {
 			y.R = y.R + 1;
 		}
 		if (y == 0) return res;
+
 		return res * exp(y * ln(x));
 	}
-	complex sqrt(complex x) { return exp(0.5 * ln(x)); }
+	complex sqrt(complex x) {
+		if (x == 0) return 0;
+		return exp(0.5 * ln(x));
+	}
 	complex inv_sqrt(complex x) { return exp(-0.5 * ln(x)); }
 
 	real Re(complex x) { return x.R; }
@@ -310,8 +336,9 @@ namespace math {
 			x = x - 1;
 		}
 		real n = 512.5;
-		res *= exp(-x + (x + 0.5) * ln(x + n) - 0.5 * std::log(n));
-		for (long long i = 1; i < n; i++) res *= i / (x + i) / n * (x + n);
+		if (x == 0) return res;
+		res = res * exp(-x + (x + 0.5) * ln(x + n) - 0.5 * std::log(n));
+		for (long long i = 1; i < n; i++) res = res * i / (x + i) / n * (x + n);
 		return res;
 	}
 	complex inv_fct(complex x) {
@@ -322,6 +349,8 @@ namespace math {
 		return res;
 	}
 	complex gamma(complex x) {
+		return fct(x - 1);
+
 		complex res = exp(-0.5772156649 * x) / x;
 		for (int k = 1; k != 2048; k++) res = res * exp(x / k) / (1 + x / k);
 		return res;
@@ -350,7 +379,7 @@ namespace math {
 		if (0 < x.R) return -fct(x) * pow(2 * pi, -x) * sin1(x * 0.5) * zeta(-x - 1);
 		int n = 128;
 		complex res = 0;
-		for (int k = 1; k <= n; k++) res += pow(k, x);
+		for (int k = 1; k <= n; k++) res = res + pow(k, x);
 		return res - pow(n + 0.5, x + 1) / (x + 1);
 	}
 	complex zetaByFct(complex x) {
@@ -360,7 +389,7 @@ namespace math {
 
 	complex USumN(complex x, complex n) {
 		complex res;
-		for (; x.R < 1;) {
+		if (x != x + 1) for (; x.R < 1;) {
 			x = x + 1;
 			res = res - pow(x, n);
 		}
@@ -389,7 +418,7 @@ namespace math {
 			}
 		}
 		else {
-			int m = 64;
+			int m = 512;
 			if (n == -1)	res = res + ln(x + m + 0.5);
 			else			res = res + pow(x + m + 0.5, n + 1) / (n + 1);
 			for (int k = 1; k <= m; k++) res = res - pow(x + k, n);
@@ -404,7 +433,7 @@ namespace math {
 			dx = (b - a) / n,
 			x = a + dx * 0.5;
 		for (int k = 0; k < n; k++) {
-			res += f(x);
+			res = res + f(x);
 			x += dx;
 		}
 		return res * dx;
@@ -414,7 +443,7 @@ namespace math {
 		const real dt = 1.0 / n;
 		complex res = 0;
 		for (real k = dt * 0.5; k < 1.0;) {
-			res += f(path(k)) * (path(k + dt * 0.5) - path(k - dt * 0.5));
+			res = res + f(path(k)) * (path(k + dt * 0.5) - path(k - dt * 0.5));
 			k += dt;
 		}
 		return res;
@@ -498,7 +527,7 @@ namespace math {
 
 	infsim exp(infsim x) {
 		infsim res = x * std::pow(2.0, -64);
-		if (res.getNum(acch).R < 0) res = -res;
+		if (x.getNum(acch).R < 0) res = -res;
 		for (int i = 0; i < 64; i++) res = (res * 2) + res * res;
 		if (x.getNum(acch).R < 0) return 1 / (res + 1);
 		return res + 1;
@@ -607,7 +636,7 @@ namespace math {
 	}
 	infsim Harmonic(infsim x) {
 		if (x.getNum(acch).R < -0.5) return Harmonic(-x - 1) - cos1(x) / sin1(x);
-		int n = 64;
+		int n = 256;
 		infsim res = ln(1 + x / n);
 		for (int k = 1; k <= n; k++)
 			res = res + x / (k * (x + k));
