@@ -1,15 +1,10 @@
 #pragma once
 #include "../include.h"
 
-#ifndef infsimIsHere
-#define infsimIsHere 0
-#endif
-
 namespace math {
 	using real = long double;
 	extern const real pi, inf;
 
-	struct infsim;
 	//	complex
 	struct complex {
 		real R, i;
@@ -26,14 +21,10 @@ namespace math {
 			this->R = R;
 			this->i = i;
 		}
-		complex(infsim x);
 
 		std::string toString() {
 			double R = this->R, i = this->i;
-			//if (-0.000001 < this->R && this->R < 0.000001) R = 0.0;
-			//if (-0.000001 < this->i && this->i < 0.000001) i = 0.0;
-
-			//if (R == 0.0 && this->i == 0.0) return "0";
+			
 			if (i == 0.0) return std::format("{:.20f}", this->R);
 			if (R == 0.0) return std::format("{:.20f}", this->i) + "i";
 
@@ -134,122 +125,8 @@ namespace math {
 	complex Derivative(complex(*f)(complex), complex x);
 
 
-	// infinitesimal (infsim)
-	const unsigned int accuracy = 32u;
-	const int acch = accuracy >> 1;
-
-	struct infsim {
-		std::vector<complex> Pol;
-		infsim() { this->Pol.resize(accuracy); }
-		infsim(complex x) {
-			this->Pol.resize(accuracy);
-			Pol[acch] = x;
-		}
-		infsim(double x) : infsim(complex(x)) {}
-		infsim(int index, complex x) {
-			this->Pol.resize(accuracy);
-			if (index < 0) return;
-			if (index >= accuracy) return;
-			Pol[index] = x;
-		}
-		complex getNum(int index) {
-			if (index < 0) return 0;
-			if (index >= accuracy) return 0;
-			return Pol[index];
-		}
-		void setNum(int index, complex x) {
-			if (index < 0) return;
-			if (index >= accuracy) return;
-			Pol[index] = x;
-		}
-		std::string toString() {
-			std::string str = "";
-			int lower = 0, higher = accuracy - 1;
-			for (; 0 <= higher && this->getNum(higher) == 0; higher--) {}
-			for (; lower < accuracy && this->getNum(lower) == 0; lower++) {}
-			for (int i = higher; i >= lower; i--) {
-				std::string numstr = this->Pol[i].toString();
-				if (numstr == "0") continue;
-				str += "\n  + (" + numstr + ")";
-				/**/ if (i == acch + 1)		str += " * inf";
-				else if (i == acch - 1)		str += " * o";
-				else if (i > acch)	str += " * inf^" + std::to_string(i - acch);
-				else if (i < acch)	str += " * o^" + std::to_string(acch - i);
-			}
-			if (str == "") return "ConstZero";
-			return str.substr(5);
-		}
-		std::string toStringSmall() {
-			std::string str;
-			int index = accuracy - 1;
-			for (; 0 <= index && this->getNum(index) == 0; index--) {}
-			if (index > acch)		return "inf";
-			if (index < acch)		return "0";
-			return this->Pol[index].toString();
-		}
-		std::string toStringLatex() {
-			std::string str = "";
-			int lower = 0, higher = accuracy - 1;
-			for (; 0 <= higher && this->getNum(higher) == 0; higher--) {}
-			for (; lower < accuracy && this->getNum(lower) == 0; lower++) {}
-			for (int i = higher; i >= lower; i--) {
-				if (i < higher)		str += "+";
-				/**/ if (i == acch)		str += "1\\cdot";
-				else if (i == acch + 1)		str += "\\infty\\cdot";
-				else if (i == acch - 1)		str += "0\\cdot";
-				else if (i > acch)	str += "\\infty^" + std::to_string(i - acch) + "\\cdot";
-				else				str += "0^" + std::to_string(acch - i) + "\\cdot";
-				str += "(" + this->Pol[i].toString() + ")";
-			}
-			if (str == "") str = "0_C";
-			return str;
-		}
-	};
-	extern const infsim infinity, zero, lnInf;
-
-	infsim operator+(infsim x, infsim y);
-	infsim operator-(infsim x);
-	infsim operator-(infsim x, infsim y);
-	infsim operator*(infsim x, infsim y);
-	infsim inv(infsim x);
-	infsim operator/(infsim x, infsim y);
-	infsim mul(infsim x, complex y);
-	infsim div(infsim x, complex y);
-
-
-	infsim Re(infsim x);
-	infsim Im(infsim x);
-	complex grid(infsim x);
-	infsim mul_i(infsim x);
-	infsim floor(infsim x);
-	infsim ceil(infsim x);
-
-	infsim exp(infsim x);
-	infsim ln_sum(infsim x);
-	infsim ln_integral(infsim x);
-	infsim ln(infsim x);
-	infsim pow(infsim x, infsim y);
-	infsim sqrt(infsim x);
-	infsim inv_sqrt(infsim x);
-
-	infsim sin1(infsim x);
-	infsim cos1(infsim x);
-	infsim Binom(infsim n, infsim k);
-
-	infsim fct(infsim x);
-	infsim inv_fct(infsim x);
-	infsim gamma(infsim x);
-	infsim fctIntegral(infsim x, infsim y);
-	infsim Harmonic(infsim x);
-	infsim zeta(infsim x);
-
-	infsim USumN(infsim x, infsim n);
-
-#if infsimIsHere
-	typedef infsim number;
-#else
 	typedef complex number;
-#endif
+
 
 	template <typename NumT> NumT cosh(NumT x) { return (exp(x) + exp(-x)) * 0.5; }
 	template <typename NumT> NumT sinh(NumT x) { return (exp(x) - exp(-x)) * 0.5; }

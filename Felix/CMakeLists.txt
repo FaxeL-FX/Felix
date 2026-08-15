@@ -6,7 +6,6 @@ list(APPEND FELIX_SOURCES
 )
 
 target_sources(Felix PRIVATE ${FELIX_SOURCES})
-target_sources(FelixInfsim PRIVATE ${FELIX_SOURCES})
 
 if(TARGET FelixMath)
     target_sources(FelixMath PRIVATE math/math.cpp)

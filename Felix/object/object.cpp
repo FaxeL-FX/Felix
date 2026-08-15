@@ -376,18 +376,6 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 		(*objects)[objIndex].value = math::i;
 		return;
 	}
-#if infsimIsHere
-	else if (token == "inf") {
-		(*objects)[objIndex].type = ObjType::_Const;
-		(*objects)[objIndex].value = math::infinity;
-		return;
-	}
-	else if (token == "o") {
-		(*objects)[objIndex].type = ObjType::_Const;
-		(*objects)[objIndex].value = math::zero;
-		return;
-	}
-#endif
 
 	(*objects)[objIndex].name = token;
 	(*objects)[objIndex].type = nameToType(token);
@@ -657,19 +645,13 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			math::number
 				res = (*objects)[this->arg_indexes[3]].return_value(objects, args),
 				difference = args_results[2] - args_results[1];
-#if infsimIsHere
-			long long
-				repeats = std::floor(difference.getNum(math::acch).R);
-			math::number
-				diffPart = math::infsim(difference.getNum(math::acch).R - repeats + math::i * difference.getNum(math::acch).i),
-				step = math::normalize(diffPart.getNum(math::acch));
-#else
+
 			long long
 				repeats = std::floor(difference.R);
 			math::number
 				diffPart = math::complex(difference.R - repeats, difference.i),
 				step = math::normalize(diffPart);
-#endif
+
 			math::real
 				radius = math::abs(diffPart),
 				radFract = radius - std::floor(radius);
@@ -908,6 +890,27 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			return res;
 		}
 	}
+	case(5): switch (this->type) {
+		case(ObjType::_Sum): {
+			int var_index = args->size();
+			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+			math::number
+				res = (*objects)[this->arg_indexes[4]].return_value(objects, args),
+				difference = args_results[2] - args_results[1],
+				m = args_results[3];
+
+			long long
+				repeats = std::floor(difference.R);
+			math::number
+				diffPart = math::complex(difference.R - repeats, difference.i),
+				step = math::normalize(diffPart);
+
+
+
+			args->erase(args->begin() + var_index);
+			return res;
+		}
+	}
 	}
 	if (this->type == ObjType::_Polynomial && args_results.size() > 3) {
 		int var_index = args->size();
@@ -947,12 +950,11 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		args->erase(args->begin() + var_index);
 		return res;
 	}
-#if !infsimIsHere
+
 	if (this->type == ObjType::_rand) {
 		if (args_results.size() == 0) return math::rand(std::chrono::steady_clock::now().time_since_epoch().count() % 4096);
 		return math::rand(0, args_results);
 	}
-#endif
 
 	for (auto arg : *args)
 		if (this->id == arg.id)

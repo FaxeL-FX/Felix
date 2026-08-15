@@ -11,10 +11,7 @@ endif()
 
 add_executable(Felix)
 
-add_executable(FelixInfsim)
-target_compile_definitions(FelixInfsim PRIVATE infsimIsHere=1)
 
 target_link_libraries(Felix PRIVATE msvc_utf8)
-target_link_libraries(FelixInfsim PRIVATE msvc_utf8)
 
 add_subdirectory(Felix)
