@@ -45,6 +45,8 @@ enum ObjType {
 	_zetaZero,
 };
 
+extern struct Function;
+
 struct Variable {
 	int id = -1;
 	std::string name;
@@ -77,7 +79,7 @@ struct Object {
 	std::vector<int> arg_indexes;
 	math::number value;
 
-	math::number return_value(std::vector<Object>* objects, std::vector<Variable>* args);
+	math::number return_value(std::vector<Object> &objects, std::vector<Variable> &args, std::vector<Function>& functions);
 
 	Object(std::string name, ObjType type, std::vector<int> arg_indexes, math::number value) {
 		this->name = name;
@@ -123,7 +125,7 @@ struct Function {
 	std::vector<Variable> args;
 	std::vector<Object> objects;
 
-	math::number return_value();
+	math::number return_value(std::vector<Function> &functions);
 	std::string toString();
 
 	Function() {}
@@ -135,7 +137,6 @@ struct Function {
 	}
 };
 
-extern std::vector<Function> functions_list;
 
 ObjType nameToType(std::string);
 
@@ -148,4 +149,4 @@ char antibr(char);
 int priority(std::string);
 bool need_mul(std::string, std::string);
 
-math::number value(std::vector<Object>, std::vector<Variable>);
+math::number value(std::vector<Object> &objects, std::vector<Variable> &variables, std::vector<Function>& functions);

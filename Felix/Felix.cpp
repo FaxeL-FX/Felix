@@ -1,13 +1,12 @@
-﻿//	v1.12.17
+﻿//	v1.12.18
 
-#include <iostream>
-#include "include.h"
-#include "object/object.h"
+#include "Felix.h"
+
 #include "bmp/BMPWriter.h"
 #include "bmp/gif.h"
+#include <iostream>
 #include <functional>
 #include <thread>
-#include <Windows.h>
 
 const unsigned int prc_count = std::thread::hardware_concurrency();
 
@@ -91,10 +90,7 @@ Color RGBColor(double col) {
 		1);
 }
 
-math::complex plot_center = 0;
-long double plot_radius = 8;
-
-bool run_command(std::string c) {
+bool Felix::run_command(std::string c) {
 	std::vector<std::string> args;
 	for (;;) {
 		while (c[0] == ' ') c = c.substr(1);
@@ -139,7 +135,11 @@ bool run_command(std::string c) {
 
 		std::string expr = "";
 		for (int i = 2 + (args[2] == "="); i < args.size(); i++) expr += args[i] + ' ';
-		if (f.args.size() == 0) f.objects = { Object(ObjType::_Const, {}, value(parse_expr(expr), {})) };
+		if (f.args.size() == 0) {
+			auto objs = parse_expr(expr);
+			std::vector<Variable> vars = {};
+			f.objects = { Object(ObjType::_Const, {}, value(objs, vars, functions_list)) };
+		}
 		else f.objects = parse_expr(expr);
 
 		for (int i = 0; i < functions_list.size(); i++)
@@ -165,7 +165,7 @@ bool run_command(std::string c) {
 				for (auto a : f.args) std::cout << a.name << ",";
 				std::cout << "\b) = " << f.toString() << "\n";
 			}
-			else std::cout << " = " << f.return_value().toString() << "\n";
+			else std::cout << " = " << f.return_value(functions_list).toString() << "\n";
 		}
 		return true;
 	}
@@ -175,8 +175,13 @@ bool run_command(std::string c) {
 	}
 	if (args[0] == "scale") {
 		if (args.size() < 3) return false;
-		plot_center = value(parse_expr(args[1]), {});
-		plot_radius = math::abs(value(parse_expr(args[2]), {}));
+
+		auto objs1 = parse_expr(args[1]);
+		auto objs2 = parse_expr(args[2]);
+		std::vector<Variable> vars = {};
+
+		plot_center = value(objs1, vars, functions_list);
+		plot_radius = math::abs(value(objs2, vars, functions_list));
 		return true;
 	}
 	if (args[0] == "print") {
@@ -209,10 +214,14 @@ bool run_command(std::string c) {
 				delay = std::stoi(args[i].substr(6));
 			}
 			else if (args[i].substr(0, 8) == "p_start=") {
-				start_value = value(parse_expr(args[i].substr(8)), {});
+				auto objs = parse_expr(args[i].substr(8));
+				std::vector<Variable> vars = {};
+				start_value = value(objs, vars, functions_list);
 			}
 			else if (args[i].substr(0, 6) == "p_end=") {
-				end_value = value(parse_expr(args[i].substr(6)), {});
+				auto objs = parse_expr(args[i].substr(6));
+				std::vector<Variable> vars = {};
+				end_value = value(objs, vars, functions_list);
 			}
 		}
 		if (!gif) frames = 1;
@@ -269,13 +278,13 @@ bool run_command(std::string c) {
 				if (gif && f.args.size() == 2) {
 					f.args[1].value = parameter;
 				}
-				res = f.return_value();
+				res = f.return_value(functions_list);
 				iYp = ((res.R - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
 				if (resolution <= iYp) iYp = resolution - 1;
 				if (iYp < 0) iYp = 0;
 				for (long long iX = begin; iX < end && iX < resolution; iX++) {
 					f.args[0].value = start + step * iX;
-					res = f.return_value();
+					res = f.return_value(functions_list);
 					iY = ((res.R - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
 					if (resolution <= iY) iY = resolution - 1;
 					if (iY < 0) iY = 0;
@@ -335,7 +344,7 @@ bool run_command(std::string c) {
 							}
 							break;
 						}
-						res = 1 / (1 + math::abs(f.return_value()));
+						res = 1 / (1 + math::abs(f.return_value(functions_list)));
 						img[iY * resolution + iX] = toVecF(penAdd(img[iY * resolution + iX], Color(res.R)));
 						progress++;
 					}
@@ -380,7 +389,7 @@ bool run_command(std::string c) {
 							}
 							break;
 						}
-						res = f.return_value();
+						res = f.return_value(functions_list);
 						img[iY * resolution + iX] = toVecF(penAdd(img[iY * resolution + iX], toCol(res)));
 						progress++;
 					}
@@ -849,23 +858,4 @@ bool run_command(std::string c) {
 	}
 
 	return false;
-}
-
-int main() {
-	SetConsoleOutputCP(CP_UTF8);
-	std::string expression;
-	int count = 0;
-	for (;;) {
-		std::cout << " ";
-		std::getline(std::cin, expression);
-		if (expression[0] == '>') {
-			if (run_command(expression.substr(1)))	std::cout << " ----> done";
-			else									std::cout << " --X-> failed";
-		}
-		else {
-			math::number answer = value(parse_expr(expression), {});
-			std::cout << " -> " << answer.toString();
-		}
-		std::cout << "\n\n";
-	}
 }

@@ -322,7 +322,7 @@ namespace math {
 		if (abs(x.i) == inf) return 0;
 		if (x.R < -0.5) return -1 / (sin1(x) * fct(-1 - x));
 		complex res = 1;
-		if (x != x - 1) for (;1 <= x.R;) {
+		if (x != x - 1) for (;1 <= x.R && !(std::isnan(res.R) || std::isnan(res.i));) {
 			res *= x;
 			x = x - 1;
 		}

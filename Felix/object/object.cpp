@@ -1,7 +1,6 @@
 #include "object.h"
 #include <chrono>
 
-std::vector<Function> functions_list;
 
 ObjType nameToType(std::string token) {
 	if ('0' <= token[0] && token[0] <= '9' || token[0] == '.') return ObjType::_Const;
@@ -458,9 +457,9 @@ std::vector<Object> parse_expr(std::string expr) {
 	return objects;
 }
 
-math::number Object::return_value(std::vector<Object>* objects, std::vector<Variable>* args) {
+math::number Object::return_value(std::vector<Object> &objects, std::vector<Variable> &args, std::vector<Function>& functions) {
 	std::vector<math::number> args_results;
-	for (auto i : this->arg_indexes) args_results.push_back((*objects)[i].return_value(objects, args));
+	for (auto i : this->arg_indexes) args_results.push_back(objects[i].return_value(objects, args, functions));
 
 	switch (arg_indexes.size()) {
 	case(0): switch (this->type) {
@@ -574,76 +573,76 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 	case(3): switch (this->type) {
 		case(ObjType::_Derivative): {
 			const int n = 256;
-			int var_index = args->size();
-			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1] + 0.5 / n));
-			math::number res = (*objects)[this->arg_indexes[2]].return_value(objects, args);
-			(*args)[var_index].value = args_results[1] - 0.5 / n;
-			res = res - (*objects)[this->arg_indexes[2]].return_value(objects, args);
-			args->erase(args->begin() + var_index);
+			int var_index = args.size();
+			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1] + 0.5 / n));
+			math::number res = objects[this->arg_indexes[2]].return_value(objects, args, functions);
+			args[var_index].value = args_results[1] - 0.5 / n;
+			res = res - objects[this->arg_indexes[2]].return_value(objects, args, functions);
+			args.erase(args.begin() + var_index);
 			return res * n;
 		}
 		case(ObjType::_ForwardDifference): {
-			int var_index = args->size();
-			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
-			math::number res = -(*objects)[this->arg_indexes[2]].return_value(objects, args);
-			(*args)[var_index].value = args_results[1] + 1;
-			res = res + (*objects)[this->arg_indexes[2]].return_value(objects, args);
-			args->erase(args->begin() + var_index);
+			int var_index = args.size();
+			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
+			math::number res = -objects[this->arg_indexes[2]].return_value(objects, args, functions);
+			args[var_index].value = args_results[1] + 1;
+			res = res + objects[this->arg_indexes[2]].return_value(objects, args, functions);
+			args.erase(args.begin() + var_index);
 			return res;
 		}
 		case(ObjType::_BackwardDifference): {
-			int var_index = args->size();
-			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
-			math::number res = (*objects)[this->arg_indexes[2]].return_value(objects, args);
-			(*args)[var_index].value = args_results[1] - 1;
-			res = res - (*objects)[this->arg_indexes[2]].return_value(objects, args);
-			args->erase(args->begin() + var_index);
+			int var_index = args.size();
+			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
+			math::number res = objects[this->arg_indexes[2]].return_value(objects, args, functions);
+			args[var_index].value = args_results[1] - 1;
+			res = res - objects[this->arg_indexes[2]].return_value(objects, args, functions);
+			args.erase(args.begin() + var_index);
 			return res;
 		}
 		case(ObjType::_If): {
-			if ((*objects)[this->arg_indexes[0]].return_value(objects, args) == 0)
-				return (*objects)[this->arg_indexes[1]].return_value(objects, args);
-			return (*objects)[this->arg_indexes[2]].return_value(objects, args);
+			if (objects[this->arg_indexes[0]].return_value(objects, args, functions) == 0)
+				return objects[this->arg_indexes[1]].return_value(objects, args, functions);
+			return objects[this->arg_indexes[2]].return_value(objects, args, functions);
 		}
 
 		case(ObjType::_SumZeta): {
-			int var_index = args->size(), n = 256;
-			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, 0));
+			int var_index = args.size(), n = 256;
+			args.push_back(Variable(objects[this->arg_indexes[0]].name, 0));
 
 			math::number res, integ, dx = args_results[1] / n;
-			(*args)[var_index].value = (*args)[var_index].value + dx * 0.5;
+			args[var_index].value = args[var_index].value + dx * 0.5;
 			for (int k = 0; k < n; k++) {
-				integ = integ + (*objects)[this->arg_indexes[2]].return_value(objects, args);
-				(*args)[var_index].value = (*args)[var_index].value + dx;
+				integ = integ + objects[this->arg_indexes[2]].return_value(objects, args, functions);
+				args[var_index].value = args[var_index].value + dx;
 			}
 			res = integ * dx;
 
-			(*args)[var_index].value = args_results[1];
-			res = res + (*objects)[this->arg_indexes[2]].return_value(objects, args) * 0.5;
+			args[var_index].value = args_results[1];
+			res = res + objects[this->arg_indexes[2]].return_value(objects, args, functions) * 0.5;
 
 			for (int k = 1; k < 20;) {
-				(*args)[var_index].value = args_results[1];
-				math::number der = (*objects)[this->arg_indexes[2]].return_value(objects, args);
+				args[var_index].value = args_results[1];
+				math::number der = objects[this->arg_indexes[2]].return_value(objects, args, functions);
 				math::real d = 4294967296, delta = std::exp(-std::log(d) / k);
 				for (int l = 1; l <= k; l++) {
-					(*args)[var_index].value = (*args)[var_index].value - delta;
-					der = der + (1 - 2 * (l % 2)) * math::Binom(k, l) * (*objects)[this->arg_indexes[2]].return_value(objects, args);
+					args[var_index].value = args[var_index].value - delta;
+					der = der + (1 - 2 * (l % 2)) * math::Binom(k, l) * objects[this->arg_indexes[2]].return_value(objects, args, functions);
 				}
 				res = res - math::zbf(k) * (der * d);
 				k += 2;
 			}
 
-			args->erase(args->begin() + var_index);
+			args.erase(args.begin() + var_index);
 			return res;
 		}
 	}
 	case(4): switch (this->type) {
 		case(ObjType::_Sum):
 		case(ObjType::_Product): {
-			int var_index = args->size();
-			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+			int var_index = args.size();
+			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
 			math::number
-				res = (*objects)[this->arg_indexes[3]].return_value(objects, args),
+				res = objects[this->arg_indexes[3]].return_value(objects, args, functions),
 				difference = args_results[2] - args_results[1];
 
 			long long
@@ -668,234 +667,234 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 				step3 = -step * math::exp( angle2),
 				step4 = -step * math::exp(-angle2);
 
-			(*args)[var_index].value = (*args)[var_index].value + 0.5 * (1 - step);
+			args[var_index].value = args[var_index].value + 0.5 * (1 - step);
 			/**/ if (this->type == ObjType::_Sum) {
 				for (int i = 0; i != (long long)radius; i++) {
-					(*args)[var_index].value = (*args)[var_index].value + step;
-					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step;
+					args[var_index].value = args[var_index].value + step;
+					res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step;
 				}
 				if (radFract != 0 || (step != 1 && step != -1)) {
-					math::number breakpoint = (*args)[var_index].value;
+					math::number breakpoint = args[var_index].value;
 
-					(*args)[var_index].value = breakpoint + 0.5 * (step - step2);
+					args[var_index].value = breakpoint + 0.5 * (step - step2);
 					for (int k = 0; k < n; k++) {
-						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step2 + step1);
-						res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step1 * 0.5 * (1 - radFract);
-						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step1 + step2);
-						res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step2 * 0.5 * (1 - radFract);
+						args[var_index].value = args[var_index].value + 0.5 * (step2 + step1);
+						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step1 * 0.5 * (1 - radFract);
+						args[var_index].value = args[var_index].value + 0.5 * (step1 + step2);
+						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step2 * 0.5 * (1 - radFract);
 					}
 
-					(*args)[var_index].value = breakpoint + 0.5 * (step - step1);
+					args[var_index].value = breakpoint + 0.5 * (step - step1);
 					for (int k = 0; k < n; k++) {
-						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step1 + step2);
-						res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step2 * 0.5 * (1 - radFract);
-						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step2 + step1);
-						res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step1 * 0.5 * (1 - radFract);
+						args[var_index].value = args[var_index].value + 0.5 * (step1 + step2);
+						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step2 * 0.5 * (1 - radFract);
+						args[var_index].value = args[var_index].value + 0.5 * (step2 + step1);
+						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step1 * 0.5 * (1 - radFract);
 					}
 
 
-					(*args)[var_index].value = breakpoint + step;
-					res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step * radFract;
-					breakpoint = (*args)[var_index].value;
+					args[var_index].value = breakpoint + step;
+					res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step * radFract;
+					breakpoint = args[var_index].value;
 
 
-					(*args)[var_index].value = breakpoint + 0.5 * (step - step4);
+					args[var_index].value = breakpoint + 0.5 * (step - step4);
 					for (int k = 0; k < n; k++) {
-						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step4 + step3);
-						res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step3 * 0.5 * radFract;
-						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step3 + step4);
-						res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step4 * 0.5 * radFract;
+						args[var_index].value = args[var_index].value + 0.5 * (step4 + step3);
+						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step3 * 0.5 * radFract;
+						args[var_index].value = args[var_index].value + 0.5 * (step3 + step4);
+						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step4 * 0.5 * radFract;
 					}
 
-					(*args)[var_index].value = breakpoint + 0.5 * (step - step3);
+					args[var_index].value = breakpoint + 0.5 * (step - step3);
 					for (int k = 0; k < n; k++) {
-						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step3 + step4);
-						res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step4 * 0.5 * radFract;
-						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step4 + step3);
-						res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * step3 * 0.5 * radFract;
+						args[var_index].value = args[var_index].value + 0.5 * (step3 + step4);
+						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step4 * 0.5 * radFract;
+						args[var_index].value = args[var_index].value + 0.5 * (step4 + step3);
+						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step3 * 0.5 * radFract;
 					}
 
-					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step3 - 1);
+					args[var_index].value = args[var_index].value + 0.5 * (step3 - 1);
 				}
 				if (repeats < 0) {
 					for (int i = 0; repeats < i; i--) {
-						res = res - (*objects)[this->arg_indexes[3]].return_value(objects, args);
-						(*args)[var_index].value = (*args)[var_index].value - 1;
+						res = res - objects[this->arg_indexes[3]].return_value(objects, args, functions);
+						args[var_index].value = args[var_index].value - 1;
 					}
 				}
 				else {
 					for (int i = 0; i < repeats; i++) {
-						(*args)[var_index].value = (*args)[var_index].value + 1;
-						res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args);
+						args[var_index].value = args[var_index].value + 1;
+						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions);
 					}
 				}
 			}
 			else if (this->type == ObjType::_Product) {
 				for (int i = 0; i < (int)radius; i++) {
-					(*args)[var_index].value = (*args)[var_index].value + step;
-					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step);
+					args[var_index].value = args[var_index].value + step;
+					res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step);
 				}
 				if (radFract != 0 || (step != 1 && step != -1)) {
-					math::number breakpoint = (*args)[var_index].value;
+					math::number breakpoint = args[var_index].value;
 
-					(*args)[var_index].value = breakpoint + 0.5 * (step - step2);
+					args[var_index].value = breakpoint + 0.5 * (step - step2);
 					for (int k = 0; k < n; k++) {
-						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step2 + step1);
-						res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step1 * 0.5 * (1 - radFract));
-						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step1 + step2);
-						res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step2 * 0.5 * (1 - radFract));
+						args[var_index].value = args[var_index].value + 0.5 * (step2 + step1);
+						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step1 * 0.5 * (1 - radFract));
+						args[var_index].value = args[var_index].value + 0.5 * (step1 + step2);
+						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step2 * 0.5 * (1 - radFract));
 					}
 
-					(*args)[var_index].value = breakpoint + 0.5 * (step - step1);
+					args[var_index].value = breakpoint + 0.5 * (step - step1);
 					for (int k = 0; k < n; k++) {
-						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step1 + step2);
-						res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step2 * 0.5 * (1 - radFract));
-						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step2 + step1);
-						res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step1 * 0.5 * (1 - radFract));
+						args[var_index].value = args[var_index].value + 0.5 * (step1 + step2);
+						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step2 * 0.5 * (1 - radFract));
+						args[var_index].value = args[var_index].value + 0.5 * (step2 + step1);
+						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step1 * 0.5 * (1 - radFract));
 					}
 
 
-					(*args)[var_index].value = breakpoint + step;
-					res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step * radFract);
-					breakpoint = (*args)[var_index].value;
+					args[var_index].value = breakpoint + step;
+					res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step * radFract);
+					breakpoint = args[var_index].value;
 
 
-					(*args)[var_index].value = breakpoint + 0.5 * (step - step4);
+					args[var_index].value = breakpoint + 0.5 * (step - step4);
 					for (int k = 0; k < n; k++) {
-						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step4 + step3);
-						res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step3 * 0.5 * radFract);
-						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step3 + step4);
-						res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step4 * 0.5 * radFract);
+						args[var_index].value = args[var_index].value + 0.5 * (step4 + step3);
+						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step3 * 0.5 * radFract);
+						args[var_index].value = args[var_index].value + 0.5 * (step3 + step4);
+						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step4 * 0.5 * radFract);
 					}
 
-					(*args)[var_index].value = breakpoint + 0.5 * (step - step3);
+					args[var_index].value = breakpoint + 0.5 * (step - step3);
 					for (int k = 0; k < n; k++) {
-						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step3 + step4);
-						res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step4 * 0.5 * radFract);
-						(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step4 + step3);
-						res = res * math::pow((*objects)[this->arg_indexes[3]].return_value(objects, args), step3 * 0.5 * radFract);
+						args[var_index].value = args[var_index].value + 0.5 * (step3 + step4);
+						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step4 * 0.5 * radFract);
+						args[var_index].value = args[var_index].value + 0.5 * (step4 + step3);
+						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step3 * 0.5 * radFract);
 					}
 
-					(*args)[var_index].value = (*args)[var_index].value + 0.5 * (step3 - 1);
+					args[var_index].value = args[var_index].value + 0.5 * (step3 - 1);
 				}
 				if (repeats < 0) {
 					for (int i = 0; repeats < i; i--) {
-						res = res / (*objects)[this->arg_indexes[3]].return_value(objects, args);
-						(*args)[var_index].value = (*args)[var_index].value - 1;
+						res = res / objects[this->arg_indexes[3]].return_value(objects, args, functions);
+						args[var_index].value = args[var_index].value - 1;
 					}
 				}
 				else {
 					for (int i = 0; i < repeats; i++) {
-						(*args)[var_index].value = (*args)[var_index].value + 1;
-						res = res * (*objects)[this->arg_indexes[3]].return_value(objects, args);
+						args[var_index].value = args[var_index].value + 1;
+						res = res * objects[this->arg_indexes[3]].return_value(objects, args, functions);
 					}
 				}
 			}
 
-			args->erase(args->begin() + var_index);
+			args.erase(args.begin() + var_index);
 			return res;
 		}
 		case(ObjType::_Return): {
-			int var_index = args->size();
-			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+			int var_index = args.size();
+			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
 			int repeats = std::round(((math::complex)args_results[2]).R);
 			for (int i = 0; i < repeats; i++) {
-				(*args)[var_index].value = (*objects)[this->arg_indexes[3]].return_value(objects, args);
+				args[var_index].value = objects[this->arg_indexes[3]].return_value(objects, args, functions);
 			}
-			math::number res = (*args)[var_index].value;
-			args->erase(args->begin() + var_index);
+			math::number res = args[var_index].value;
+			args.erase(args.begin() + var_index);
 			return res;
 		}
 
 		case(ObjType::_Integral): {
-			int var_index = args->size();
-			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+			int var_index = args.size();
+			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
 
 			const int n = 16 * (1 + math::abs(args_results[2] - args_results[1]));
 			math::number res = 0, dx = (args_results[2] - args_results[1]) / n;
-			(*args)[var_index].value = (*args)[var_index].value + dx * 0.5;
+			args[var_index].value = args[var_index].value + dx * 0.5;
 			for (int k = 0; k < n; k++) {
-				res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args);
-				(*args)[var_index].value = (*args)[var_index].value + dx;
+				res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions);
+				args[var_index].value = args[var_index].value + dx;
 			}
 
-			args->erase(args->begin() + var_index);
+			args.erase(args.begin() + var_index);
 			return res * dx;
 		}
 		case(ObjType::_IntegralAlongExp): {
 			if (args_results[1] == args_results[2]) return 0;
 
-			int var_index = args->size();
-			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+			int var_index = args.size();
+			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
 
 			const int n = 512 * (1 + math::abs(math::ln(args_results[2] / args_results[1])));
 			math::number res = 0, dx = (math::ln(args_results[2] / args_results[1])) / n, x = math::ln(args_results[1]) + 0.5 * dx, dt;
 			for (int k = 0; k < n; k++) {
-				(*args)[var_index].value = math::exp(x);
+				args[var_index].value = math::exp(x);
 				dt = math::exp(x + 0.5 * dx) - math::exp(x - 0.5 * dx);
-				res = res + (*objects)[this->arg_indexes[3]].return_value(objects, args) * dt;
+				res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * dt;
 				x = x + dx;
 			}
 
-			args->erase(args->begin() + var_index);
+			args.erase(args.begin() + var_index);
 			return res;
 		}
 
 		case(ObjType::_Derivative): {
-			int var_index = args->size();
-			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+			int var_index = args.size();
+			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
 
 			math::number
 				res = 0,
-				n = (*objects)[this->arg_indexes[2]].return_value(objects, args);
+				n = objects[this->arg_indexes[2]].return_value(objects, args, functions);
 			math::real
 				iter = ((math::complex)n).R,
 				delta = 0.0000000001,
 				delta_root = std::pow(delta, 1 / iter);
-			(*args)[var_index].value = (*args)[var_index].value + n * delta_root * 0.5;
+			args[var_index].value = args[var_index].value + n * delta_root * 0.5;
 			for (int k = 0; k <= iter; k++) {
-				res = res + (1 - 2 * (k % 2)) * math::Binom(n, k) * (*objects)[this->arg_indexes[3]].return_value(objects, args);
-				(*args)[var_index].value = (*args)[var_index].value - delta_root;
+				res = res + (1 - 2 * (k % 2)) * math::Binom(n, k) * objects[this->arg_indexes[3]].return_value(objects, args, functions);
+				args[var_index].value = args[var_index].value - delta_root;
 			}
 
-			args->erase(args->begin() + var_index);
+			args.erase(args.begin() + var_index);
 			return res / delta;
 		}
 		case(ObjType::_ForwardDifference): {
-			int var_index = args->size();
-			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
-			math::number res = (*objects)[this->arg_indexes[3]].return_value(objects, args);
+			int var_index = args.size();
+			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
+			math::number res = objects[this->arg_indexes[3]].return_value(objects, args, functions);
 
-			math::real n = ((math::complex)(*objects)[this->arg_indexes[2]].return_value(objects, args)).R;
+			math::real n = ((math::complex)objects[this->arg_indexes[2]].return_value(objects, args, functions)).R;
 			for (int k = 1; k <= n; k++) {
-				(*args)[var_index].value = (*args)[var_index].value + 1;
-				res = res + (1 - 2 * (k % 2)) * math::Binom(n, k) * (*objects)[this->arg_indexes[3]].return_value(objects, args);
+				args[var_index].value = args[var_index].value + 1;
+				res = res + (1 - 2 * (k % 2)) * math::Binom(n, k) * objects[this->arg_indexes[3]].return_value(objects, args, functions);
 			}
 
-			args->erase(args->begin() + var_index);
+			args.erase(args.begin() + var_index);
 			return res * (1 - 2 * ((int)n % 2));
 		}
 		case(ObjType::_BackwardDifference): {
-			int var_index = args->size();
-			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
-			math::number res = (*objects)[this->arg_indexes[3]].return_value(objects, args);
+			int var_index = args.size();
+			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
+			math::number res = objects[this->arg_indexes[3]].return_value(objects, args, functions);
 
-			math::real n = ((math::complex)(*objects)[this->arg_indexes[2]].return_value(objects, args)).R;
+			math::real n = ((math::complex)objects[this->arg_indexes[2]].return_value(objects, args, functions)).R;
 			for (int k = 1; k <= n; k++) {
-				(*args)[var_index].value = (*args)[var_index].value - 1;
-				res = res + (1 - 2 * (k % 2)) * math::Binom(n, k) * (*objects)[this->arg_indexes[3]].return_value(objects, args);
+				args[var_index].value = args[var_index].value - 1;
+				res = res + (1 - 2 * (k % 2)) * math::Binom(n, k) * objects[this->arg_indexes[3]].return_value(objects, args, functions);
 			}
 
-			args->erase(args->begin() + var_index);
+			args.erase(args.begin() + var_index);
 			return res;
 		}
 	}
 	case(5): switch (this->type) {
 		case(ObjType::_Sum): {
-			int var_index = args->size();
-			args->push_back(Variable((*objects)[this->arg_indexes[0]].name, args_results[1]));
+			int var_index = args.size();
+			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
 			math::number
-				res = (*objects)[this->arg_indexes[4]].return_value(objects, args),
+				res = objects[this->arg_indexes[4]].return_value(objects, args, functions),
 				difference = args_results[2] - args_results[1],
 				m = args_results[3];
 
@@ -907,14 +906,14 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 
 
 
-			args->erase(args->begin() + var_index);
+			args.erase(args.begin() + var_index);
 			return res;
 		}
 	}
 	}
 	if (this->type == ObjType::_Polynomial && args_results.size() > 3) {
-		int var_index = args->size();
-		args->push_back(Variable((*objects)[this->arg_indexes[0]].name));
+		int var_index = args.size();
+		args.push_back(Variable(objects[this->arg_indexes[0]].name));
 
 		std::vector<std::vector<math::number>> matrix(args_results.size() - 3, std::vector<math::number>(args_results.size() - 2, 1));
 		for (int i = 0; i < matrix.size(); i++) {
@@ -923,8 +922,8 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 					matrix[i][k] = matrix[i][k] * args_results[i + 3];
 				}
 			}
-			(*args)[var_index].value = args_results[i + 3];
-			matrix[i][matrix.size()] = (*objects)[this->arg_indexes[1]].return_value(objects, args);
+			args[var_index].value = args_results[i + 3];
+			matrix[i][matrix.size()] = objects[this->arg_indexes[1]].return_value(objects, args, functions);
 		}
 
 		for (int i = 0; i < matrix.size(); i++) {
@@ -947,7 +946,7 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 			res = res + var * matrix[i][matrix.size()];
 		}
 
-		args->erase(args->begin() + var_index);
+		args.erase(args.begin() + var_index);
 		return res;
 	}
 
@@ -956,24 +955,24 @@ math::number Object::return_value(std::vector<Object>* objects, std::vector<Vari
 		return math::rand(0, args_results);
 	}
 
-	for (auto arg : *args)
+	for (auto arg : args)
 		if (this->id == arg.id)
 			return arg.value;
-	for (auto fnc : functions_list)
+	for (auto fnc : functions)
 		if (this->id == fnc.id) {
 			for (int i = 0; i < fnc.args.size() && i < args_results.size(); i++)
 				fnc.args[i].value = args_results[i];
-			return fnc.return_value();
+			return fnc.return_value(functions);
 		}
 	return 0;
 }
 
-math::number value(std::vector<Object> objects, std::vector<Variable> args) {
-	return objects[0].return_value(&objects, &args);
+math::number value(std::vector<Object> &objects, std::vector<Variable> &args, std::vector<Function>& functions) {
+	return objects[0].return_value(objects, args, functions);
 }
 
-math::number Function::return_value() {
-	return value(this->objects, this->args);
+math::number Function::return_value(std::vector<Function>& functions) {
+	return value(this->objects, this->args, functions);
 }
 
 static std::string printObj(std::string str, std::vector<Object> &objects, int index) {
