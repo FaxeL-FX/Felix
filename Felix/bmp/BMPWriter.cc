@@ -1,23 +1,11 @@
 #include "BMPWriter.h"
-#include <Windows.h>
 #include <vector>
 #include <string>
 
 float BMPWriter::max_float = 1;
 
-void BMPWriter::write_image(std::vector<std::vector<float>> rgb, int size, char* file_name)
+std::string BMPWriter::make_bmp_image(const std::vector<std::vector<float>> &rgb, int size)
 {
-    HANDLE file = CreateFileA
-    (
-            file_name,
-            GENERIC_WRITE,
-            FILE_SHARE_WRITE,
-            nullptr,
-            CREATE_ALWAYS,
-            FILE_ATTRIBUTE_NORMAL,
-            nullptr
-    );
-
     std::string file_cnt;
 
     file_cnt.append("P3\n");
@@ -57,11 +45,7 @@ void BMPWriter::write_image(std::vector<std::vector<float>> rgb, int size, char*
             file_cnt.append(std::to_string(val_red) + " " + std::to_string(val_green) + " " + std::to_string(val_blue) + "\n");
         }*/
 
-
-    DWORD written = 0;
-    char* ptr = (char*)file_cnt.c_str();
-    WriteFile(file,ptr,file_cnt.size(),&written,NULL);
-    CloseHandle(file);
+    return file_cnt;
 }
 int BMPWriter::get_index(std::vector<std::vector<float>>* rgb, int x, int y) {
     return y * rgb->size() + x;
