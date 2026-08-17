@@ -2,8 +2,6 @@
 
 #include "Felix.h"
 
-#include "bmp/BMPWriter.h"
-#include "bmp/gif.h"
 #include <iostream>
 #include <functional>
 #include <thread>
@@ -90,7 +88,7 @@ Color RGBColor(double col) {
 		1);
 }
 
-bool Felix::run_command(std::string c) {
+Felix::CommandResult Felix::run_command(std::string c) {
 	std::vector<std::string> args;
 	for (;;) {
 		while (c[0] == ' ') c = c.substr(1);
@@ -106,7 +104,7 @@ bool Felix::run_command(std::string c) {
 	}
 
 	if (args[0] == "def") {
-		if (args.size() < 3) return false;
+		if (args.size() < 3) return std::unexpected{"Bad arguments count"};
 		Function f;
 
 		int bracket_index = args[1].find('(');
@@ -145,36 +143,39 @@ bool Felix::run_command(std::string c) {
 		for (int i = 0; i < functions_list.size(); i++)
 			if (functions_list[i].name == f.name) {
 				functions_list[i] = f;
-				return true;
+				return std::monostate{};
 			}
 		functions_list.push_back(f);
-		return true;
+		return std::monostate{};
 	}
 	if (args[0] == "del") {
-		if (args.size() < 2) return false;
+		if (args.size() < 2) return std::unexpected{"Bad arguments count"};
 		for (int i = 0; i < functions_list.size(); i++)
 			if (functions_list[i].name == args[1])
 				functions_list.erase(functions_list.begin() + i);
-		return true;
+		return std::monostate{};
 	}
 	if (args[0] == "list") {
+		std::string out;
+
 		for (auto f : functions_list) {
-			std::cout << " -> " << f.name;
+			out += " -> " + f.name;
 			if (f.args.size() > 0) {
-				std::cout << "(";
-				for (auto a : f.args) std::cout << a.name << ",";
-				std::cout << "\b) = " << f.toString() << "\n";
+				out += "(";
+				for (auto a : f.args) out += a.name += ",";
+				out.erase(out.end() - 1, out.end());
+				out += ") = " + f.toString() + "\n";
 			}
-			else std::cout << " = " << f.return_value(functions_list).toString() << "\n";
+			else out += " = " + f.return_value(functions_list).toString() + "\n";
 		}
-		return true;
+		return out;
 	}
 	if (args[0] == "clear") {
 		functions_list.clear();
-		return true;
+		return std::monostate{};
 	}
 	if (args[0] == "scale") {
-		if (args.size() < 3) return false;
+		if (args.size() < 3) return std::unexpected{"Bad arguments count"};
 
 		auto objs1 = parse_expr(args[1]);
 		auto objs2 = parse_expr(args[2]);
@@ -182,11 +183,13 @@ bool Felix::run_command(std::string c) {
 
 		plot_center = value(objs1, vars, functions_list);
 		plot_radius = math::abs(value(objs2, vars, functions_list));
-		return true;
+		return std::monostate{};
 	}
 	if (args[0] == "print") {
+		ImageList printed_images;
+
 		bool grid = true, cmplx = false, eq = false, gif = false, one_thread = false;
-		if (args.size() < 2) return false;
+		if (args.size() < 2) return std::unexpected{"Bad arguments count"};
 
 		int resolution = 400;	// bmp/gif
 		int frames = 64;		// gif
@@ -224,6 +227,9 @@ bool Felix::run_command(std::string c) {
 				end_value = value(objs, vars, functions_list);
 			}
 		}
+
+		printed_images.gif_delay = delay;
+
 		if (!gif) frames = 1;
 
 		int prc = prc_count;
@@ -410,12 +416,14 @@ bool Felix::run_command(std::string c) {
 		else if (cmplx) render_function = render_complex;
 
 		math::number p = start_value;
+#if 0
 		std::vector<uint8_t> image;
 		image.resize(resolution * resolution * 4);
 
 		GifWriter writer = {};
 		int32_t bit_depth = 8;
 		if (gif) GifBegin(&writer, "graph.gif", resolution, resolution, delay, bit_depth);
+#endif
 
 		int progress = 0;
 		bool go = true;
@@ -441,7 +449,7 @@ bool Felix::run_command(std::string c) {
 					col = RGBColor(colorNum);
 				}
 
-				if (f.args.size() == 0) return false;
+				if (f.args.size() == 0) return std::unexpected{"Bad arguments count"};
 				std::vector<std::thread> thr(prc);
 				for (int i = 0; i < prc; i++) {
 					auto thr_fn = [&](
@@ -483,6 +491,7 @@ bool Felix::run_command(std::string c) {
 				}
 			}
 
+#if 0
 			if (!gif) break;
 			for (int yy = 0; yy < resolution; ++yy) {
 				for (int xx = 0; xx < resolution; ++xx) {
@@ -499,14 +508,18 @@ bool Felix::run_command(std::string c) {
 				}
 			}
 			GifWriteFrame(&writer, image.data(), resolution, resolution, delay, bit_depth);
+#else
+			printed_images.emplace_back(img, resolution);
+#endif
 		}
 
 		go = false;
 		counter.join();
 		
-		if (gif) GifEnd(&writer);
-		else BMPWriter::write_image(img, resolution, (char*)"graph.bmp");
-		return true;
+		if (!gif) {
+			printed_images.emplace_back(img, resolution);
+		}
+		return printed_images;
 	}
 	if (args[0] == "help") {
 		std::string response = "";
@@ -516,8 +529,7 @@ bool Felix::run_command(std::string c) {
 			response += "   >help commands\n";
 			response += "   >help functions\n";
 			response += "   >help syntax <function name>\n";
-			std::cout << response;
-			return true;
+			return response;
 		}
 		if (args.size() >= 2) {
 			if (args[1] == "operators") {
@@ -529,8 +541,7 @@ bool Felix::run_command(std::string c) {
 				response += " => x^y -> power\n";
 				response += " => x%y -> modulus (remainder of the division)\n";
 				response += " => x!  -> factorial\n";
-				std::cout << response;
-				return true;
+				return response;
 			}
 			if (args[1] == "commands") {
 				response += " Define\n";
@@ -564,8 +575,7 @@ bool Felix::run_command(std::string c) {
 
 				response += "\n Help\n";
 				response += "  >help <*category>   :D\n";
-				std::cout << response;
-				return true;
+				return response;
 			}
 			if (args[1] == "functions") {
 				response += " How To Call Functions\n";
@@ -634,8 +644,7 @@ bool Felix::run_command(std::string c) {
 				response += " =>                  zbf(x) -> zeta(x)/x!\n";
 				response += " =>              USumN(x,n) -> Undefined sum of x^n\n";
 
-				std::cout << response;
-				return true;
+				return response;
 			}
 		}
 		if (args.size() >= 3) {
@@ -649,15 +658,13 @@ bool Felix::run_command(std::string c) {
 					response += " Пример:\n";
 					response += "   exp(1) = e = 2.718282\n";
 					response += "   exp(0) = 1\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 				case(_ln): {
 					response += " ln(x)\n";
 					response += "   Натуральный логарифм x\n";
 					response += "   -> log[e](x)\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 				case(_sqrt): {
 					response += " sqrt(x)\n";
@@ -666,15 +673,13 @@ bool Felix::run_command(std::string c) {
 					response += " Пример:\n";
 					response += "   sqrt(4) = 2\n";
 					response += "   sqrt(9) = 3\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 				case(_inv_sqrt): {
 					response += " inv_sqrt(x)\n";
 					response += "   Обратный квадратный корень из x\n";
 					response += "   -> 1/sqrt(x)\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 				case(_root): {
 					response += " root[y](x)\n";
@@ -682,8 +687,7 @@ bool Felix::run_command(std::string c) {
 					response += "   -> x^(1/y)\n";
 					response += " Пример:\n";
 					response += "   root[3](8) = 2\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 				case(_log): {
 					response += " log[y](x)\n";
@@ -691,15 +695,13 @@ bool Felix::run_command(std::string c) {
 					response += "   -> ln(x)/ln(y)\n";
 					response += " Пример:\n";
 					response += "   log[2](8) = 3\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 
 				case(_sin1): {
 					response += " sin1(x)\n";
 					response += "   -> sin(πx)/π\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 				case(_cos1): {
 					response += " cos1(x)\n";
@@ -710,8 +712,7 @@ bool Felix::run_command(std::string c) {
 					response += "   cos1(1) = -1\n";
 					response += "   cos1(2) = 1\n";
 					response += "   cos1(3) = -1\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 
 				case(_Sum): {
@@ -724,8 +725,7 @@ bool Felix::run_command(std::string c) {
 					response += " Пример:\n";
 					response += "   S{k;1;5}[k] = 1 + 2 + 3 + 4 + 5 = 15\n";
 					response += "   S{k;1;4}[k^2] = 1^2 + 2^2 + 3^2 + 4^2 = 30\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 				case(_Product): {
 					response += " P{k;a;b}[f(k)]\n";
@@ -736,8 +736,7 @@ bool Felix::run_command(std::string c) {
 					response += "   f(k) -> функция от переменной k\n";
 					response += " Пример:\n";
 					response += "   P{k;1;4}[k] = 1 * 2 * 3 * 4 = 24\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 				case(_Return): {
 					response += " R{t;a;n}[f(t)]\n";
@@ -750,8 +749,7 @@ bool Felix::run_command(std::string c) {
 					response += " Пример:\n";
 					response += "   R{t;13;0}[t-5] = 13\n";
 					response += "   R{t;13;3}[t-5] = (((13-5)-5)-5) = -2\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 				case(_Integral): {
 					response += " I{t;a;b}[f(t)]\n";
@@ -762,8 +760,7 @@ bool Felix::run_command(std::string c) {
 					response += "   f(t) -> функция от переменной t\n";
 					response += " Пример:\n";
 					response += "   I{t;0;1}[t] = 0.5\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 				case(_IntegralAlongExp): {
 					response += " Iexp{t;a;b}[f(t)]\n";
@@ -774,8 +771,7 @@ bool Felix::run_command(std::string c) {
 					response += "   f(t) -> функция от переменной t\n";
 					response += " Пример:\n";
 					response += "   Iexp{t;1;-1}[1/t] = πi\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 				case(_Derivative): {
 					response += " D{t;x}[f(t)]\n";
@@ -789,8 +785,7 @@ bool Felix::run_command(std::string c) {
 					response += " Пример:\n";
 					response += "   D{t;2}[t^2] = 2t|t=2 = 4\n";
 					response += "   D{t;1;2}[t^3] = 6t|t=1 = 6\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 				case(_ForwardDifference): {
 					response += " FD{t;x}[f(t)] = f(t+1) - f(t)\n";
@@ -803,8 +798,7 @@ bool Felix::run_command(std::string c) {
 					response += "   f(t) -> функция от переменной t\n";
 					response += " Пример:\n";
 					response += "   FD{t;2}[t^2] = (t+1)^2-t^2 = 3^2-2^2 = 5\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 				case(_BackwardDifference): {
 					response += " BD{t;x}[f(t)] = f(t) - f(t-1)\n";
@@ -817,8 +811,7 @@ bool Felix::run_command(std::string c) {
 					response += "   f(t) -> функция от переменной t\n";
 					response += " Пример:\n";
 					response += "   BD{t;2}[t^2] = t^2-(t-1)^2 = 2^2-1^2 = 3\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 				case(_Polynomial): {
 					response += " Poly{t;f(t);x}[...]\n";
@@ -830,8 +823,7 @@ bool Felix::run_command(std::string c) {
 					response += " Пример:\n";
 					response += "   >def f(x) = Poly{t;cos(t);x}[1;2;3;4;5;6]\n";
 					response += "   -> f(x) = ax^5 + bx^4 + cx^3 + ...\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 				case(_If): {
 					response += " if{x}[a;b]\n";
@@ -842,20 +834,18 @@ bool Felix::run_command(std::string c) {
 					response += " Пример:\n";
 					response += "   >def f(x) = if{x >= 0}[cos(x);sin(x)]   - кусочно-заданная функция\n";
 					response += "   >def f(x) = if{x = 0}[1;sin(x)/x]       - устранение разрыва у функции\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 
 				default: {
 					response += "  unknown function\n";
-					std::cout << response;
-					return true;
+					return response;
 				}
 				}
 			}
 		}
-		return true;
+		return std::monostate{};
 	}
 
-	return false;
+	return std::unexpected{std::format("Unknown command [{}]", args[0])};
 }
