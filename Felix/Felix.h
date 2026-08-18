@@ -34,4 +34,5 @@ struct Felix {
 
 
 	CommandResult run_command(std::string command);
+	std::string evaluate(std::string expression);
 };
