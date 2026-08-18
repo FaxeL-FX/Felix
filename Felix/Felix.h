@@ -3,6 +3,10 @@
 #include "object/object.h"
 
 struct Felix {
+	struct ErrorMessage {
+		std::string string;
+	};
+
 	struct Image : std::vector<std::vector<float>> {
 		Image(const std::vector<std::vector<float>> &data, int resolution)
 			: std::vector<std::vector<float>>{data},
@@ -16,12 +20,12 @@ struct Felix {
 		uint32_t gif_delay;
 	};
 
-	using GoodCommandResult = std::variant<
+	using CommandResult = std::variant<
 		std::monostate,
+		ErrorMessage,
 		std::string,
 		ImageList
 	>;
-	using CommandResult = std::expected<GoodCommandResult, std::string>;
 
 	math::complex plot_center = 0;
 	math::real plot_radius = 8;
