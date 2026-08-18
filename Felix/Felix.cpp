@@ -849,3 +849,11 @@ Felix::CommandResult Felix::run_command(std::string c) {
 
 	return ErrorMessage{std::format("Unknown command [{}]", args[0])};
 }
+
+std::string Felix::evaluate(std::string expression)
+{
+	auto objs = parse_expr(expression);
+	std::vector<Variable> vars = {};
+	math::number answer = value(objs, vars, functions_list);
+	return answer.toString();
+}

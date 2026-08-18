@@ -91,10 +91,7 @@ int main() {
 			std::visit(CommandResultVisitor{}, res);
 		}
 		else {
-			auto objs = parse_expr(expression);
-			std::vector<Variable> vars = {};
-			math::number answer = value(objs, vars, felix.functions_list);
-			std::cout << " -> " << answer.toString();
+			std::cout << " -> " << felix.evaluate(expression);
 		}
 		std::cout << "\n\n";
 	}
