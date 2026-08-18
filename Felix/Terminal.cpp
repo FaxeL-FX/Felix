@@ -1,75 +1,6 @@
 
 #include "Felix.h"
 #include <Windows.h>
-#include <fstream>
-#include "bmp/BMPWriter.h"
-#include "bmp/gif.h"
-
-#include "include.h"
-
-struct GoodCommandResultVisitor
-{
-	std::string operator()(std::monostate)
-	{
-		return " ----> done";
-	}
-
-	std::string operator()(const std::string &res)
-	{
-		return res;
-	}
-
-	std::string operator()(const Felix::ImageList &images)
-	{
-		if (images.empty()) {
-			return " ----> Empty image list";
-		}
-
-		if (images.size() == 1) {
-			std::ofstream image_file{"graph.bmp"};
-			auto &first_image = images[0];
-			std::string bmp_image =
-				BMPWriter::make_bmp_image(first_image, first_image.resolution);
-			image_file << bmp_image;
-			return " ----> done (to graph.bmp)";
-		}
-
-		auto resolution = images[0].resolution;
-
-		GifWriter writer = {};
-		GifBegin(&writer, "graph.gif", resolution, resolution, images.gif_delay);
-		for (auto &image : images) {
-			write_gif_frame(&writer, image, resolution, images.gif_delay);
-		}
-		GifEnd(&writer);
-		return " ----> done (to graph.gif)";
-	}
-
-	void write_gif_frame(
-		GifWriter *writer,
-		const std::vector<std::vector<float>> &img,
-		int resolution,
-		uint32_t delay)
-	{
-		std::vector<uint8_t> image;
-		image.resize(resolution * resolution * 4);
-		for (int yy = 0; yy < resolution; ++yy) {
-			for (int xx = 0; xx < resolution; ++xx) {
-				size_t offset_image = ((resolution - yy - 1) * resolution + xx);
-				size_t offset = (yy * resolution + xx);
-				auto &r = image[offset_image * 4 + 0];
-				auto &g = image[offset_image * 4 + 1];
-				auto &b = image[offset_image * 4 + 2];
-				auto &a = image[offset_image * 4 + 3];
-				r = img[offset][0] * 255;
-				g = img[offset][1] * 255;
-				b = img[offset][2] * 255;
-				a = 255;
-			}
-		}
-		GifWriteFrame(writer, image.data(), resolution, resolution, delay);
-	}
-};
 
 int main() {
 	Felix felix;
@@ -80,14 +11,8 @@ int main() {
 		std::cout << " ";
 		std::getline(std::cin, expression);
 		if (expression[0] == '>') {
-			Felix::CommandResult res = felix.run_command(expression.substr(1));
-			if (!res) {
-				std::string &error = res.error();
-				std::println(" --X-> failed: ({})", error);
-				continue;
-			}
-			Felix::GoodCommandResult &good_res = res.value();
-			std::cout << good_res.visit(GoodCommandResultVisitor{});
+			if (felix.run_command(expression.substr(1)))	std::cout << " ----> done";
+			else											std::cout << " --X-> failed";
 		}
 		else {
 			auto objs = parse_expr(expression);
