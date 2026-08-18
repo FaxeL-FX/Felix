@@ -5,5 +5,4 @@
 #include <cmath>
 #include <mutex>
 #include <format>
-#include <expected>
 #include <variant>

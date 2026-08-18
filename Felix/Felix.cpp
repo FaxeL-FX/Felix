@@ -104,7 +104,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 	}
 
 	if (args[0] == "def") {
-		if (args.size() < 3) return std::unexpected{"Bad arguments count"};
+		if (args.size() < 3) return ErrorMessage{"Bad arguments count"};
 		Function f;
 
 		int bracket_index = args[1].find('(');
@@ -149,7 +149,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		return std::monostate{};
 	}
 	if (args[0] == "del") {
-		if (args.size() < 2) return std::unexpected{"Bad arguments count"};
+		if (args.size() < 2) return ErrorMessage{"Bad arguments count"};
 		for (int i = 0; i < functions_list.size(); i++)
 			if (functions_list[i].name == args[1])
 				functions_list.erase(functions_list.begin() + i);
@@ -175,7 +175,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		return std::monostate{};
 	}
 	if (args[0] == "scale") {
-		if (args.size() < 3) return std::unexpected{"Bad arguments count"};
+		if (args.size() < 3) return ErrorMessage{"Bad arguments count"};
 
 		auto objs1 = parse_expr(args[1]);
 		auto objs2 = parse_expr(args[2]);
@@ -189,7 +189,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		ImageList printed_images;
 
 		bool grid = true, cmplx = false, eq = false, gif = false, one_thread = false;
-		if (args.size() < 2) return std::unexpected{"Bad arguments count"};
+		if (args.size() < 2) return ErrorMessage{"Bad arguments count"};
 
 		int resolution = 400;	// bmp/gif
 		int frames = 64;		// gif
@@ -449,7 +449,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 					col = RGBColor(colorNum);
 				}
 
-				if (f.args.size() == 0) return std::unexpected{"Bad arguments count"};
+				if (f.args.size() == 0) return ErrorMessage{"Bad arguments count"};
 				std::vector<std::thread> thr(prc);
 				for (int i = 0; i < prc; i++) {
 					auto thr_fn = [&](
@@ -847,5 +847,5 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		return std::monostate{};
 	}
 
-	return std::unexpected{std::format("Unknown command [{}]", args[0])};
+	return ErrorMessage{std::format("Unknown command [{}]", args[0])};
 }

@@ -7,22 +7,28 @@
 
 #include "include.h"
 
-struct GoodCommandResultVisitor
+struct CommandResultVisitor
 {
-	std::string operator()(std::monostate)
+	void operator()(std::monostate)
 	{
-		return " ----> done";
+		std::cout << " ----> done";
 	}
 
-	std::string operator()(const std::string &res)
+	void operator()(const Felix::ErrorMessage &message)
 	{
-		return res;
+		std::cout << " --X-> failed: (" << message.string << ")";
 	}
 
-	std::string operator()(const Felix::ImageList &images)
+	void operator()(const std::string &res)
+	{
+		std::cout << res;
+	}
+
+	void operator()(const Felix::ImageList &images)
 	{
 		if (images.empty()) {
-			return " ----> Empty image list";
+			std::cout << " ----> Empty image list";
+			return;
 		}
 
 		if (images.size() == 1) {
@@ -31,7 +37,8 @@ struct GoodCommandResultVisitor
 			std::string bmp_image =
 				BMPWriter::make_bmp_image(first_image, first_image.resolution);
 			image_file << bmp_image;
-			return " ----> done (to graph.bmp)";
+			std::cout << " ----> done (to graph.bmp)";
+			return;
 		}
 
 		auto resolution = images[0].resolution;
@@ -42,7 +49,7 @@ struct GoodCommandResultVisitor
 			write_gif_frame(&writer, image, resolution, images.gif_delay);
 		}
 		GifEnd(&writer);
-		return " ----> done (to graph.gif)";
+		std::cout << " ----> done (to graph.gif)";
 	}
 
 	void write_gif_frame(
@@ -81,13 +88,7 @@ int main() {
 		std::getline(std::cin, expression);
 		if (expression[0] == '>') {
 			Felix::CommandResult res = felix.run_command(expression.substr(1));
-			if (!res) {
-				std::string &error = res.error();
-				std::println(" --X-> failed: ({})", error);
-				continue;
-			}
-			Felix::GoodCommandResult &good_res = res.value();
-			std::cout << good_res.visit(GoodCommandResultVisitor{});
+			std::visit(CommandResultVisitor{}, res);
 		}
 		else {
 			auto objs = parse_expr(expression);
