@@ -1,4 +1,4 @@
-﻿//	v1.12.18
+﻿//	v1.13.0
 
 #include "Felix.h"
 
@@ -438,8 +438,9 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		};
 		std::thread counter = std::thread(counter_lambda);
 
-		for (int frame = 0; frame <= frames; frame++) {
-			p = start_value * (1 - (double)frame / frames) + end_value * ((double)frame / frames);
+		for (int frame = 0; frame < frames; frame++) {
+			if (frames > 1) p = start_value * (1 - (double)frame / (frames - 1)) + end_value * ((double)frame / (frames - 1));
+			else			p = start_value;
 			for (int i = 0; i < resolution * resolution; i++) img[i] = { 0, 0, 0 };
 
 			double colorNum = 0;
@@ -515,10 +516,6 @@ Felix::CommandResult Felix::run_command(std::string c) {
 
 		go = false;
 		counter.join();
-		
-		if (!gif) {
-			printed_images.emplace_back(img, resolution);
-		}
 		return printed_images;
 	}
 	if (args[0] == "help") {
