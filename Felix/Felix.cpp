@@ -87,6 +87,12 @@ Color RGBColor(double col) {
 		(2 + cos(col * 1.8 - 2.095)) / 3,
 		1);
 }
+Color inverse(Color c) {
+	c.R = 1.0 - c.R;
+	c.G = 1.0 - c.G;
+	c.B = 1.0 - c.B;
+	return c;
+}
 
 Felix::CommandResult Felix::run_command(std::string c) {
 	std::vector<std::string> args;
@@ -474,8 +480,10 @@ Felix::CommandResult Felix::run_command(std::string c) {
 					for (int j = 0; j < resolution; j++) {
 						int index = j * resolution + iX;
 						if (index < resolution * resolution) {
-							if (x == 0) img[index] = toVecF(penAdd(img[index], Color(0.25)));
-							else		img[index] = toVecF(penAdd(img[index], Color(0.125)));
+							Color gridLine = Color(1.0);
+							gridLine.A = 0.125;
+							if (x == 0) gridLine.A = 0.25;
+							img[index] = toVecF(penAdd(img[index], gridLine));
 						}
 					}
 				}
@@ -485,8 +493,10 @@ Felix::CommandResult Felix::run_command(std::string c) {
 					for (int j = 0; j < resolution; j++) {
 						int index = iY * resolution + j;
 						if (index < resolution * resolution) {
-							if (y == 0) img[index] = toVecF(penAdd(img[index], Color(0.25)));
-							else		img[index] = toVecF(penAdd(img[index], Color(0.125)));
+							Color gridLine = Color(1.0);
+							gridLine.A = 0.125;
+							if (y == 0) gridLine.A = 0.25;
+							img[index] = toVecF(penAdd(img[index], gridLine));
 						}
 					}
 				}

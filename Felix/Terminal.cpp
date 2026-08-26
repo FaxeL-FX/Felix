@@ -16,7 +16,7 @@ struct CommandResultVisitor
 
 	void operator()(const Felix::ErrorMessage &message)
 	{
-		std::cout << " --X-> failed: (" << message.string << ")";
+		std::cout << " --X-> failed: " << message.string;
 	}
 
 	void operator()(const std::string &res)

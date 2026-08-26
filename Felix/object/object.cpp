@@ -459,7 +459,7 @@ std::vector<Object> parse_expr(std::string expr) {
 
 math::number Object::return_value(std::vector<Object> &objects, std::vector<Variable> &args, std::vector<Function>& functions) {
 	std::vector<math::number> args_results;
-	for (auto i : this->arg_indexes) args_results.push_back(objects[i].return_value(objects, args, functions));
+	for (auto i : this->arg_indexes) args_results.push_back(objects.at(i).return_value(objects, args, functions));
 
 	switch (arg_indexes.size()) {
 	case(0): switch (this->type) {
@@ -968,7 +968,7 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 }
 
 math::number value(std::vector<Object> &objects, std::vector<Variable> &args, std::vector<Function>& functions) {
-	return objects[0].return_value(objects, args, functions);
+	return objects.at(0).return_value(objects, args, functions);
 }
 
 math::number Function::return_value(std::vector<Function>& functions) {
