@@ -3,6 +3,7 @@
 #include <dpp/dpp.h>
 #include "Felix.h"
 #include "bmp/stb_image_write.h"
+#include "bmp/gif.h"
 
 struct CommandReplyVisitor
 {
@@ -83,10 +84,59 @@ struct CommandReplyVisitor
 
 		// gif
 		{
+			auto resolution = images[0].resolution;
+			std::vector<uint8_t> data;
+			GifWriterCallback cb;
+			cb.udata = &data;
+			cb.write = [](void *udata, void *data, size_t size) {
+				std::vector<uint8_t> &vec = *static_cast<std::vector<uint8_t>*>(udata);
+				uint8_t *start = (uint8_t *)data;
+				uint8_t *end = start + size;
+				std::copy(start, end, std::back_inserter(vec));
+			};
+
+			GifWriter writer = {};
+			GifBegin(&writer, cb, resolution, resolution, images.gif_delay);
+			for (auto &image : images) {
+				write_gif_frame(&writer, image, resolution, images.gif_delay);
+			}
+			GifEnd(&writer);
+
+			dpp::embed embed;
+			embed.set_image("attachment://graph.gif");
+			dpp::message m{ event.msg.channel_id, embed };
+			std::string_view content{ (const char*)data.data(), data.size() };
+			m.add_file("graph.gif", content);
+			event.reply(m);
 			return;
 		}
 		
 	};
+
+	void write_gif_frame(
+		GifWriter *writer,
+		const std::vector<std::vector<float>> &img,
+		int resolution,
+		uint32_t delay)
+	{
+		std::vector<uint8_t> image;
+		image.resize(resolution * resolution * 4);
+		for (int yy = 0; yy < resolution; ++yy) {
+			for (int xx = 0; xx < resolution; ++xx) {
+				size_t offset_image = ((resolution - yy - 1) * resolution + xx);
+				size_t offset = (yy * resolution + xx);
+				auto &r = image[offset_image * 4 + 0];
+				auto &g = image[offset_image * 4 + 1];
+				auto &b = image[offset_image * 4 + 2];
+				auto &a = image[offset_image * 4 + 3];
+				r = img[offset][0] * 255;
+				g = img[offset][1] * 255;
+				b = img[offset][2] * 255;
+				a = 255;
+			}
+		}
+		GifWriteFrame(writer, image.data(), resolution, resolution, delay);
+	}
 };
 
 int main() {
@@ -98,7 +148,8 @@ int main() {
 		token_file >> BOT_TOKEN;
 	}
 
-	dpp::cluster bot(BOT_TOKEN, dpp::i_all_intents );
+	auto intents = dpp::i_default_intents | dpp::i_message_content;
+	dpp::cluster bot(BOT_TOKEN, intents );
 
 	bot.on_log(dpp::utility::cout_logger());
 
@@ -113,6 +164,7 @@ int main() {
 		if (event.msg.author.is_bot()) return;
 		if (event.msg.content.starts_with(">>")) {
 			std::string expr = event.msg.content.substr(2);
+#if 0
 			if (expr.starts_with("help")) {
 				expr = expr.substr(5);
 				dpp::embed embed;
@@ -214,6 +266,7 @@ int main() {
 				event.reply(m);
 				return;
 			}
+#endif
 			CommandReplyVisitor crv(event);
 			std::visit(crv, f.run_command(expr));
 			return;

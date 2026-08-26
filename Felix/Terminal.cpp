@@ -2,6 +2,7 @@
 #include "Felix.h"
 #include <Windows.h>
 #include <fstream>
+#include <iterator>
 #include "bmp/BMPWriter.h"
 #include "bmp/gif.h"
 
@@ -43,12 +44,26 @@ struct CommandResultVisitor
 
 		auto resolution = images[0].resolution;
 
+		std::vector<uint8_t> data;
+		GifWriterCallback cb;
+		cb.udata = &data;
+		cb.write = [](void *udata, void *data, size_t size) {
+			std::vector<uint8_t> &vec = *static_cast<std::vector<uint8_t>*>(udata);
+			uint8_t *start = (uint8_t *)data;
+			uint8_t *end = start + size;
+			std::copy(start, end, std::back_inserter(vec));
+		};
+
 		GifWriter writer = {};
-		GifBegin(&writer, "graph.gif", resolution, resolution, images.gif_delay);
+		GifBegin(&writer, cb, resolution, resolution, images.gif_delay);
 		for (auto &image : images) {
 			write_gif_frame(&writer, image, resolution, images.gif_delay);
 		}
 		GifEnd(&writer);
+		{
+		    std::ofstream of{"graph.gif", std::ios::binary};
+		    of.write((char*)data.data(), data.size());
+		}
 		std::cout << " ----> done (to graph.gif)";
 	}
 

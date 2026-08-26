@@ -77,6 +77,36 @@ typedef struct
     uint8_t treeSplit[256];
 } GifPalette;
 
+typedef struct
+{
+    void *udata;
+    void(*write)(void *user_pointer, void *data, size_t size);
+} GifWriterCallback;
+
+void GifWriterCallbackWrite(GifWriterCallback cb, void *data, size_t size)
+{
+    if (!cb.write) {
+        return;
+    }
+    cb.write(cb.udata, data, size);
+}
+
+void fputs_GifWriter(const char *str, GifWriterCallback cb)
+{
+    GifWriterCallbackWrite(cb, (void *)str, strlen(str));
+}
+
+void fputc_GifWriter(int c, GifWriterCallback cb)
+{
+    char char_c = c;
+    GifWriterCallbackWrite(cb, (void*)&char_c, 1);
+}
+
+void fwrite_GifWriter(void *data, size_t size, size_t count, GifWriterCallback cb)
+{
+    GifWriterCallbackWrite(cb, data, size * count);
+}
+
 // max, min, and abs functions
 int GifIMax(int l, int r) { return l > r ? l : r; }
 int GifIMin(int l, int r) { return l < r ? l : r; }
@@ -582,17 +612,17 @@ void GifWriteBit(GifBitStatus* stat, uint32_t bit)
 }
 
 // write all bytes so far to the file
-void GifWriteChunk(FILE* f, GifBitStatus* stat)
+void GifWriteChunk(GifWriterCallback f, GifBitStatus* stat)
 {
-    fputc((int)stat->chunkIndex, f);
-    fwrite(stat->chunk, 1, stat->chunkIndex, f);
+    fputc_GifWriter((int)stat->chunkIndex, f);
+    fwrite_GifWriter(stat->chunk, 1, stat->chunkIndex, f);
 
     stat->bitIndex = 0;
     stat->byte = 0;
     stat->chunkIndex = 0;
 }
 
-void GifWriteCode(FILE* f, GifBitStatus* stat, uint32_t code, uint32_t length)
+void GifWriteCode(GifWriterCallback f, GifBitStatus* stat, uint32_t code, uint32_t length)
 {
     for (uint32_t ii = 0; ii < length; ++ii)
     {
@@ -614,11 +644,11 @@ typedef struct
 } GifLzwNode;
 
 // write a 256-color (8-bit) image palette to the file
-void GifWritePalette(const GifPalette* pPal, FILE* f)
+void GifWritePalette(const GifPalette* pPal, GifWriterCallback f)
 {
-    fputc(0, f);  // first color: transparency
-    fputc(0, f);
-    fputc(0, f);
+    fputc_GifWriter(0, f);  // first color: transparency
+    fputc_GifWriter(0, f);
+    fputc_GifWriter(0, f);
 
     for (int ii = 1; ii < (1 << pPal->bitDepth); ++ii)
     {
@@ -626,47 +656,47 @@ void GifWritePalette(const GifPalette* pPal, FILE* f)
         uint32_t g = pPal->g[ii];
         uint32_t b = pPal->b[ii];
 
-        fputc((int)r, f);
-        fputc((int)g, f);
-        fputc((int)b, f);
+        fputc_GifWriter((int)r, f);
+        fputc_GifWriter((int)g, f);
+        fputc_GifWriter((int)b, f);
     }
 }
 
 // write the image header, LZW-compress and write out the image
-void GifWriteLzwImage(FILE* f, uint8_t* image, uint32_t left, uint32_t top, uint32_t width, uint32_t height, uint32_t delay, GifPalette* pPal)
+void GifWriteLzwImage(GifWriterCallback f, uint8_t* image, uint32_t left, uint32_t top, uint32_t width, uint32_t height, uint32_t delay, GifPalette* pPal)
 {
     // graphics control extension
-    fputc(0x21, f);
-    fputc(0xf9, f);
-    fputc(0x04, f);
-    fputc(0x05, f); // leave prev frame in place, this frame has transparency
-    fputc(delay & 0xff, f);
-    fputc((delay >> 8) & 0xff, f);
-    fputc(kGifTransIndex, f); // transparent color index
-    fputc(0, f);
+    fputc_GifWriter(0x21, f);
+    fputc_GifWriter(0xf9, f);
+    fputc_GifWriter(0x04, f);
+    fputc_GifWriter(0x05, f); // leave prev frame in place, this frame has transparency
+    fputc_GifWriter(delay & 0xff, f);
+    fputc_GifWriter((delay >> 8) & 0xff, f);
+    fputc_GifWriter(kGifTransIndex, f); // transparent color index
+    fputc_GifWriter(0, f);
 
-    fputc(0x2c, f); // image descriptor block
+    fputc_GifWriter(0x2c, f); // image descriptor block
 
-    fputc(left & 0xff, f);           // corner of image in canvas space
-    fputc((left >> 8) & 0xff, f);
-    fputc(top & 0xff, f);
-    fputc((top >> 8) & 0xff, f);
+    fputc_GifWriter(left & 0xff, f);           // corner of image in canvas space
+    fputc_GifWriter((left >> 8) & 0xff, f);
+    fputc_GifWriter(top & 0xff, f);
+    fputc_GifWriter((top >> 8) & 0xff, f);
 
-    fputc(width & 0xff, f);          // width and height of image
-    fputc((width >> 8) & 0xff, f);
-    fputc(height & 0xff, f);
-    fputc((height >> 8) & 0xff, f);
+    fputc_GifWriter(width & 0xff, f);          // width and height of image
+    fputc_GifWriter((width >> 8) & 0xff, f);
+    fputc_GifWriter(height & 0xff, f);
+    fputc_GifWriter((height >> 8) & 0xff, f);
 
-    //fputc(0, f); // no local color table, no transparency
-    //fputc(0x80, f); // no local color table, but transparency
+    //fputc_GifWriter(0, f); // no local color table, no transparency
+    //fputc_GifWriter(0x80, f); // no local color table, but transparency
 
-    fputc(0x80 + pPal->bitDepth - 1, f); // local color table present, 2 ^ bitDepth entries
+    fputc_GifWriter(0x80 + pPal->bitDepth - 1, f); // local color table present, 2 ^ bitDepth entries
     GifWritePalette(pPal, f);
 
     const int minCodeSize = pPal->bitDepth;
     const uint32_t clearCode = 1 << pPal->bitDepth;
 
-    fputc(minCodeSize, f); // min code size 8 bits
+    fputc_GifWriter(minCodeSize, f); // min code size 8 bits
 
     GifLzwNode* codetree = (GifLzwNode*)GIF_TEMP_MALLOC(sizeof(GifLzwNode) * 4096);
 
@@ -746,14 +776,14 @@ void GifWriteLzwImage(FILE* f, uint8_t* image, uint32_t left, uint32_t top, uint
     while (stat.bitIndex) GifWriteBit(&stat, 0);
     if (stat.chunkIndex) GifWriteChunk(f, &stat);
 
-    fputc(0, f); // image block terminator
+    fputc_GifWriter(0, f); // image block terminator
 
     GIF_TEMP_FREE(codetree);
 }
 
 typedef struct
 {
-    FILE* f;
+    GifWriterCallback f;
     uint8_t* oldImage;
     bool firstFrame;
 
@@ -763,9 +793,10 @@ typedef struct
 // Creates a gif file.
 // The input GIFWriter is assumed to be uninitialized.
 // The delay value is the time between frames in hundredths of a second - note that not all viewers pay much attention to this value.
-bool GifBegin(GifWriter* writer, const char* filename, uint32_t width, uint32_t height, uint32_t delay, int32_t bitDepth = 8, bool dither = false)
+bool GifBegin(GifWriter* writer, GifWriterCallback cb, uint32_t width, uint32_t height, uint32_t delay, int32_t bitDepth = 8, bool dither = false)
 {
     (void)bitDepth; (void)dither; // Mute "Unused argument" warnings
+#if 0
 #if defined(_MSC_VER) && (_MSC_VER >= 1400)
     writer->f = 0;
     fopen_s(&writer->f, filename, "wb");
@@ -773,48 +804,50 @@ bool GifBegin(GifWriter* writer, const char* filename, uint32_t width, uint32_t 
     writer->f = fopen(filename, "wb");
 #endif
     if (!writer->f) return false;
+#endif
 
+    writer->f = cb;
     writer->firstFrame = true;
 
     // allocate
     writer->oldImage = (uint8_t*)GIF_MALLOC(width * height * 4);
 
-    fputs("GIF89a", writer->f);
+    fputs_GifWriter("GIF89a", writer->f);
 
     // screen descriptor
-    fputc(width & 0xff, writer->f);
-    fputc((width >> 8) & 0xff, writer->f);
-    fputc(height & 0xff, writer->f);
-    fputc((height >> 8) & 0xff, writer->f);
+    fputc_GifWriter(width & 0xff, writer->f);
+    fputc_GifWriter((width >> 8) & 0xff, writer->f);
+    fputc_GifWriter(height & 0xff, writer->f);
+    fputc_GifWriter((height >> 8) & 0xff, writer->f);
 
-    fputc(0xf0, writer->f);  // there is an unsorted global color table of 2 entries
-    fputc(0, writer->f);     // background color
-    fputc(0, writer->f);     // pixels are square (we need to specify this because it's 1989)
+    fputc_GifWriter(0xf0, writer->f);  // there is an unsorted global color table of 2 entries
+    fputc_GifWriter(0, writer->f);     // background color
+    fputc_GifWriter(0, writer->f);     // pixels are square (we need to specify this because it's 1989)
 
     // now the "global" palette (really just a dummy palette)
     // color 0: black
-    fputc(0, writer->f);
-    fputc(0, writer->f);
-    fputc(0, writer->f);
+    fputc_GifWriter(0, writer->f);
+    fputc_GifWriter(0, writer->f);
+    fputc_GifWriter(0, writer->f);
     // color 1: also black
-    fputc(0, writer->f);
-    fputc(0, writer->f);
-    fputc(0, writer->f);
+    fputc_GifWriter(0, writer->f);
+    fputc_GifWriter(0, writer->f);
+    fputc_GifWriter(0, writer->f);
 
     if (delay != 0)
     {
         // animation header
-        fputc(0x21, writer->f); // extension
-        fputc(0xff, writer->f); // application specific
-        fputc(11, writer->f); // length 11
-        fputs("NETSCAPE2.0", writer->f); // yes, really
-        fputc(3, writer->f); // 3 bytes of NETSCAPE2.0 data
+        fputc_GifWriter(0x21, writer->f); // extension
+        fputc_GifWriter(0xff, writer->f); // application specific
+        fputc_GifWriter(11, writer->f); // length 11
+        fputs_GifWriter("NETSCAPE2.0", writer->f); // yes, really
+        fputc_GifWriter(3, writer->f); // 3 bytes of NETSCAPE2.0 data
 
-        fputc(1, writer->f); // this is the Netscape 2.0 sub-block ID and it must be 1, otherwise some viewers error
-        fputc(0, writer->f); // loop infinitely (byte 0)
-        fputc(0, writer->f); // loop infinitely (byte 1)
+        fputc_GifWriter(1, writer->f); // this is the Netscape 2.0 sub-block ID and it must be 1, otherwise some viewers error
+        fputc_GifWriter(0, writer->f); // loop infinitely (byte 0)
+        fputc_GifWriter(0, writer->f); // loop infinitely (byte 1)
 
-        fputc(0, writer->f); // block terminator
+        fputc_GifWriter(0, writer->f); // block terminator
     }
 
     return true;
@@ -826,7 +859,7 @@ bool GifBegin(GifWriter* writer, const char* filename, uint32_t width, uint32_t 
 // this may be handy to save bits in animations that don't change much.
 bool GifWriteFrame(GifWriter* writer, const uint8_t* image, uint32_t width, uint32_t height, uint32_t delay, int bitDepth = 8, bool dither = false)
 {
-    if (!writer->f) return false;
+    //if (!writer->f) return false;
 
     const uint8_t* oldImage = writer->firstFrame ? NULL : writer->oldImage;
     writer->firstFrame = false;
@@ -849,13 +882,13 @@ bool GifWriteFrame(GifWriter* writer, const uint8_t* image, uint32_t width, uint
 // but it's still a good idea to write it out.
 bool GifEnd(GifWriter* writer)
 {
-    if (!writer->f) return false;
+    //if (!writer->f) return false;
 
-    fputc(0x3b, writer->f); // end of file
-    fclose(writer->f);
+    fputc_GifWriter(0x3b, writer->f); // end of file
+    //fclose(writer->f);
     GIF_FREE(writer->oldImage);
 
-    writer->f = NULL;
+    //writer->f = NULL;
     writer->oldImage = NULL;
 
     return true;
