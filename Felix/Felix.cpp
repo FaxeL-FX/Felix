@@ -1,10 +1,11 @@
-﻿//	v1.14.0
+﻿//	v1.14.1
 
 #include "Felix.h"
 
 #include <iostream>
 #include <functional>
 #include <thread>
+#include <chrono>
 
 const unsigned int prc_count = std::thread::hardware_concurrency();
 
@@ -196,7 +197,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 	if (args[0] == "print") {
 		ImageList printed_images;
 
-		bool grid = true, cmplx = false, eq = false, gif = false, one_thread = false;
+		bool grid = true, cmplx = false, eq = false, gif = false, one_thread = false, debug = false;
 		if (args.size() < 2) return ErrorMessage{"Bad arguments count"};
 
 		int resolution = 400;	// bmp/gif
@@ -210,6 +211,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 			else if (args[i] == "c") cmplx = true;
 			else if (args[i] == "eq") eq = true;
 			else if (args[i] == "gif") gif = true;
+			else if (args[i] == "debug") debug = true;
 			else if (args[i] == "one_thread") one_thread = true;
 
 			else if (args[i].substr(0, 4) == "res=") {	// substr(length)
@@ -417,6 +419,55 @@ Felix::CommandResult Felix::run_command(std::string c) {
 					}
 				}
 			};
+		auto render_debug = [&](
+			std::vector<std::vector<float>>& img,
+			int begin,
+			int end,
+			int resolution,
+			Function f,
+			int& progress,
+			Color color,
+			math::number parameter)
+			{
+				long double
+					startX = plot_center.R - plot_radius,
+					startY = plot_center.i - plot_radius,
+					step = 2 * plot_radius / resolution;
+				math::complex res;
+				for (int iX = begin; iX < end && iX < resolution; iX++) {
+					for (int iY = 0; iY < resolution; iY++) {
+						switch (f.args.size()) {
+						case(1):
+							f.args[0].value = math::complex(startX + step * iX, startY + step * iY);
+							break;
+						case(2):
+							if (gif) {
+								f.args[0].value = math::complex(startX + step * iX, startY + step * iY);
+								f.args[1].value = parameter;
+							}
+							else {
+								f.args[0].value = startX + step * iX;
+								f.args[1].value = startY + step * iY;
+							}
+							break;
+						case(3):
+							if (gif) {
+								f.args[0].value = startX + step * iX;
+								f.args[1].value = startY + step * iY;
+								f.args[2].value = parameter;
+							}
+							break;
+						}
+						auto start = std::chrono::high_resolution_clock::now();
+						f.return_value(functions_list);
+						auto end = std::chrono::high_resolution_clock::now();
+						float dur = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 100.0;
+						dur = dur / (dur + 1);
+						img[iY * resolution + iX] = toVecF(penAdd(img[iY * resolution + iX], Color(dur)));
+						progress++;
+					}
+				}
+			};
 
 		std::function<void(
 			std::vector<std::vector<float>>& img,
@@ -430,6 +481,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 			render_function = render_graph;
 		/**/ if (eq)	render_function = render_eq;
 		else if (cmplx) render_function = render_complex;
+		else if (debug) render_function = render_debug;
 
 		math::number p = start_value;
 
