@@ -122,6 +122,7 @@ struct Object {
 struct Function {
 	int id = -1;
 	std::string name;
+	std::string expression;
 	std::vector<Variable> args;
 	std::vector<Object> objects;
 

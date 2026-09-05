@@ -70,7 +70,7 @@ namespace math {
 		}
 		return factorial(n) / (factorial(k) * factorial(n - k));
 	}
-	std::vector<real> zbfValues = {};
+	std::vector<real> zbfValues = { -0.5 };
 	std::mutex zbfMutex;
 	real zbf(int x) {
 		if (x == -1)	return -1;
@@ -81,7 +81,7 @@ namespace math {
 		}
 
 		real res = 0;
-		for (int k = 1; k <= x + 1; k++) {
+		if (x % 2) for (int k = 1; k <= x + 1; k++) {
 			res = res + zbf(x - k) * (2 * (k % 2) - 1) / factorial(k + 1);
 		}
 		{
@@ -316,20 +316,27 @@ namespace math {
 		return fct(n) / (fct(k) * fct(n - k));
 	}
 
+	static complex factorial(complex x) {
+		real n = 512.5;
+		complex res = exp(-x + (x + 0.5) * ln(x + n) - 0.5 * std::log(n));
+		for (long long i = 1; i < n; i++) res = res * i / (x + i) / n * (x + n);
+		return res;
+	}
 	complex fct(complex x) {
 		if (x.R == inf) return inf;
 		if (x.R == -inf) return 0;
 		if (abs(x.i) == inf) return 0;
 		if (x.R < -0.5) return -1 / (sin1(x) * fct(-1 - x));
-		complex res = 1;
-		if (x != x - 1) for (;1 <= x.R && !(std::isnan(res.R) || std::isnan(res.i));) {
+		complex 
+			res = 1;
+#if 1
+		if (x != x - 1 && !(std::isnan(res.R) || std::isnan(res.i))) for (;1 <= x.R;) {
 			res *= x;
 			x = x - 1;
 		}
-		real n = 512.5;
+#endif
 		if (x == 0) return res;
-		res = res * exp(-x + (x + 0.5) * ln(x + n) - 0.5 * std::log(n));
-		for (long long i = 1; i < n; i++) res = res * i / (x + i) / n * (x + n);
+		res = res * (res * factorial(x - 1) * x + (1 - res) * factorial(x));
 		return res;
 	}
 	complex inv_fct(complex x) {
@@ -380,7 +387,7 @@ namespace math {
 
 	complex USumN(complex x, complex n) {
 		complex res;
-		if (x != x + 1) for (; x.R < 1;) {
+		if (x != x + 1) for (; x.R < 1 + std::abs(n.i);) {
 			x = x + 1;
 			res = res - pow(x, n);
 		}
@@ -394,17 +401,13 @@ namespace math {
 				return res;
 			}
 			else {
-#if 1
 				res = res + pow(x, n + 1) / (n + 1) + pow(x, n) * 0.5;
 				for (int k = 1; k < n.R + 8;) {
-					res = res - zetaByFct(k) * fct(n) / fct(n - k) * pow(x, n - k);
+					complex multiplier = zetaByFct(k);
+					for (int l = 0;l < k; l++) multiplier = multiplier * (n - l);
+					res = res - multiplier * pow(x, n - k);
 					k += 2;
 				}
-#else
-				for (int k = 0; k < n.R + 8; k++) {
-					res = res - zeta(n - k) * Binom(n, k) * pow(x, k);
-				}
-#endif
 				return res;
 			}
 		}

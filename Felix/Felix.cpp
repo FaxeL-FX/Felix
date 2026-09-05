@@ -1,4 +1,4 @@
-﻿//	v1.13.0
+﻿//	v1.14.0
 
 #include "Felix.h"
 
@@ -139,6 +139,8 @@ Felix::CommandResult Felix::run_command(std::string c) {
 
 		std::string expr = "";
 		for (int i = 2 + (args[2] == "="); i < args.size(); i++) expr += args[i] + ' ';
+		f.expression = expr;
+
 		if (f.args.size() == 0) {
 			auto objs = parse_expr(expr);
 			std::vector<Variable> vars = {};
@@ -247,29 +249,37 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		for (int i = 0; i < resolution * resolution; i++) img.push_back({ 0, 0, 0 });
 
 		std::vector<Function> target_fncs;
-		args[1] += ';';
-		for (; 0 < args[1].size();) {
-			if (args[1][0] == ';' || args[1][0] == ',') break;
-			bool no_func = true;
-			std::string token = parse_token(args[1]);
-			for (auto fnc : functions_list)
-				if (fnc.name == token) {
-					target_fncs.push_back(fnc);
-					no_func = false;
-					break;
-				}
-			if (no_func) {
-				target_fncs.push_back(Function(-1, token,
-					{
-						Variable("x")
-					},
+		if (args[1] == "all") {
+			for (auto f : functions_list) {
+				if (f.args.size() > 0) target_fncs.push_back(f);
+			}
+		}
+		else {
+			args[1] += ';';
+			for (; 0 < args[1].size();) {
+				if (args[1][0] == ';' || args[1][0] == ',') break;
+				bool no_func = true;
+				std::string token = parse_token(args[1]);
+				for (auto fnc : functions_list)
+					if (fnc.name == token) {
+						if (fnc.args.size() == 0) fnc.args.push_back(Variable());
+						target_fncs.push_back(fnc);
+						no_func = false;
+						break;
+					}
+				if (no_func) {
+					target_fncs.push_back(Function(-1, token,
+						{
+							Variable("x")
+						},
 					{
 						Object(nameToType(token), { 1 }),
 						Object("x")
 					}
-				));
+					));
+				}
+				args[1] = args[1].substr(args[1].find_first_of(";,") + 1);
 			}
-			args[1] = args[1].substr(args[1].find_first_of(";,") + 1);
 		}
 
 		// render functions
@@ -422,14 +432,6 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		else if (cmplx) render_function = render_complex;
 
 		math::number p = start_value;
-#if 0
-		std::vector<uint8_t> image;
-		image.resize(resolution * resolution * 4);
-
-		GifWriter writer = {};
-		int32_t bit_depth = 8;
-		if (gif) GifBegin(&writer, "graph.gif", resolution, resolution, delay, bit_depth);
-#endif
 
 		int progress = 0;
 		bool go = true;
@@ -456,7 +458,6 @@ Felix::CommandResult Felix::run_command(std::string c) {
 					col = RGBColor(colorNum);
 				}
 
-				if (f.args.size() == 0) return ErrorMessage{"Bad arguments count"};
 				std::vector<std::thread> thr(prc);
 				for (int i = 0; i < prc; i++) {
 					auto thr_fn = [&](
@@ -502,26 +503,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 				}
 			}
 
-#if 0
-			if (!gif) break;
-			for (int yy = 0; yy < resolution; ++yy) {
-				for (int xx = 0; xx < resolution; ++xx) {
-					size_t offset_image = ((resolution - yy - 1) * resolution + xx);
-					size_t offset = (yy * resolution + xx);
-					auto& r = image[offset_image * 4 + 0];
-					auto& g = image[offset_image * 4 + 1];
-					auto& b = image[offset_image * 4 + 2];
-					auto& a = image[offset_image * 4 + 3];
-					r = img[offset][0] * 255;
-					g = img[offset][1] * 255;
-					b = img[offset][2] * 255;
-					a = 255;
-				}
-			}
-			GifWriteFrame(&writer, image.data(), resolution, resolution, delay, bit_depth);
-#else
 			printed_images.emplace_back(img, resolution);
-#endif
 		}
 
 		go = false;

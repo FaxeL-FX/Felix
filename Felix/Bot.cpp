@@ -164,11 +164,11 @@ int main() {
 		if (event.msg.author.is_bot()) return;
 		if (event.msg.content.starts_with(">>")) {
 			std::string expr = event.msg.content.substr(2);
-#if 0
+#if 1
 			if (expr.starts_with("help")) {
-				expr = expr.substr(5);
+				expr = expr.substr(4);
 				dpp::embed embed;
-				/**/ if (expr.starts_with("functions")) {
+				/**/ if (expr.starts_with(" functions")) {
 					embed.set_title("Math functions");
 					std::string
 						power_functions_str,
@@ -253,14 +253,15 @@ int main() {
 					experimental_functions_str += "```";
 					embed.add_field("Experimental functions", experimental_functions_str, false);
 				}
-				else if (expr.starts_with("commands")) {
+				else if (expr.starts_with(" commands")) {
 					embed.set_title("Felix commands");
 				}
-				else if (expr.starts_with("operators")) {
+				else if (expr.starts_with(" operators")) {
 					embed.set_title("Math operators");
 				}
 				else {
 					embed.set_title("Help menu");
+					embed.add_field("", ">>help functions\n>>help commands\n>>help operators");
 				}
 				dpp::message m{ event.msg.channel_id, embed };
 				event.reply(m);

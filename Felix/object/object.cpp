@@ -849,16 +849,16 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 				n = objects[this->arg_indexes[2]].return_value(objects, args, functions);
 			math::real
 				iter = ((math::complex)n).R,
-				delta = 0.0000000001,
-				delta_root = std::pow(delta, 1 / iter);
-			args[var_index].value = args[var_index].value + n * delta_root * 0.5;
-			for (int k = 0; k <= iter; k++) {
+				delta = 1.0 / 4294967296.0,
+				delta_root = std::pow(delta, 1.0 / iter);
+			args[var_index].value = args[var_index].value + n * 0.5 * delta_root;
+			for (int k = 0; k < iter + 8; k++) {
 				res = res + (1 - 2 * (k % 2)) * math::Binom(n, k) * objects[this->arg_indexes[3]].return_value(objects, args, functions);
 				args[var_index].value = args[var_index].value - delta_root;
 			}
 
 			args.erase(args.begin() + var_index);
-			return res / delta;
+			return res * 4294967296;
 		}
 		case(ObjType::_ForwardDifference): {
 			int var_index = args.size();
@@ -979,11 +979,13 @@ static std::string printObj(std::string str, std::vector<Object> &objects, int i
 	if (objects.size() <= index) return "?";
 
 	if (objects[index].arg_indexes.size() == 0) {
-
+		if (objects[index].type == ObjType::_Const) return objects[index].value.toString();
+		return objects[index].name;
 	}
 
 	return "?";
 }
 std::string Function::toString() {
+	return this->expression;
 	return printObj("", this->objects, 0);
 }
