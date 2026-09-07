@@ -395,7 +395,9 @@ namespace math {
 			if (n.i == 0 && std::floor(n.R) == n.R) {
 				res = res + pow(x, n + 1) / (n + 1) + pow(x, n) * 0.5;
 				for (int k = 1; k <= n.R;) {
-					res = res - zetaByFct(k) * fct(n) / fct(n - k) * pow(x, n - k);
+					complex multiplier = zetaByFct(k);
+					for (int l = 0; l < k; l++) multiplier = multiplier * (n - l);
+					res = res - multiplier * pow(x, n - k);
 					k += 2;
 				}
 				return res;
@@ -412,7 +414,7 @@ namespace math {
 			}
 		}
 		else {
-			int m = 512;
+			int m = 128;
 			if (n == -1)	res = res + ln(x + m + 0.5);
 			else			res = res + pow(x + m + 0.5, n + 1) / (n + 1);
 			for (int k = 1; k <= m; k++) res = res - pow(x + k, n);

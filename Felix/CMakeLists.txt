@@ -3,6 +3,7 @@ list(APPEND FELIX_SOURCES
     bmp/BMPWriter.cc
     math/math.cpp
     object/object.cpp
+    text/text_image.cpp
 )
 
 target_sources(Felix PRIVATE ${FELIX_SOURCES})

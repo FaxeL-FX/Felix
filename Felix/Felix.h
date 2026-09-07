@@ -1,6 +1,7 @@
 #pragma once
 #include "include.h"
 #include "object/object.h"
+#include "text/text_image.h"
 
 struct Felix {
 	struct ErrorMessage {

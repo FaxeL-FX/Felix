@@ -1,4 +1,4 @@
-﻿//	v1.14.1
+﻿//	v1.15.0
 
 #include "Felix.h"
 
@@ -94,6 +94,7 @@ Color inverse(Color c) {
 	c.B = 1.0 - c.B;
 	return c;
 }
+
 
 Felix::CommandResult Felix::run_command(std::string c) {
 	std::vector<std::string> args;
@@ -197,7 +198,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 	if (args[0] == "print") {
 		ImageList printed_images;
 
-		bool grid = true, cmplx = false, eq = false, gif = false, one_thread = false, debug = false;
+		bool grid = true, cmplx = false, eq = false, gif = false, one_thread = false, debug = false, param = false;
 		if (args.size() < 2) return ErrorMessage{"Bad arguments count"};
 
 		int resolution = 400;	// bmp/gif
@@ -212,6 +213,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 			else if (args[i] == "eq") eq = true;
 			else if (args[i] == "gif") gif = true;
 			else if (args[i] == "debug") debug = true;
+			else if (args[i] == "param") param = true;
 			else if (args[i] == "one_thread") one_thread = true;
 
 			else if (args[i].substr(0, 4) == "res=") {	// substr(length)
@@ -550,6 +552,37 @@ Felix::CommandResult Felix::run_command(std::string c) {
 							gridLine.A = 0.125;
 							if (y == 0) gridLine.A = 0.25;
 							img[index] = toVecF(penAdd(img[index], gridLine));
+						}
+					}
+				}
+			}
+			if (param) {
+				int
+					scale = 1,
+					pos_x = 1 * scale,
+					pos_y = resolution - 1 - 1 * scale;
+				ImageString s{ p.toString() };
+
+				for (int iX = pos_x - scale; iX < pos_x + scale * 4 * s.str.size(); iX++) {
+					for (int iY = pos_y + scale; iY >= pos_y - 6 * scale + 1; iY--) {
+						int index = iX + resolution * iY;
+						if (index < 0 || resolution * resolution <= index) continue;
+						img.at(index) = toVecF(0.0);
+					}
+				}
+
+				for (int i = 0; i < s.str.size(); i++) {
+					for (int iX = 0; iX < s.str.at(i).c.size(); iX++) {
+						for (int iY = 0; iY < s.str.at(i).c.at(iX).size(); iY++) {
+							if (s.str.at(i).c.at(iX).at(iY)) {
+								for (int scale_incX = 0; scale_incX < scale; scale_incX++) {
+									for (int scale_incY = 0; scale_incY < scale; scale_incY++) {
+										int index = (scale * (4 * i + iX) + scale_incX + pos_x) + resolution * (pos_y - scale * iY - scale_incY);
+										if (index < 0 || resolution * resolution <= index) continue;
+										img.at(index) = toVecF(1.0);
+									}
+								}
+							}
 						}
 					}
 				}
