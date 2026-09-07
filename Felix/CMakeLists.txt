@@ -1,13 +1,14 @@
 list(APPEND FELIX_SOURCES
     Felix.cpp
-    bmp/BMPWriter.cc
     math/math.cpp
     object/object.cpp
     text/text_image.cpp
 )
 
 target_sources(Felix PRIVATE ${FELIX_SOURCES})
-target_sources(Terminal PRIVATE Terminal.cpp)
+target_sources(Terminal PRIVATE Terminal.cpp ImageListBinary.cpp)
+
+target_include_directories(Terminal PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if(TARGET FelixMath)
     target_sources(FelixMath PRIVATE math/math.cpp)
@@ -15,6 +16,6 @@ if(TARGET FelixMath)
 endif()
 
 if(TARGET Bot)
-    target_sources(Bot PRIVATE Bot.cpp)
+    target_sources(Bot PRIVATE Bot.cpp ImageListBinary.cpp)
     target_link_libraries(Bot PRIVATE dpp Felix)
 endif()
