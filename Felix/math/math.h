@@ -22,14 +22,14 @@ namespace math {
 			this->i = i;
 		}
 
-		std::string toString() {
+		std::string toString(uint16_t digits = 20) {
 			double R = this->R, i = this->i;
-			
-			if (i == 0.0) return std::format("{:.20f}", this->R);
-			if (R == 0.0) return std::format("{:.20f}", this->i) + "i";
 
-			if (i < 0) return std::format("{:.20f}", this->R) + std::format("{:.20f}", this->i) + "i";
-			return std::format("{:.20f}", this->R) + "+" + std::format("{:.20f}", this->i) + "i";
+			if (i == 0.0) return std::format("{:.{}f}", this->R, digits);
+			if (R == 0.0) return std::format("{:.{}f}", this->i, digits) + "i";
+
+			if (i < 0) return std::format("{:.{}f}", this->R, digits) + std::format("{:.{}f}", this->i, digits) + "i";
+			return std::format("{:.{}f}", this->R, digits) + "+" + std::format("{:.{}f}", this->i, digits) + "i";
 		}
 
 		complex& operator +=(complex& x) {

@@ -1,4 +1,4 @@
-﻿//	v1.15.0
+﻿//	v1.15.1
 
 #include "Felix.h"
 
@@ -558,16 +558,16 @@ Felix::CommandResult Felix::run_command(std::string c) {
 			}
 			if (param) {
 				int
-					scale = 1,
+					scale = 2,
 					pos_x = 1 * scale,
 					pos_y = resolution - 1 - 1 * scale;
-				ImageString s{ p.toString() };
+				ImageString s{ p.toString(8) };
 
 				for (int iX = pos_x - scale; iX < pos_x + scale * 4 * s.str.size(); iX++) {
 					for (int iY = pos_y + scale; iY >= pos_y - 6 * scale + 1; iY--) {
-						int index = iX + resolution * iY;
-						if (index < 0 || resolution * resolution <= index) continue;
-						img.at(index) = toVecF(0.0);
+						if (iX < 0 || resolution <= iX) continue;
+						if (iY < 0 || resolution <= iY) continue;
+						img.at(iX + resolution * iY) = toVecF(0.0);
 					}
 				}
 
@@ -577,9 +577,12 @@ Felix::CommandResult Felix::run_command(std::string c) {
 							if (s.str.at(i).c.at(iX).at(iY)) {
 								for (int scale_incX = 0; scale_incX < scale; scale_incX++) {
 									for (int scale_incY = 0; scale_incY < scale; scale_incY++) {
-										int index = (scale * (4 * i + iX) + scale_incX + pos_x) + resolution * (pos_y - scale * iY - scale_incY);
-										if (index < 0 || resolution * resolution <= index) continue;
-										img.at(index) = toVecF(1.0);
+										int
+											index_x = scale * (4 * i + iX) + scale_incX + pos_x,
+											index_y = pos_y - scale * iY - scale_incY;
+										if (index_x < 0 || resolution <= index_x) continue;
+										if (index_y < 0 || resolution <= index_y) continue;
+										img.at(index_x + resolution * index_y) = toVecF(1.0);
 									}
 								}
 							}
