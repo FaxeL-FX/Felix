@@ -11,6 +11,8 @@
 
 const unsigned int prc_count = std::thread::hardware_concurrency();
 
+namespace
+{
 struct Color {
 	float R, G, B, A;
 
@@ -39,6 +41,27 @@ struct Color {
 		this->A = 1;
 	}
 };
+
+struct RenderContext
+{
+	RenderContext(std::vector<std::array<float, 3>> &img) : img{img}
+	{
+	}
+
+	std::vector<std::array<float, 3>> &img;
+	Function f;
+	int begin;
+	int end;
+	int resolution;
+	Color color;
+	math::number parameter;
+
+	std::vector<Function> functions_list;
+	math::complex plot_center;
+	long double plot_radius = 8;
+	bool gif = false;
+};
+
 Color pen(Color a, Color b) {
 	a.R = b.A * b.R + (1 - b.A) * a.R;
 	a.G = b.A * b.G + (1 - b.A) * a.G;
@@ -96,6 +119,7 @@ Color inverse(Color c) {
 	c.B = 1.0 - c.B;
 	return c;
 }
+} // namespace
 
 
 Felix::CommandResult Felix::run_command(std::string c) {
@@ -289,15 +313,20 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		}
 
 		// render functions
-		auto render_graph = [&](
-			std::vector<std::vector<float>>& img,
-			int begin,
-			int end,
-			int resolution,
-			Function f,
-			Color color,
-			math::number parameter)
-			{
+		auto render_graph = [](RenderContext &C) {
+				auto &img = C.img;
+				auto &begin = C.begin;
+				auto &end = C.end;
+				auto &resolution = C.resolution;
+				auto &f = C.f;
+				auto &color = C.color;
+				auto &parameter = C.parameter;
+
+				auto &functions_list = C.functions_list;
+				auto &plot_center = C.plot_center;
+				auto &plot_radius = C.plot_radius;
+				auto &gif = C.gif;
+
 				long long iY, iYp;
 				long double start = plot_center.R - plot_radius, step = 2 * plot_radius / resolution;
 				math::complex res;
@@ -331,15 +360,19 @@ Felix::CommandResult Felix::run_command(std::string c) {
 					iYp = iY;
 				}
 			};
-		auto render_eq = [&](
-			std::vector<std::vector<float>>& img,
-			int begin,
-			int end,
-			int resolution,
-			Function f,
-			Color color,
-			math::number parameter)
-			{
+		auto render_eq = [](RenderContext &C) {
+				auto &img = C.img;
+				auto &begin = C.begin;
+				auto &end = C.end;
+				auto &resolution = C.resolution;
+				auto &f = C.f;
+				auto &parameter = C.parameter;
+
+				auto &functions_list = C.functions_list;
+				auto &plot_center = C.plot_center;
+				auto &plot_radius = C.plot_radius;
+				auto &gif = C.gif;
+
 				long double
 					startX = plot_center.R - plot_radius,
 					startY = plot_center.i - plot_radius,
@@ -374,15 +407,19 @@ Felix::CommandResult Felix::run_command(std::string c) {
 					}
 				}
 			};
-		auto render_complex = [&](
-			std::vector<std::vector<float>>& img,
-			int begin,
-			int end,
-			int resolution,
-			Function f,
-			Color color,
-			math::number parameter)
-			{
+		auto render_complex = [](RenderContext &C) {
+				auto &img = C.img;
+				auto &begin = C.begin;
+				auto &end = C.end;
+				auto &resolution = C.resolution;
+				auto &f = C.f;
+				auto &parameter = C.parameter;
+
+				auto &functions_list = C.functions_list;
+				auto &plot_center = C.plot_center;
+				auto &plot_radius = C.plot_radius;
+				auto &gif = C.gif;
+
 				long double
 					startX = plot_center.R - plot_radius,
 					startY = plot_center.i - plot_radius,
@@ -417,15 +454,19 @@ Felix::CommandResult Felix::run_command(std::string c) {
 					}
 				}
 			};
-		auto render_debug = [&](
-			std::vector<std::vector<float>>& img,
-			int begin,
-			int end,
-			int resolution,
-			Function f,
-			Color color,
-			math::number parameter)
-			{
+		auto render_debug = [](RenderContext &C) {
+				auto &img = C.img;
+				auto &begin = C.begin;
+				auto &end = C.end;
+				auto &resolution = C.resolution;
+				auto &f = C.f;
+				auto &parameter = C.parameter;
+
+				auto &functions_list = C.functions_list;
+				auto &plot_center = C.plot_center;
+				auto &plot_radius = C.plot_radius;
+				auto &gif = C.gif;
+
 				long double
 					startX = plot_center.R - plot_radius,
 					startY = plot_center.i - plot_radius,
@@ -465,14 +506,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 				}
 			};
 
-		std::function<void(
-			std::vector<std::vector<float>>& img,
-			int begin,
-			int end,
-			int resolution,
-			Function f,
-			Color color,
-			math::number parameter)>
+		std::function<void(RenderContext &)>
 			render_function = render_graph;
 		/**/ if (eq)	render_function = render_eq;
 		else if (cmplx) render_function = render_complex;
@@ -494,6 +528,11 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		};
 		std::thread counter = std::thread(counter_lambda);
 #endif
+		RenderContext render_ctx{img};
+		render_ctx.functions_list = functions_list;
+		render_ctx.plot_center = plot_center;
+		render_ctx.plot_radius = plot_radius;
+		render_ctx.gif = gif;
 
 		for (int frame = 0; frame < frames; frame++) {
 			if (frames > 1) p = start_value * (math::real)(1 - (double)frame / (frames - 1)) + end_value * (math::real)((double)frame / (frames - 1));
@@ -503,21 +542,19 @@ Felix::CommandResult Felix::run_command(std::string c) {
 			double colorNum = 0;
 			Color col(1);
 			for (auto f : target_fncs) {
+				render_ctx.f = f;
 				if (target_fncs.size() > 1) {
 					col = RGBColor(colorNum);
 				}
 
 				std::vector<std::thread> thr(prc);
 				for (int i = 0; i < prc; i++) {
-					auto thr_fn = [&](
-						int begin,
-						int end,
-						Function f,
-						Color color,
-						math::number parameter) {
-							render_function(img, begin, end, resolution, f, color, parameter);
-					};
-					thr[i] = std::thread(thr_fn, i * resolution / prc, (i + 1) * resolution / prc, f, col, p);
+					render_ctx.begin = i * resolution / prc;
+					render_ctx.end = (i + 1) * resolution / prc;
+					render_ctx.resolution = resolution;
+					render_ctx.color = col;
+					render_ctx.parameter = p;
+					thr[i] = std::thread([&](){render_function(render_ctx);});
 				}
 				for (int i = 0; i < prc; i++) thr[i].join();
 
