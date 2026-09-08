@@ -1,4 +1,4 @@
-﻿//	v1.15.1
+﻿//	v1.15.2
 
 #include "Felix.h"
 
@@ -6,6 +6,8 @@
 #include <functional>
 #include <thread>
 #include <chrono>
+
+#include <print>
 
 const unsigned int prc_count = std::thread::hardware_concurrency();
 
@@ -563,6 +565,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 					pos_y = resolution - 1 - 1 * scale;
 				ImageString s{ p.toString(8) };
 
+				// rectangle
 				for (int iX = pos_x - scale; iX < pos_x + scale * 4 * s.str.size(); iX++) {
 					for (int iY = pos_y + scale; iY >= pos_y - 6 * scale + 1; iY--) {
 						if (iX < 0 || resolution <= iX) continue;
@@ -570,21 +573,17 @@ Felix::CommandResult Felix::run_command(std::string c) {
 						img.at(iX + resolution * iY) = toVecF(0.0);
 					}
 				}
-
+				// number
 				for (int i = 0; i < s.str.size(); i++) {
-					for (int iX = 0; iX < s.str.at(i).c.size(); iX++) {
-						for (int iY = 0; iY < s.str.at(i).c.at(iX).size(); iY++) {
-							if (s.str.at(i).c.at(iX).at(iY)) {
-								for (int scale_incX = 0; scale_incX < scale; scale_incX++) {
-									for (int scale_incY = 0; scale_incY < scale; scale_incY++) {
-										int
-											index_x = scale * (4 * i + iX) + scale_incX + pos_x,
-											index_y = pos_y - scale * iY - scale_incY;
-										if (index_x < 0 || resolution <= index_x) continue;
-										if (index_y < 0 || resolution <= index_y) continue;
-										img.at(index_x + resolution * index_y) = toVecF(1.0);
-									}
-								}
+					for (int iX = 0; iX < s.str.at(i).c.size() * scale; iX++) {
+						for (int iY = 0; iY < s.str.at(i).c.at(iX / scale).size() * scale; iY++) {
+							if (s.str.at(i).c.at(iX / scale).at(iY / scale)) {
+								int
+									index_x = scale * 4 * i + iX + pos_x,
+									index_y = pos_y - iY;
+								if (index_x < 0 || resolution <= index_x) continue;
+								if (index_y < 0 || resolution <= index_y) continue;
+								img.at(index_x + resolution * index_y) = toVecF(1.0);
 							}
 						}
 					}
