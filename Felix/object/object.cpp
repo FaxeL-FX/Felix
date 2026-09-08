@@ -889,27 +889,6 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 			return res;
 		}
 	}
-	case(5): switch (this->type) {
-		case(ObjType::_Sum): {
-			int var_index = args.size();
-			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
-			math::number
-				res = objects[this->arg_indexes[4]].return_value(objects, args, functions),
-				difference = args_results[2] - args_results[1],
-				m = args_results[3];
-
-			long long
-				repeats = std::floor(difference.R);
-			math::number
-				diffPart = math::complex(difference.R - repeats, difference.i),
-				step = math::normalize(diffPart);
-
-
-
-			args.erase(args.begin() + var_index);
-			return res;
-		}
-	}
 	}
 	if (this->type == ObjType::_Polynomial && args_results.size() > 3) {
 		int var_index = args.size();
