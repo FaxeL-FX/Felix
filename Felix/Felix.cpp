@@ -295,7 +295,6 @@ Felix::CommandResult Felix::run_command(std::string c) {
 			int end,
 			int resolution,
 			Function f,
-			int& progress,
 			Color color,
 			math::number parameter)
 			{
@@ -330,7 +329,6 @@ Felix::CommandResult Felix::run_command(std::string c) {
 						img[j * resolution + iX] = toVecF(penAdd(img[j * resolution + iX], fncColor(color, res.i)));
 					}
 					iYp = iY;
-					progress += resolution;
 				}
 			};
 		auto render_eq = [&](
@@ -339,7 +337,6 @@ Felix::CommandResult Felix::run_command(std::string c) {
 			int end,
 			int resolution,
 			Function f,
-			int& progress,
 			Color color,
 			math::number parameter)
 			{
@@ -374,7 +371,6 @@ Felix::CommandResult Felix::run_command(std::string c) {
 						}
 						res = math::complex(1 / (1 + math::abs(f.return_value(functions_list))));
 						img[iY * resolution + iX] = toVecF(penAdd(img[iY * resolution + iX], Color(res.R)));
-						progress++;
 					}
 				}
 			};
@@ -384,7 +380,6 @@ Felix::CommandResult Felix::run_command(std::string c) {
 			int end,
 			int resolution,
 			Function f,
-			int& progress,
 			Color color,
 			math::number parameter)
 			{
@@ -419,7 +414,6 @@ Felix::CommandResult Felix::run_command(std::string c) {
 						}
 						res = f.return_value(functions_list);
 						img[iY * resolution + iX] = toVecF(penAdd(img[iY * resolution + iX], toCol(res)));
-						progress++;
 					}
 				}
 			};
@@ -429,7 +423,6 @@ Felix::CommandResult Felix::run_command(std::string c) {
 			int end,
 			int resolution,
 			Function f,
-			int& progress,
 			Color color,
 			math::number parameter)
 			{
@@ -468,7 +461,6 @@ Felix::CommandResult Felix::run_command(std::string c) {
 						float dur = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 100.0;
 						dur = dur / (dur + 1);
 						img[iY * resolution + iX] = toVecF(penAdd(img[iY * resolution + iX], Color(dur)));
-						progress++;
 					}
 				}
 			};
@@ -479,7 +471,6 @@ Felix::CommandResult Felix::run_command(std::string c) {
 			int end,
 			int resolution,
 			Function f,
-			int& progress,
 			Color color,
 			math::number parameter)>
 			render_function = render_graph;
@@ -489,6 +480,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 
 		math::number p = start_value;
 
+#if 0
 		int progress = 0;
 		bool go = true;
 		auto counter_lambda = [&]() {
@@ -501,6 +493,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 			std::cout << "\b\b\b\b\b\b\b\b\b\bcomplete     \n";
 		};
 		std::thread counter = std::thread(counter_lambda);
+#endif
 
 		for (int frame = 0; frame < frames; frame++) {
 			if (frames > 1) p = start_value * (math::real)(1 - (double)frame / (frames - 1)) + end_value * (math::real)((double)frame / (frames - 1));
@@ -522,7 +515,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 						Function f,
 						Color color,
 						math::number parameter) {
-							render_function(img, begin, end, resolution, f, progress, color, parameter);
+							render_function(img, begin, end, resolution, f, color, parameter);
 					};
 					thr[i] = std::thread(thr_fn, i * resolution / prc, (i + 1) * resolution / prc, f, col, p);
 				}
@@ -593,8 +586,10 @@ Felix::CommandResult Felix::run_command(std::string c) {
 			printed_images.emplace_back(img, resolution);
 		}
 
+#if 0
 		go = false;
 		counter.join();
+#endif
 		return printed_images;
 	}
 	if (args[0] == "help") {
