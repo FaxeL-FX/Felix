@@ -8,9 +8,9 @@ struct Felix {
 		std::string string;
 	};
 
-	struct Image : std::vector<std::vector<float>> {
-		Image(const std::vector<std::vector<float>> &data, int resolution)
-			: std::vector<std::vector<float>>{data},
+	struct Image : std::vector<std::array<float, 3>> {
+		Image(const std::vector<std::array<float, 3>> &data, int resolution)
+			: std::vector<std::array<float, 3>>{data},
 			  resolution{resolution}
 		{
 		}

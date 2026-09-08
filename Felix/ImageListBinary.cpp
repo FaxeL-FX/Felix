@@ -14,7 +14,7 @@
 
 static void write_gif_frame(
     GifWriter *writer,
-    const std::vector<std::vector<float>> &img,
+    const std::vector<std::array<float, 3>> &img,
     int resolution,
     uint32_t delay)
 {

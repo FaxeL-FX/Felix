@@ -26,7 +26,7 @@ struct Color {
 		this->B = B;
 		this->A = A;
 	}
-	Color(std::vector<float> rgb) {
+	Color(std::array<float, 3> rgb) {
 		this->R = rgb[0];
 		this->G = rgb[1];
 		this->B = rgb[2];
@@ -77,7 +77,7 @@ Color toCol(math::complex x) {
 	c.B = absMul(c.B, absolute);
 	return c;
 }
-std::vector<float> toVecF(Color c) { return { c.R, c.G, c.B }; }
+std::array<float, 3> toVecF(Color c) { return { c.R, c.G, c.B }; }
 Color fncColor(Color col, long double im) {
 	if (im == im)	col.A = 1 / (1 + im * im);
 	else			col.A = 0;
@@ -250,7 +250,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		if (prc > resolution) prc = resolution;
 		if (one_thread) prc = 1;
 
-		std::vector<std::vector<float>> img;
+		std::vector<std::array<float, 3>> img;
 		img.reserve(resolution * resolution);
 		for (int i = 0; i < resolution * resolution; i++) img.push_back({ 0, 0, 0 });
 
