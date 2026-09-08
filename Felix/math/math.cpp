@@ -316,12 +316,6 @@ namespace math {
 		return fct(n) / (fct(k) * fct(n - k));
 	}
 
-	static complex factorial(complex x) {
-		real n = 512.5;
-		complex res = exp(-x + (x + 0.5) * ln(x + n) - 0.5 * std::log(n));
-		for (long long i = 1; i < n; i++) res = res * i / (x + i) / n * (x + n);
-		return res;
-	}
 	complex fct(complex x) {
 		if (x.R == inf) return inf;
 		if (x.R == -inf) return 0;
@@ -336,7 +330,9 @@ namespace math {
 		}
 #endif
 		if (x == 0) return res;
-		res = res * (res * factorial(x - 1) * x + (1 - res) * factorial(x));
+		real n = 512.5;
+		res = res * exp(-x + (x + 0.5) * ln(x + n) - 0.5 * std::log(n));
+		for (long long i = 1; i < n; i++) res = res * i / (x + i) / n * (x + n);
 		return res;
 	}
 	complex inv_fct(complex x) {
