@@ -2,12 +2,19 @@
 
 #include "Felix.h"
 
+#include <algorithm>
+#include <cmath>
+#include <future>
 #include <iostream>
 #include <functional>
+#include <memory>
+#include <mutex>
+#include <optional>
 #include <thread>
 #include <chrono>
 
 #include <print>
+#include <vector>
 
 const unsigned int prc_count = std::thread::hardware_concurrency();
 
@@ -44,22 +51,19 @@ struct Color {
 
 struct RenderContext
 {
-	RenderContext(std::vector<std::array<float, 3>> &img) : img{img}
-	{
-	}
-
-	std::vector<std::array<float, 3>> &img;
 	Function f;
-	int begin;
-	int end;
 	int resolution;
 	Color color;
 	math::number parameter;
+
+	size_t strip_width;
+	size_t strip_index;
 
 	std::vector<Function> functions_list;
 	math::complex plot_center;
 	long double plot_radius = 8;
 	bool gif = false;
+	std::vector<std::array<float, 3>> strip;
 };
 
 Color pen(Color a, Color b) {
@@ -314,9 +318,6 @@ Felix::CommandResult Felix::run_command(std::string c) {
 
 		// render functions
 		auto render_graph = [](RenderContext &C) {
-				auto &img = C.img;
-				auto &begin = C.begin;
-				auto &end = C.end;
 				auto &resolution = C.resolution;
 				auto &f = C.f;
 				auto &color = C.color;
@@ -330,40 +331,44 @@ Felix::CommandResult Felix::run_command(std::string c) {
 				long long iY, iYp;
 				long double start = plot_center.R - plot_radius, step = 2 * plot_radius / resolution;
 				math::complex res;
-				f.args[0].value = (math::real)(start + step * (begin - 1));
 				if (gif && f.args.size() == 2) {
 					f.args[1].value = parameter;
 				}
-				res = f.return_value(functions_list);
-				iYp = ((res.R - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
-				if (resolution <= iYp) iYp = resolution - 1;
-				if (iYp < 0) iYp = 0;
-				for (long long iX = begin; iX < end && iX < resolution; iX++) {
-					f.args[0].value = (math::real)(start + step * iX);
-					res = f.return_value(functions_list);
-					iY = ((long double)(res.R - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
-					if (resolution <= iY) iY = resolution - 1;
-					if (iY < 0) iY = 0;
-					long long up, down;
-					if (iYp > iY) {
-						up = iYp;
-						down = iY;
+
+				auto compute_point = [&](int64_t offset)
+				{
+					f.args[0].value = (math::real)(start + step * offset);
+					return f.return_value(functions_list);
+				};
+
+				auto remap = [&](math::complex P)
+				{
+					return ((long double)(P.R - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
+				};
+
+				std::optional<math::complex> prev;
+				for (size_t x = 0; x < C.strip_width; x++) {
+					int64_t point_index = C.strip_width * C.strip_index + x;
+					if (point_index >= resolution) {
+						continue;
 					}
-					else {
-						up = iY;
-						down = iYp;
-					}
+					if (!prev.has_value()) prev = compute_point(point_index - 1);
+					res = compute_point(point_index);
+					iYp = remap(prev.value());
+					iY = remap(res);
+					int64_t down = std::min(iY, iYp);
+					down = std::max<int64_t>(0, down);
+					int64_t up = std::max(iY, iYp);
+					up = std::max<int64_t>(0, up);
 					if (down < up) down++;
-					for (long long j = down; j <= up && j < resolution; j++) {
-						img[j * resolution + iX] = toVecF(penAdd(img[j * resolution + iX], fncColor(color, res.i)));
+					for (size_t y = down; y <= up && y < resolution; y++) {
+						auto &pixel = C.strip[y * C.strip_width + x];
+						pixel = toVecF(penAdd(pixel, fncColor(color, res.i)));
 					}
-					iYp = iY;
+					prev = res;
 				}
 			};
 		auto render_eq = [](RenderContext &C) {
-				auto &img = C.img;
-				auto &begin = C.begin;
-				auto &end = C.end;
 				auto &resolution = C.resolution;
 				auto &f = C.f;
 				auto &parameter = C.parameter;
@@ -378,8 +383,10 @@ Felix::CommandResult Felix::run_command(std::string c) {
 					startY = plot_center.i - plot_radius,
 					step = 2 * plot_radius / resolution;
 				math::complex res;
-				for (int iX = begin; iX < end && iX < resolution; iX++) {
-					for (int iY = 0; iY < resolution; iY++) {
+				for (int iY = 0; iY < resolution; iY++) {
+					for (size_t x = 0; x < C.strip_width; x++) {
+						size_t iX = C.strip_width * C.strip_index + x;
+						auto &pixel = C.strip[iY * C.strip_width + x];
 						switch (f.args.size()) {
 						case(1):
 							f.args[0].value = math::complex(startX + step * iX, startY + step * iY);
@@ -403,14 +410,12 @@ Felix::CommandResult Felix::run_command(std::string c) {
 							break;
 						}
 						res = math::complex(1 / (1 + math::abs(f.return_value(functions_list))));
-						img[iY * resolution + iX] = toVecF(penAdd(img[iY * resolution + iX], Color(res.R)));
+						pixel = toVecF(penAdd(pixel, Color(res.R)));
 					}
 				}
 			};
 		auto render_complex = [](RenderContext &C) {
-				auto &img = C.img;
-				auto &begin = C.begin;
-				auto &end = C.end;
+				std::vector<std::array<float, 3>> strip;
 				auto &resolution = C.resolution;
 				auto &f = C.f;
 				auto &parameter = C.parameter;
@@ -425,8 +430,10 @@ Felix::CommandResult Felix::run_command(std::string c) {
 					startY = plot_center.i - plot_radius,
 					step = 2 * plot_radius / resolution;
 				math::complex res;
-				for (int iX = begin; iX < end && iX < resolution; iX++) {
-					for (int iY = 0; iY < resolution; iY++) {
+				for (int iY = 0; iY < resolution; iY++) {
+					for (size_t x = 0; x < C.strip_width; x++) {
+						size_t iX = C.strip_width * C.strip_index + x;
+						auto &pixel = C.strip[iY * C.strip_width + x];
 						switch (f.args.size()) {
 						case(1):
 							f.args[0].value = math::complex(startX + step * iX, startY + step * iY);
@@ -450,14 +457,12 @@ Felix::CommandResult Felix::run_command(std::string c) {
 							break;
 						}
 						res = f.return_value(functions_list);
-						img[iY * resolution + iX] = toVecF(penAdd(img[iY * resolution + iX], toCol(res)));
+						pixel = toVecF(penAdd(pixel, toCol(res)));
 					}
 				}
 			};
 		auto render_debug = [](RenderContext &C) {
-				auto &img = C.img;
-				auto &begin = C.begin;
-				auto &end = C.end;
+				std::vector<std::array<float, 3>> strip;
 				auto &resolution = C.resolution;
 				auto &f = C.f;
 				auto &parameter = C.parameter;
@@ -472,8 +477,10 @@ Felix::CommandResult Felix::run_command(std::string c) {
 					startY = plot_center.i - plot_radius,
 					step = 2 * plot_radius / resolution;
 				math::complex res;
-				for (int iX = begin; iX < end && iX < resolution; iX++) {
-					for (int iY = 0; iY < resolution; iY++) {
+				for (int iY = 0; iY < resolution; iY++) {
+					for (size_t x = 0; x < C.strip_width; x++) {
+						size_t iX = C.strip_width * C.strip_index + x;
+						auto &pixel = C.strip[iY * C.strip_width + x];
 						switch (f.args.size()) {
 						case(1):
 							f.args[0].value = math::complex(startX + step * iX, startY + step * iY);
@@ -501,7 +508,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 						auto end = std::chrono::high_resolution_clock::now();
 						float dur = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() / 100.0;
 						dur = dur / (dur + 1);
-						img[iY * resolution + iX] = toVecF(penAdd(img[iY * resolution + iX], Color(dur)));
+						pixel = toVecF(penAdd(pixel, Color(dur)));
 					}
 				}
 			};
@@ -528,38 +535,63 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		};
 		std::thread counter = std::thread(counter_lambda);
 #endif
-		RenderContext render_ctx{img};
-		render_ctx.functions_list = functions_list;
-		render_ctx.plot_center = plot_center;
-		render_ctx.plot_radius = plot_radius;
-		render_ctx.gif = gif;
+
+		size_t n_strips = prc;
+		size_t strip_width = resolution / prc;
+		if (strip_width * prc < resolution) n_strips++;
+		std::vector<RenderContext> ctxs;
+		for (size_t strip_index = 0; strip_index != n_strips; ++strip_index) {
+			RenderContext &C = ctxs.emplace_back();
+			C.strip_index = strip_index;
+			C.functions_list = functions_list;
+			C.plot_center = plot_center;
+			C.plot_radius = plot_radius;
+			C.gif = gif;
+			C.strip_width = strip_width;
+			C.strip_index = strip_index;
+			C.resolution = resolution;
+			C.strip.resize(strip_width * resolution);
+		}
 
 		for (int frame = 0; frame < frames; frame++) {
 			if (frames > 1) p = start_value * (math::real)(1 - (double)frame / (frames - 1)) + end_value * (math::real)((double)frame / (frames - 1));
 			else			p = start_value;
 			for (int i = 0; i < resolution * resolution; i++) img[i] = { 0, 0, 0 };
 
+			std::array<float, 3> background_color{0, 0, 0};
+			for (RenderContext &C : ctxs) {
+				std::fill(C.strip.begin(), C.strip.end(), background_color);
+				C.parameter = p;
+			}
+
 			double colorNum = 0;
 			Color col(1);
-			for (auto f : target_fncs) {
-				render_ctx.f = f;
+			for (const Function &f : target_fncs) {
 				if (target_fncs.size() > 1) {
 					col = RGBColor(colorNum);
 				}
 
-				std::vector<std::thread> thr(prc);
-				for (int i = 0; i < prc; i++) {
-					render_ctx.begin = i * resolution / prc;
-					render_ctx.end = (i + 1) * resolution / prc;
-					render_ctx.resolution = resolution;
-					render_ctx.color = col;
-					render_ctx.parameter = p;
-					thr[i] = std::thread([&](){render_function(render_ctx);});
+				std::vector<std::thread> thr;
+				for (RenderContext &C : ctxs) {
+					C.f = f;
+					C.color = col;
+					thr.emplace_back(render_function, std::ref(C));
 				}
-				for (int i = 0; i < prc; i++) thr[i].join();
+				for (int i = 0; i < thr.size(); i++) thr[i].join();
 
 				colorNum++;
 			}
+
+			for (size_t y = 0; y != resolution; ++y) {
+				for (size_t x = 0; x != resolution; ++x) {
+					auto &image_pixel = img[y * resolution + x];
+					size_t strip_index = x / strip_width;
+					auto &strip = ctxs.at(strip_index).strip;
+					auto &strip_pixel = strip[y * strip_width + (x % strip_width)];
+					image_pixel = strip_pixel;
+				}
+			}
+
 			if (grid) {
 				for (int i = 1; i <= 2 * plot_radius; i++) {
 					long double x = std::floor(plot_center.R - plot_radius) + i;
