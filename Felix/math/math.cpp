@@ -86,7 +86,8 @@ namespace math {
 		}
 		{
 			std::lock_guard<std::mutex> l{ zbfMutex };
-			zbfValues.push_back(res);
+			if (x >= zbfValues.size()) zbfValues.resize(x + 1);
+			zbfValues[x] = res;
 		}
 		return res;
 	}
@@ -323,14 +324,17 @@ namespace math {
 		if (x.R < -0.5) return -1 / (sin1(x) * fct(-1 - x));
 		complex 
 			res = 1;
-#if 1
-		if (x != x - 1 && !(std::isnan(res.R) || std::isnan(res.i))) for (;1 <= x.R;) {
-			res *= x;
-			x = x - 1;
+		if (x != x - 1 && !(std::isnan(res.R) || std::isnan(res.i))) {
+			for (; 1 <= x.R;) {
+				res *= x;
+				x = x - 1;
+			}
 		}
-#endif
+		else {
+			return sqrt(2 * pi) * exp((x + 0.5) * (ln(x + 0.5) - 1.0));
+		}
 		if (x == 0) return res;
-		real n = 512.5;
+		real n = 128.5;
 		res = res * exp(-x + (x + 0.5) * ln(x + n) - 0.5 * std::log(n));
 		for (long long i = 1; i < n; i++) res = res * i / (x + i) / n * (x + n);
 		return res;
@@ -388,26 +392,13 @@ namespace math {
 			res = res - pow(x, n);
 		}
 		if (0 <= n.R) {
-			if (n.i == 0 && std::floor(n.R) == n.R) {
-				res = res + pow(x, n + 1) / (n + 1) + pow(x, n) * 0.5;
-				for (int k = 1; k <= n.R;) {
-					complex multiplier = zetaByFct(k);
-					for (int l = 0; l < k; l++) multiplier = multiplier * (n - l);
-					res = res - multiplier * pow(x, n - k);
-					k += 2;
-				}
-				return res;
+			res = res + pow(x, n + 1) / (n + 1) + pow(x, n) * 0.5;
+			for (int k = 1; k < n.R + 8; k++) {
+				complex multiplier = zbf(k);
+				for (int l = 0; l < k; l++) multiplier = multiplier * (n - l);
+				res = res - multiplier * pow(x, n - k);
 			}
-			else {
-				res = res + pow(x, n + 1) / (n + 1) + pow(x, n) * 0.5;
-				for (int k = 1; k < n.R + 8;) {
-					complex multiplier = zetaByFct(k);
-					for (int l = 0;l < k; l++) multiplier = multiplier * (n - l);
-					res = res - multiplier * pow(x, n - k);
-					k += 2;
-				}
-				return res;
-			}
+			return res;
 		}
 		else {
 			int m = 128;

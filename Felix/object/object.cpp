@@ -851,8 +851,8 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 				iter = ((math::complex)n).R,
 				delta = 1.0 / 4294967296.0,
 				delta_root = std::pow(delta, 1.0 / iter);
-			args[var_index].value = args[var_index].value + n * 0.5 * delta_root;
-			for (int k = 0; k < iter + 8; k++) {
+			args[var_index].value = args_results[1] + n * 0.5 * delta_root;
+			for (int k = 0; k <= iter; k++) {
 				res = res + (1 - 2 * (k % 2)) * math::Binom(n, k) * objects[this->arg_indexes[3]].return_value(objects, args, functions);
 				args[var_index].value = args[var_index].value - delta_root;
 			}
