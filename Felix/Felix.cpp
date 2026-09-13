@@ -6,13 +6,8 @@
 #include <algorithm>
 #include <atomic>
 #include <cmath>
-#include <future>
-#include <iostream>
 #include <functional>
-#include <memory>
-#include <mutex>
 #include <optional>
-#include <ranges>
 #include <thread>
 #include <chrono>
 
@@ -29,12 +24,13 @@ struct ThreadedTaskWrap
 {
 	ThreadedTaskWrap(std::reference_wrapper<TaskT> task) : _task{task} {}
 
-	void do_work()
+	bool do_work()
 	{
 		Guard in_work_guard{_mutex};
-		if (!in_work_guard.own) return;
+		if (!in_work_guard.own) return false;
 		_task.get().do_work();
 		if (_task.get().done) std::atomic_ref{_done}.store(true);
+		return true;
 	}
 
 	bool done()
@@ -47,11 +43,13 @@ private:
 	{
 		Guard(bool &mutex) : std::atomic_ref<bool>{mutex}
 		{
+			std::atomic_thread_fence(std::memory_order_acquire);
 			own = !exchange(true);
 		}
 		~Guard(){
 			if(!own) return;
 			store(false);
+			std::atomic_thread_fence(std::memory_order_release);
 		}
 		bool own;
 	};
@@ -137,6 +135,96 @@ struct RenderStripTask
 			return;
 		}
 		color = RGBColor(target_fnc_idx);
+	}
+};
+
+struct RenderFrameTask
+{
+	struct PostProcessInfo
+	{
+		math::complex parameter;
+		size_t resolution;
+		size_t strip_width;
+		math::complex plot_center;
+		long double plot_radius = 8;
+	};
+
+	RenderFrameTask(std::vector<RenderStripTask> &&strip_tasks, PostProcessInfo i) :
+		_i{i},
+		_strip_tasks{std::move(strip_tasks)}
+	{
+		_img.resize(_i.resolution * _i.resolution);
+		for (auto &task : _strip_tasks) _strip_task_wraps.emplace_back(std::ref(task));
+	}
+
+	bool do_work()
+	{
+		if (done()) return false;
+		if (!std::atomic_ref{_strips_done}.load()) return do_work_strips();
+
+		if (std::atomic_ref{_postprocess_in_progress}.exchange(true)) return false;
+		postprocess();
+
+		std::atomic_ref{_postprocess_done}.store(true);
+		return true;
+	}
+
+	bool done()
+	{
+	    return std::atomic_ref{_postprocess_done}.load();
+	}
+
+	std::vector<std::function<void(std::vector<std::array<float, 3>> &img, RenderFrameTask::PostProcessInfo &I)>> postprocess_functions;
+
+	auto &image()
+	{
+		return _img;
+	}
+
+private:
+	PostProcessInfo _i;
+	std::vector<RenderStripTask> _strip_tasks;
+
+	std::vector<std::array<float, 3>> _img;
+	std::vector<ThreadedTaskWrap<RenderStripTask>> _strip_task_wraps;
+	bool _strips_done = false;
+	bool _postprocess_done = false;
+	bool do_work_strips()
+	{
+		bool all_done = true;
+		for (auto &task : _strip_task_wraps) {
+			if (task.done()) continue;
+			all_done = false;
+			if (task.do_work()) return true;
+		}
+		if (all_done) std::atomic_ref{_strips_done}.store(true);
+		return false;
+	}
+
+	bool _postprocess_in_progress = false;
+	void postprocess()
+	{
+		merge_strips();
+		external_postproc();
+		std::atomic_ref{_postprocess_done}.store(true);
+	}
+
+	void merge_strips()
+	{
+		for (size_t y = 0; y != _i.resolution; ++y) {
+			for (size_t x = 0; x != _i.resolution; ++x) {
+				auto &image_pixel = _img[y * _i.resolution + x];
+				size_t strip_index = x / _i.strip_width;
+				auto &strip = _strip_tasks.at(strip_index).strip;
+				auto &strip_pixel = strip[y * _i.strip_width + (x % _i.strip_width)];
+				image_pixel = strip_pixel;
+			}
+		}
+	}
+
+	void external_postproc()
+	{
+		for (auto &f : postprocess_functions) f(_img, _i);
 	}
 };
 
@@ -592,23 +680,19 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		};
 		std::thread counter = std::thread(counter_lambda);
 #endif
-		ImageList printed_images;
-		printed_images.gif_delay = delay;
-
 		size_t n_strips = prc;
 		size_t strip_width = resolution / prc;
 		if (strip_width * prc < resolution) n_strips++;
 
-		for (int frame = 0; frame < frames; frame++) {
-			std::vector<std::array<float, 3>> img;
-			img.resize(resolution * resolution);
+		std::vector<RenderFrameTask> frame_tasks;
 
+		for (int frame = 0; frame < frames; frame++) {
 			math::number p = start_value;
 			if (frames > 1) p = start_value * (math::real)(1 - (double)frame / (frames - 1)) + end_value * (math::real)((double)frame / (frames - 1));
 
-			std::vector<RenderStripTask> ctxs;
+			std::vector<RenderStripTask> strip_tasks;
 			for (size_t strip_index = 0; strip_index != n_strips; ++strip_index) {
-				RenderStripTask &C = ctxs.emplace_back();
+				RenderStripTask &C = strip_tasks.emplace_back();
 				C.render_function = render_function;
 
 				C.strip_width = strip_width;
@@ -630,39 +714,19 @@ Felix::CommandResult Felix::run_command(std::string c) {
 				C.color = target_fncs.size() == 1 ? Color{1} : RGBColor(0);
 			}
 
-			std::vector<ThreadedTaskWrap<RenderStripTask>> tasks;
-			for (auto &ctx : ctxs) {
-				tasks.emplace_back(std::ref(ctx));
-			}
+			RenderFrameTask::PostProcessInfo I;
+			I.parameter = p;
+			I.resolution = resolution;
+			I.strip_width = strip_width;
+			I.plot_center = plot_center;
+			I.plot_radius = plot_radius;
 
-			auto worker = [&tasks]()
-			{
-				bool all_done = false;
-				while (!all_done) {
-					all_done = true;
-					for (auto &task : tasks){
-						task.do_work();
-						all_done = all_done && task.done();
-					}
-				}
-			};
+			RenderFrameTask frame_task{std::move(strip_tasks), I};
 
-			{
-				std::vector<std::jthread> thread_pool;
-				for (size_t i = 0; i != prc; ++i) thread_pool.emplace_back(worker);
-			}
-
-			for (size_t y = 0; y != resolution; ++y) {
-				for (size_t x = 0; x != resolution; ++x) {
-					auto &image_pixel = img[y * resolution + x];
-					size_t strip_index = x / strip_width;
-					auto &strip = ctxs.at(strip_index).strip;
-					auto &strip_pixel = strip[y * strip_width + (x % strip_width)];
-					image_pixel = strip_pixel;
-				}
-			}
-
-			if (grid) {
+			if (grid) frame_task.postprocess_functions.push_back([](std::vector<std::array<float, 3>> &img, RenderFrameTask::PostProcessInfo &I) {
+				auto &plot_radius = I.plot_radius;
+				auto &plot_center = I.plot_center;
+				auto &resolution = I.resolution;
 				for (int i = 1; i <= 2 * plot_radius; i++) {
 					long double x = std::floor(plot_center.R - plot_radius) + i;
 					int iX = ((x - plot_center.R) / plot_radius + 1) * 0.5 * resolution;
@@ -689,8 +753,12 @@ Felix::CommandResult Felix::run_command(std::string c) {
 						}
 					}
 				}
-			}
-			if (param) {
+			});
+			if (param) frame_task.postprocess_functions.push_back([](std::vector<std::array<float, 3>> &img, RenderFrameTask::PostProcessInfo &I) {
+				auto &plot_radius = I.plot_radius;
+				auto &plot_center = I.plot_center;
+				auto &resolution = I.resolution;
+				auto &p = I.parameter;
 				int
 					scale = 2,
 					pos_x = 1 * scale,
@@ -720,11 +788,30 @@ Felix::CommandResult Felix::run_command(std::string c) {
 						}
 					}
 				}
-			}
-
-			printed_images.emplace_back(img, resolution);
+			});
+			frame_tasks.push_back(std::move(frame_task));
 		}
 
+		auto worker = [&frame_tasks]() {
+			bool all_done = false;
+			while (!all_done) {
+				all_done = true;
+				for (auto &task : frame_tasks){
+					if(task.done()) continue;
+					all_done = false;
+					task.do_work();
+				}
+			}
+		};
+
+		{
+			std::vector<std::jthread> thread_pool;
+			for (size_t i = 0; i != prc; ++i) thread_pool.emplace_back(worker);
+		}
+
+		ImageList printed_images;
+		printed_images.gif_delay = delay;
+		for (auto &task : frame_tasks) printed_images.emplace_back(task.image(), resolution);
 #if 0
 		go = false;
 		counter.join();
