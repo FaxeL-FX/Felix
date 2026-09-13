@@ -1,6 +1,7 @@
 ﻿//	v1.15.4
 
 #include "Felix.h"
+#include "math/math.h"
 
 #include <algorithm>
 #include <cmath>
@@ -49,9 +50,32 @@ struct Color {
 	}
 };
 
-struct RenderContext
+Color RGBColor(double col) {
+	return Color(
+		(2 + cos(col * 1.8)) / 3,
+		(2 + cos(col * 1.8 + 2.095)) / 3,
+		(2 + cos(col * 1.8 - 2.095)) / 3,
+		1);
+}
+
+struct RenderStripTask
 {
-	Function f;
+	std::function<void(RenderStripTask &)> render_function;
+
+	void do_work()
+	{
+		if (done) {
+			return;
+		}
+		render_function(*this);
+		done_function();
+		return;
+	}
+
+	bool done = false;
+	std::vector<Function> target_fncs;
+	size_t target_fnc_idx = 0;
+
 	int resolution;
 	Color color;
 	math::number parameter;
@@ -64,6 +88,16 @@ struct RenderContext
 	long double plot_radius = 8;
 	bool gif = false;
 	std::vector<std::array<float, 3>> strip;
+
+	void done_function()
+	{
+		target_fnc_idx++;
+		if (target_fnc_idx == target_fncs.size()) {
+			done = true;
+			return;
+		}
+		color = RGBColor(target_fnc_idx);
+	}
 };
 
 Color pen(Color a, Color b) {
@@ -109,13 +143,6 @@ Color fncColor(Color col, long double im) {
 	if (im == im)	col.A = 1 / (1 + im * im);
 	else			col.A = 0;
 	return col;
-}
-Color RGBColor(double col) {
-	return Color(
-		(2 + cos(col * 1.8)) / 3,
-		(2 + cos(col * 1.8 + 2.095)) / 3,
-		(2 + cos(col * 1.8 - 2.095)) / 3,
-		1);
 }
 Color inverse(Color c) {
 	c.R = 1.0 - c.R;
@@ -226,8 +253,6 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		return std::monostate{};
 	}
 	if (args[0] == "print") {
-		ImageList printed_images;
-
 		bool grid = true, cmplx = false, eq = false, gif = false, one_thread = false, debug = false, param = false;
 		if (args.size() < 2) return ErrorMessage{"Bad arguments count"};
 
@@ -270,17 +295,11 @@ Felix::CommandResult Felix::run_command(std::string c) {
 			}
 		}
 
-		printed_images.gif_delay = delay;
-
 		if (!gif) frames = 1;
 
 		int prc = prc_count;
 		if (prc > resolution) prc = resolution;
 		if (one_thread) prc = 1;
-
-		std::vector<std::array<float, 3>> img;
-		img.reserve(resolution * resolution);
-		for (int i = 0; i < resolution * resolution; i++) img.push_back({ 0, 0, 0 });
 
 		std::vector<Function> target_fncs;
 		if (args[1] == "all") {
@@ -317,9 +336,9 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		}
 
 		// render functions
-		auto render_graph = [](RenderContext &C) {
+		auto render_graph = [](RenderStripTask &C) {
 				auto &resolution = C.resolution;
-				auto &f = C.f;
+				auto &f = C.target_fncs.at(C.target_fnc_idx);
 				auto &color = C.color;
 				auto &parameter = C.parameter;
 
@@ -368,9 +387,9 @@ Felix::CommandResult Felix::run_command(std::string c) {
 					prev = res;
 				}
 			};
-		auto render_eq = [](RenderContext &C) {
+		auto render_eq = [](RenderStripTask &C) {
 				auto &resolution = C.resolution;
-				auto &f = C.f;
+				auto &f = C.target_fncs.at(C.target_fnc_idx);
 				auto &parameter = C.parameter;
 
 				auto &functions_list = C.functions_list;
@@ -414,10 +433,10 @@ Felix::CommandResult Felix::run_command(std::string c) {
 					}
 				}
 			};
-		auto render_complex = [](RenderContext &C) {
+		auto render_complex = [](RenderStripTask &C) {
 				std::vector<std::array<float, 3>> strip;
 				auto &resolution = C.resolution;
-				auto &f = C.f;
+				auto &f = C.target_fncs.at(C.target_fnc_idx);
 				auto &parameter = C.parameter;
 
 				auto &functions_list = C.functions_list;
@@ -461,10 +480,10 @@ Felix::CommandResult Felix::run_command(std::string c) {
 					}
 				}
 			};
-		auto render_debug = [](RenderContext &C) {
+		auto render_debug = [](RenderStripTask &C) {
 				std::vector<std::array<float, 3>> strip;
 				auto &resolution = C.resolution;
-				auto &f = C.f;
+				auto &f = C.target_fncs.at(C.target_fnc_idx);
 				auto &parameter = C.parameter;
 
 				auto &functions_list = C.functions_list;
@@ -513,13 +532,11 @@ Felix::CommandResult Felix::run_command(std::string c) {
 				}
 			};
 
-		std::function<void(RenderContext &)>
+		std::function<void(RenderStripTask &)>
 			render_function = render_graph;
 		/**/ if (eq)	render_function = render_eq;
 		else if (cmplx) render_function = render_complex;
 		else if (debug) render_function = render_debug;
-
-		math::number p = start_value;
 
 #if 0
 		int progress = 0;
@@ -535,51 +552,51 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		};
 		std::thread counter = std::thread(counter_lambda);
 #endif
+		ImageList printed_images;
+		printed_images.gif_delay = delay;
 
 		size_t n_strips = prc;
 		size_t strip_width = resolution / prc;
 		if (strip_width * prc < resolution) n_strips++;
-		std::vector<RenderContext> ctxs;
-		for (size_t strip_index = 0; strip_index != n_strips; ++strip_index) {
-			RenderContext &C = ctxs.emplace_back();
-			C.strip_index = strip_index;
-			C.functions_list = functions_list;
-			C.plot_center = plot_center;
-			C.plot_radius = plot_radius;
-			C.gif = gif;
-			C.strip_width = strip_width;
-			C.strip_index = strip_index;
-			C.resolution = resolution;
-			C.strip.resize(strip_width * resolution);
-		}
 
 		for (int frame = 0; frame < frames; frame++) {
-			if (frames > 1) p = start_value * (math::real)(1 - (double)frame / (frames - 1)) + end_value * (math::real)((double)frame / (frames - 1));
-			else			p = start_value;
-			for (int i = 0; i < resolution * resolution; i++) img[i] = { 0, 0, 0 };
+			std::vector<std::array<float, 3>> img;
+			img.resize(resolution * resolution);
 
-			std::array<float, 3> background_color{0, 0, 0};
-			for (RenderContext &C : ctxs) {
-				std::fill(C.strip.begin(), C.strip.end(), background_color);
+			math::number p = start_value;
+			if (frames > 1) p = start_value * (math::real)(1 - (double)frame / (frames - 1)) + end_value * (math::real)((double)frame / (frames - 1));
+
+			std::vector<RenderStripTask> ctxs;
+			for (size_t strip_index = 0; strip_index != n_strips; ++strip_index) {
+				RenderStripTask &C = ctxs.emplace_back();
+				C.render_function = render_function;
+
+				C.strip_width = strip_width;
+				C.strip_index = strip_index;
+				C.strip.resize(strip_width * resolution);
+				std::fill(C.strip.begin(), C.strip.end(), std::array<float,3>{0, 0, 0});
+
+				C.functions_list = functions_list;
+
+				C.plot_center = plot_center;
+				C.plot_radius = plot_radius;
+
+				C.gif = gif;
+				C.resolution = resolution;
+				C.target_fncs = target_fncs;
 				C.parameter = p;
+				C.target_fnc_idx = 0;
+				C.done = false;
+				C.color = target_fncs.size() == 1 ? Color{1} : RGBColor(0);
 			}
 
-			double colorNum = 0;
-			Color col(1);
-			for (const Function &f : target_fncs) {
-				if (target_fncs.size() > 1) {
-					col = RGBColor(colorNum);
+			bool all_done = false;
+			while (!all_done) {
+				all_done = true;
+				for (RenderStripTask &C : ctxs) {
+					C.do_work();
+					all_done = all_done && C.done;
 				}
-
-				std::vector<std::thread> thr;
-				for (RenderContext &C : ctxs) {
-					C.f = f;
-					C.color = col;
-					thr.emplace_back(render_function, std::ref(C));
-				}
-				for (int i = 0; i < thr.size(); i++) thr[i].join();
-
-				colorNum++;
 			}
 
 			for (size_t y = 0; y != resolution; ++y) {
