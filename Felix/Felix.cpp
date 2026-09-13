@@ -4,6 +4,7 @@
 #include "math/math.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <future>
 #include <iostream>
@@ -11,6 +12,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <ranges>
 #include <thread>
 #include <chrono>
 
@@ -21,6 +23,44 @@ const unsigned int prc_count = std::thread::hardware_concurrency();
 
 namespace
 {
+
+template<typename TaskT>
+struct ThreadedTaskWrap
+{
+	ThreadedTaskWrap(std::reference_wrapper<TaskT> task) : _task{task} {}
+
+	void do_work()
+	{
+		Guard in_work_guard{_mutex};
+		if (!in_work_guard.own) return;
+		_task.get().do_work();
+		if (_task.get().done) std::atomic_ref{_done}.store(true);
+	}
+
+	bool done()
+	{
+		return std::atomic_ref{_done}.load();
+	}
+
+private:
+	struct Guard : std::atomic_ref<bool>
+	{
+		Guard(bool &mutex) : std::atomic_ref<bool>{mutex}
+		{
+			own = !exchange(true);
+		}
+		~Guard(){
+			if(!own) return;
+			store(false);
+		}
+		bool own;
+	};
+
+	std::reference_wrapper<TaskT> _task;
+	bool _mutex = false;
+	bool _done = false;
+};
+
 struct Color {
 	float R, G, B, A;
 
@@ -590,13 +630,26 @@ Felix::CommandResult Felix::run_command(std::string c) {
 				C.color = target_fncs.size() == 1 ? Color{1} : RGBColor(0);
 			}
 
-			bool all_done = false;
-			while (!all_done) {
-				all_done = true;
-				for (RenderStripTask &C : ctxs) {
-					C.do_work();
-					all_done = all_done && C.done;
+			std::vector<ThreadedTaskWrap<RenderStripTask>> tasks;
+			for (auto &ctx : ctxs) {
+				tasks.emplace_back(std::ref(ctx));
+			}
+
+			auto worker = [&tasks]()
+			{
+				bool all_done = false;
+				while (!all_done) {
+					all_done = true;
+					for (auto &task : tasks){
+						task.do_work();
+						all_done = all_done && task.done();
+					}
 				}
+			};
+
+			{
+				std::vector<std::jthread> thread_pool;
+				for (size_t i = 0; i != prc; ++i) thread_pool.emplace_back(worker);
 			}
 
 			for (size_t y = 0; y != resolution; ++y) {
