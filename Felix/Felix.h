@@ -26,6 +26,7 @@ struct Felix {
 	struct PrintTask
 	{
 		bool do_work();
+		float progress();
 		bool done();
 		ImageList images();
 

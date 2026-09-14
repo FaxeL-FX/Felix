@@ -9,6 +9,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <ratio>
 #include <thread>
 #include <chrono>
 
@@ -88,9 +89,12 @@ struct RenderStripTask
 	bool gif = false;
 	std::vector<std::array<float, 3>> strip;
 
+	float progress = 0;
+
 	void done_function()
 	{
 		target_fnc_idx++;
+		progress = static_cast<float>(target_fnc_idx) / target_fncs.size();
 		if (target_fnc_idx == target_fncs.size()) {
 			done = true;
 			return;
@@ -108,8 +112,14 @@ struct ThreadedRenderStripTask
 		Guard in_work_guard{_mutex};
 		if (!in_work_guard.own) return false;
 		_task.get().do_work();
+		std::atomic_ref{_progress}.store(_task.get().progress);
 		if (_task.get().done) std::atomic_ref{_done}.store(true);
 		return true;
+	}
+
+	float progress()
+	{
+		return std::atomic_ref{_progress}.load();
 	}
 
 	bool done()
@@ -122,13 +132,12 @@ private:
 	{
 		Guard(bool &mutex) : std::atomic_ref<bool>{mutex}
 		{
-			std::atomic_thread_fence(std::memory_order_acquire);
 			own = !exchange(true);
 		}
-		~Guard(){
+		~Guard()
+		{
 			if(!own) return;
 			store(false);
-			std::atomic_thread_fence(std::memory_order_release);
 		}
 		bool own;
 	};
@@ -136,6 +145,7 @@ private:
 	std::reference_wrapper<RenderStripTask> _task;
 	bool _mutex = false;
 	bool _done = false;
+	float _progress = 0;
 };
 
 struct RenderFrameTask
@@ -167,6 +177,16 @@ struct RenderFrameTask
 
 		std::atomic_ref{_postprocess_done}.store(true);
 		return true;
+	}
+
+	float progress()
+	{
+		float total = 0;
+		for (auto &task : _strip_task_wraps) total += task.progress();
+		total /= _strip_task_wraps.size();
+		total *= 0.8;
+		total += std::atomic_ref{_postprocess_progress}.load() * 0.2;
+		return total;
 	}
 
 	bool done()
@@ -201,12 +221,17 @@ private:
 		return false;
 	}
 
+	float _postprocess_progress = 0;
 	bool _postprocess_in_progress = false;
 	void postprocess()
 	{
+		std::atomic_ref pp{_postprocess_progress};
 		merge_strips();
+		pp = 0.333333333333333;
 		external_postproc();
+		pp = 0.666666666666666;
 		std::atomic_ref{_postprocess_done}.store(true);
+		pp = 1;
 	}
 
 	void merge_strips()
@@ -222,9 +247,11 @@ private:
 		}
 	}
 
+	size_t _postproc_done = 0;
 	void external_postproc()
 	{
-		for (auto &f : postprocess_functions) f(_img, _i);
+		std::atomic_ref pp_done{_postproc_done};
+		for (auto &f : postprocess_functions) { f(_img, _i); pp_done++;};
 	}
 };
 
@@ -300,6 +327,14 @@ bool Felix::PrintTask::do_work()
 	}
 	if (all_done) std::atomic_ref{I->all_done}.store(true);
 	return false;
+}
+
+float Felix::PrintTask::progress()
+{
+	float total = 0;
+	for (auto &task : I->frame_tasks) total += task.progress();
+	total /= I->frame_tasks.size();
+	return total;
 }
 
 bool Felix::PrintTask::done()
@@ -702,20 +737,6 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		else if (cmplx) render_function = render_complex;
 		else if (debug) render_function = render_debug;
 
-#if 0
-		int progress = 0;
-		bool go = true;
-		auto counter_lambda = [&]() {
-			int max_steps = resolution * resolution * frames;
-			std::cout << " render [" << std::to_string(100.0).substr(1) << "%]\b\b";
-			while (go) {
-				float percent = 100 + 100 * (float)progress / max_steps;
-				std::cout << "\b\b\b\b\b\b\b\b\b" << std::to_string(percent).substr(1);
-			}
-			std::cout << "\b\b\b\b\b\b\b\b\b\bcomplete     \n";
-		};
-		std::thread counter = std::thread(counter_lambda);
-#endif
 		size_t n_strips = prc;
 		size_t strip_width = resolution / prc;
 		if (strip_width * prc < resolution) n_strips++;
@@ -833,16 +854,19 @@ Felix::CommandResult Felix::run_command(std::string c) {
 			frame_tasks.push_back(std::move(frame_task));
 		}
 
-		{
-			auto worker = [&print_task](){ while(!print_task.done()) print_task.do_work();};
-			std::vector<std::jthread> thread_pool;
-			for (size_t i = 0; i != prc; ++i) thread_pool.emplace_back(worker);
-		}
+		auto worker = [&print_task](){ while(!print_task.done()) print_task.do_work();};
+		std::vector<std::thread> thread_pool;
+		for (size_t i = 0; i != prc; ++i) thread_pool.emplace_back(worker);
 
-#if 0
-		go = false;
-		counter.join();
-#endif
+		std::cout << " render [" << std::to_string(100.0).substr(1) << "%]\b\b";
+		while (!print_task.done()){
+			float percent = 100 + 100 * print_task.progress();
+			std::cout << "\b\b\b\b\b\b\b\b\b" << std::to_string(percent).substr(1);
+			std::this_thread::sleep_for(std::chrono::milliseconds{10});
+		}
+		for(auto &T : thread_pool) T.join();
+		std::cout << "\b\b\b\b\b\b\b\b\b\bcomplete     \n";
+
 		return print_task.images();
 	}
 	if (args[0] == "help") {
