@@ -350,6 +350,9 @@ Felix::ImageList Felix::PrintTask::images()
 	return images;
 }
 
+Felix::PrintTask::PrintTask() : I{std::make_unique<Impl>()} {}
+Felix::PrintTask::PrintTask(PrintTask &&) = default;
+Felix::PrintTask &Felix::PrintTask::operator=(PrintTask &&) = default;
 Felix::PrintTask::~PrintTask() = default;
 
 Felix::CommandResult Felix::run_command(std::string c) {
@@ -742,7 +745,6 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		if (strip_width * prc < resolution) n_strips++;
 
 		Felix::PrintTask print_task;
-		print_task.I = std::make_unique<Felix::PrintTask::Impl>();
 		auto &I = *print_task.I;
 		I.gif_delay = delay;
 		I.resolution = resolution;
@@ -854,20 +856,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 			frame_tasks.push_back(std::move(frame_task));
 		}
 
-		auto worker = [&print_task](){ while(!print_task.done()) print_task.do_work();};
-		std::vector<std::thread> thread_pool;
-		for (size_t i = 0; i != prc; ++i) thread_pool.emplace_back(worker);
-
-		std::cout << " render [" << std::to_string(100.0).substr(1) << "%]\b\b";
-		while (!print_task.done()){
-			float percent = 100 + 100 * print_task.progress();
-			std::cout << "\b\b\b\b\b\b\b\b\b" << std::to_string(percent).substr(1);
-			std::this_thread::sleep_for(std::chrono::milliseconds{10});
-		}
-		for(auto &T : thread_pool) T.join();
-		std::cout << "\b\b\b\b\b\b\b\b\b\bcomplete     \n";
-
-		return print_task.images();
+		return std::move(print_task);
 	}
 	if (args[0] == "help") {
 		std::string response = "";

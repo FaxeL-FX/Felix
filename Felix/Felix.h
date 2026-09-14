@@ -30,6 +30,9 @@ struct Felix {
 		bool done();
 		ImageList images();
 
+		PrintTask();
+		PrintTask(PrintTask &&);
+		PrintTask &operator=(PrintTask &&);
 		~PrintTask();
 		struct Impl;
 		std::unique_ptr<Impl> I;
@@ -39,7 +42,7 @@ struct Felix {
 		std::monostate,
 		ErrorMessage,
 		std::string,
-		ImageList
+		PrintTask
 	>;
 
 	math::complex plot_center;

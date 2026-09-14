@@ -29,8 +29,11 @@ struct CommandReplyVisitor
 		event.reply(m.set_flags(dpp::m_ephemeral));
 	}
 
-	void operator()(const Felix::ImageList& images)
+	void operator()(Felix::PrintTask &print_task)
 	{
+		while (!print_task.done()) print_task.do_work();
+		auto images = print_task.images();
+
 		if (images.empty()) {
 			dpp::message m;
 			m.content = "--X-> failed: no images";
@@ -178,7 +181,8 @@ int main() {
 			}
 #endif
 			CommandReplyVisitor crv(event);
-			std::visit(crv, f.run_command(expr));
+			auto res = f.run_command(expr);
+			std::visit(crv, res);
 			return;
 		}
 		if (event.msg.content.starts_with(">")) {
