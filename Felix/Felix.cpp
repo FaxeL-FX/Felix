@@ -20,46 +20,6 @@ const unsigned int prc_count = std::thread::hardware_concurrency();
 namespace
 {
 
-template<typename TaskT>
-struct ThreadedTaskWrap
-{
-	ThreadedTaskWrap(std::reference_wrapper<TaskT> task) : _task{task} {}
-
-	bool do_work()
-	{
-		Guard in_work_guard{_mutex};
-		if (!in_work_guard.own) return false;
-		_task.get().do_work();
-		if (_task.get().done) std::atomic_ref{_done}.store(true);
-		return true;
-	}
-
-	bool done()
-	{
-		return std::atomic_ref{_done}.load();
-	}
-
-private:
-	struct Guard : std::atomic_ref<bool>
-	{
-		Guard(bool &mutex) : std::atomic_ref<bool>{mutex}
-		{
-			std::atomic_thread_fence(std::memory_order_acquire);
-			own = !exchange(true);
-		}
-		~Guard(){
-			if(!own) return;
-			store(false);
-			std::atomic_thread_fence(std::memory_order_release);
-		}
-		bool own;
-	};
-
-	std::reference_wrapper<TaskT> _task;
-	bool _mutex = false;
-	bool _done = false;
-};
-
 struct Color {
 	float R, G, B, A;
 
@@ -139,6 +99,45 @@ struct RenderStripTask
 	}
 };
 
+struct ThreadedRenderStripTask
+{
+	ThreadedRenderStripTask(std::reference_wrapper<RenderStripTask> task) : _task{task} {}
+
+	bool do_work()
+	{
+		Guard in_work_guard{_mutex};
+		if (!in_work_guard.own) return false;
+		_task.get().do_work();
+		if (_task.get().done) std::atomic_ref{_done}.store(true);
+		return true;
+	}
+
+	bool done()
+	{
+		return std::atomic_ref{_done}.load();
+	}
+
+private:
+	struct Guard : std::atomic_ref<bool>
+	{
+		Guard(bool &mutex) : std::atomic_ref<bool>{mutex}
+		{
+			std::atomic_thread_fence(std::memory_order_acquire);
+			own = !exchange(true);
+		}
+		~Guard(){
+			if(!own) return;
+			store(false);
+			std::atomic_thread_fence(std::memory_order_release);
+		}
+		bool own;
+	};
+
+	std::reference_wrapper<RenderStripTask> _task;
+	bool _mutex = false;
+	bool _done = false;
+};
+
 struct RenderFrameTask
 {
 	struct PostProcessInfo
@@ -187,7 +186,7 @@ private:
 	std::vector<RenderStripTask> _strip_tasks;
 
 	std::vector<std::array<float, 3>> _img;
-	std::vector<ThreadedTaskWrap<RenderStripTask>> _strip_task_wraps;
+	std::vector<ThreadedRenderStripTask> _strip_task_wraps;
 	bool _strips_done = false;
 	bool _postprocess_done = false;
 	bool do_work_strips()
