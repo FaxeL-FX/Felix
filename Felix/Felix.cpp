@@ -7,6 +7,7 @@
 #include <atomic>
 #include <cmath>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <thread>
 #include <chrono>
@@ -280,6 +281,42 @@ Color inverse(Color c) {
 }
 } // namespace
 
+
+struct Felix::PrintTask::Impl
+{
+	std::vector<RenderFrameTask> frame_tasks;
+	uint32_t gif_delay;
+	uint32_t resolution;
+	bool all_done = false;
+};
+
+bool Felix::PrintTask::do_work()
+{
+	if (std::atomic_ref{I->all_done}.load()) return false;
+	bool all_done = true;
+	for (auto &task : I->frame_tasks){
+		if (task.done()) continue;
+		all_done = false;
+		if (task.do_work()) return true;
+	}
+	if (all_done) std::atomic_ref{I->all_done}.store(true);
+	return false;
+}
+
+bool Felix::PrintTask::done()
+{
+	return std::atomic_ref{I->all_done}.load();
+}
+
+Felix::ImageList Felix::PrintTask::images()
+{
+	ImageList images;
+	images.gif_delay = I->gif_delay;
+	for (auto &task : I->frame_tasks) images.emplace_back(task.image(), I->resolution);
+	return images;
+}
+
+Felix::PrintTask::~PrintTask() = default;
 
 Felix::CommandResult Felix::run_command(std::string c) {
 	std::vector<std::string> args;
@@ -684,7 +721,12 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		size_t strip_width = resolution / prc;
 		if (strip_width * prc < resolution) n_strips++;
 
-		std::vector<RenderFrameTask> frame_tasks;
+		Felix::PrintTask print_task;
+		print_task.I = std::make_unique<Felix::PrintTask::Impl>();
+		auto &I = *print_task.I;
+		I.gif_delay = delay;
+		I.resolution = resolution;
+		std::vector<RenderFrameTask> &frame_tasks = I.frame_tasks;
 
 		for (int frame = 0; frame < frames; frame++) {
 			math::number p = start_value;
@@ -792,31 +834,17 @@ Felix::CommandResult Felix::run_command(std::string c) {
 			frame_tasks.push_back(std::move(frame_task));
 		}
 
-		auto worker = [&frame_tasks]() {
-			bool all_done = false;
-			while (!all_done) {
-				all_done = true;
-				for (auto &task : frame_tasks){
-					if(task.done()) continue;
-					all_done = false;
-					task.do_work();
-				}
-			}
-		};
-
 		{
+			auto worker = [&print_task](){ while(!print_task.done()) print_task.do_work();};
 			std::vector<std::jthread> thread_pool;
 			for (size_t i = 0; i != prc; ++i) thread_pool.emplace_back(worker);
 		}
 
-		ImageList printed_images;
-		printed_images.gif_delay = delay;
-		for (auto &task : frame_tasks) printed_images.emplace_back(task.image(), resolution);
 #if 0
 		go = false;
 		counter.join();
 #endif
-		return printed_images;
+		return print_task.images();
 	}
 	if (args[0] == "help") {
 		std::string response = "";

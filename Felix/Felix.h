@@ -1,4 +1,6 @@
 #pragma once
+#include <memory>
+
 #include "include.h"
 #include "object/object.h"
 #include "text/text_image.h"
@@ -19,6 +21,17 @@ struct Felix {
 
 	struct ImageList : std::vector<Image> {
 		uint32_t gif_delay;
+	};
+
+	struct PrintTask
+	{
+		bool do_work();
+		bool done();
+		ImageList images();
+
+		~PrintTask();
+		struct Impl;
+		std::unique_ptr<Impl> I;
 	};
 
 	using CommandResult = std::variant<
