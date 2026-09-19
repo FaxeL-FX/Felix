@@ -28,8 +28,8 @@ struct Felix {
 		ImageList
 	>;
 
-	math::complex plot_center = 0;
-	math::real plot_radius = 8;
+	math::complex plot_center;
+	long double plot_radius = 8.0;
 
 	std::vector<Function> functions_list;
 

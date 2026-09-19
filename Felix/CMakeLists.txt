@@ -7,6 +7,7 @@ list(APPEND FELIX_SOURCES
 
 target_sources(Felix PRIVATE ${FELIX_SOURCES})
 target_sources(Terminal PRIVATE Terminal.cpp ImageListBinary.cpp)
+target_sources(Fixed_point PRIVATE math/fixed_point.cpp)
 
 target_include_directories(Terminal PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 

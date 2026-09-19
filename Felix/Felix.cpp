@@ -60,8 +60,8 @@ Color penAdd(Color a, Color b) {
 }
 float absMul(float c, math::real absolute) {
 	float t;
-	if (absolute > 1.0) t = 1.0 - 0.5 / std::pow(absolute, 0.25);
-	else				t = 0.5 * std::pow(absolute, 0.25);
+	if (absolute > 1.0) t = 1.0 - 0.5 / std::pow((double)absolute, 0.25);
+	else				t = 0.5 * std::pow((double)absolute, 0.25);
 	return (1.0 - 2.0 * c) * t * t + 2.0 * c * t;
 }
 Color toCol(math::complex x) {
@@ -206,7 +206,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		int resolution = 400;	// bmp/gif
 		int frames = 64;		// gif
 		uint32_t delay = 5;		// gif
-		math::number start_value = 0, end_value = 1;	// parameter
+		math::number start_value = (math::real)0, end_value = (math::real)1;	// parameter
 
 		// render options flags
 		for (int i = 2; i < args.size(); i++) {
@@ -302,7 +302,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 				long long iY, iYp;
 				long double start = plot_center.R - plot_radius, step = 2 * plot_radius / resolution;
 				math::complex res;
-				f.args[0].value = start + step * (begin - 1);
+				f.args[0].value = (math::real)(start + step * (begin - 1));
 				if (gif && f.args.size() == 2) {
 					f.args[1].value = parameter;
 				}
@@ -311,9 +311,9 @@ Felix::CommandResult Felix::run_command(std::string c) {
 				if (resolution <= iYp) iYp = resolution - 1;
 				if (iYp < 0) iYp = 0;
 				for (long long iX = begin; iX < end && iX < resolution; iX++) {
-					f.args[0].value = start + step * iX;
+					f.args[0].value = (math::real)(start + step * iX);
 					res = f.return_value(functions_list);
-					iY = ((res.R - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
+					iY = ((long double)(res.R - plot_center.i) / plot_radius + 1) * 0.5 * resolution;
 					if (resolution <= iY) iY = resolution - 1;
 					if (iY < 0) iY = 0;
 					long long up, down;
@@ -360,19 +360,19 @@ Felix::CommandResult Felix::run_command(std::string c) {
 								f.args[1].value = parameter;
 							}
 							else {
-								f.args[0].value = startX + step * iX;
-								f.args[1].value = startY + step * iY;
+								f.args[0].value = math::complex(startX + step * iX);
+								f.args[1].value = math::complex(startY + step * iY);
 							}
 							break;
 						case(3):
 							if (gif) {
-								f.args[0].value = startX + step * iX;
-								f.args[1].value = startY + step * iY;
+								f.args[0].value = math::complex(startX + step * iX);
+								f.args[1].value = math::complex(startY + step * iY);
 								f.args[2].value = parameter;
 							}
 							break;
 						}
-						res = 1 / (1 + math::abs(f.return_value(functions_list)));
+						res = math::complex(1 / (1 + math::abs(f.return_value(functions_list))));
 						img[iY * resolution + iX] = toVecF(penAdd(img[iY * resolution + iX], Color(res.R)));
 						progress++;
 					}
@@ -405,14 +405,14 @@ Felix::CommandResult Felix::run_command(std::string c) {
 								f.args[1].value = parameter;
 							}
 							else {
-								f.args[0].value = startX + step * iX;
-								f.args[1].value = startY + step * iY;
+								f.args[0].value = math::complex(startX + step * iX);
+								f.args[1].value = math::complex(startY + step * iY);
 							}
 							break;
 						case(3):
 							if (gif) {
-								f.args[0].value = startX + step * iX;
-								f.args[1].value = startY + step * iY;
+								f.args[0].value = math::complex(startX + step * iX);
+								f.args[1].value = math::complex(startY + step * iY);
 								f.args[2].value = parameter;
 							}
 							break;
@@ -450,14 +450,14 @@ Felix::CommandResult Felix::run_command(std::string c) {
 								f.args[1].value = parameter;
 							}
 							else {
-								f.args[0].value = startX + step * iX;
-								f.args[1].value = startY + step * iY;
+								f.args[0].value = math::complex(startX + step * iX);
+								f.args[1].value = math::complex(startY + step * iY);
 							}
 							break;
 						case(3):
 							if (gif) {
-								f.args[0].value = startX + step * iX;
-								f.args[1].value = startY + step * iY;
+								f.args[0].value = math::complex(startX + step * iX);
+								f.args[1].value = math::complex(startY + step * iY);
 								f.args[2].value = parameter;
 							}
 							break;
@@ -503,7 +503,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 		std::thread counter = std::thread(counter_lambda);
 
 		for (int frame = 0; frame < frames; frame++) {
-			if (frames > 1) p = start_value * (1 - (double)frame / (frames - 1)) + end_value * ((double)frame / (frames - 1));
+			if (frames > 1) p = start_value * (math::real)(1 - (double)frame / (frames - 1)) + end_value * (math::real)((double)frame / (frames - 1));
 			else			p = start_value;
 			for (int i = 0; i < resolution * resolution; i++) img[i] = { 0, 0, 0 };
 

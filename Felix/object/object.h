@@ -50,7 +50,7 @@ extern struct Function;
 struct Variable {
 	int id = -1;
 	std::string name;
-	math::number value = 0;
+	math::number value = (math::real)0;
 
 	Variable(std::string name) {
 		this->name = name;

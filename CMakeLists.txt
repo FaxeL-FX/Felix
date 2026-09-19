@@ -21,6 +21,7 @@ endif()
 
 add_library(Felix STATIC)
 add_executable(Terminal)
+add_executable(Fixed_point)
 if(FELIX_DPP_LIBRARY_PATH)
     add_executable(Bot)
 endif()

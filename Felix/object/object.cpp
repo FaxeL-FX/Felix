@@ -356,7 +356,7 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 	}
 	if ('0' <= token[0] && token[0] <= '9' || token[0] == '.') {
 		(*objects)[objIndex].type = ObjType::_Const;
-		(*objects)[objIndex].value = std::strtold(token.c_str(), 0);
+		(*objects)[objIndex].value = (math::real)std::strtold(token.c_str(), 0);
 		return;
 	}
 
@@ -433,7 +433,7 @@ void parse_obj(std::vector<Object> *objects, std::vector<std::string> tokens, in
 	}
 }
 std::vector<Object> parse_expr(std::string expr) {
-	if (expr.length() == 0) return { Object("_Const", {}, 0) };
+	if (expr.length() == 0) return { Object("_Const", {}, (math::real)0) };
 	std::vector<std::string> tokens;
 	while (expr.length() > 0) {
 		std::string token = parse_token(expr);
@@ -469,7 +469,7 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 	case(1): switch (this->type) {
 		case(ObjType::_uMinus): return -args_results[0];
 		case(ObjType::_fct): return math::fct(args_results[0]);
-		case(ObjType::_inv_fct): return math::inv_fct(args_results[0]);
+		case(ObjType::_inv_fct): return math::complex{1} / math::fct(args_results[0]);
 
 		case(ObjType::_exp): return math::exp(args_results[0]);
 		case(ObjType::_ln): return math::ln(args_results[0]);
@@ -496,7 +496,7 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 		case(ObjType::_cos1): return math::cos1(args_results[0]);
 
 		case(ObjType::_abs): return math::abs(args_results[0]);
-		case(ObjType::_inv_abs): return 1 / math::abs(args_results[0]);
+		case(ObjType::_inv_abs): return (math::real)1 / math::abs(args_results[0]);
 		case(ObjType::_arg): return math::arg(args_results[0]);
 		case(ObjType::_sign): return math::normalize(args_results[0]);
 		case(ObjType::_Re): return Re(args_results[0]);
@@ -507,7 +507,7 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 		case(ObjType::_ceil): return math::ceil(args_results[0]);
 		case(ObjType::_round): return math::floor(args_results[0] + (math::number)math::complex(0.5, 0.5));
 
-		case(ObjType::_exist): return !math::exist(args_results[0]);
+		case(ObjType::_exist): return (math::real)!math::exist(args_results[0]);
 		case(ObjType::_grid): return math::grid(args_results[0]);
 		case(ObjType::_axis): return math::axis(args_results[0]);
 
@@ -532,35 +532,35 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 		case(ObjType::_or): return args_results[0] * args_results[1];
 		case(ObjType::_equal): return args_results[0] - args_results[1];
 		case(ObjType::_smaller): {
-			if (((math::complex)args_results[0]).R < ((math::complex)args_results[1]).R) return 0;
-			return 1;
+			if (((math::complex)args_results[0]).R < ((math::complex)args_results[1]).R) return (math::real)0;
+			return (math::real)1;
 		}
 		case(ObjType::_larger): {
-			if (((math::complex)args_results[0]).R > ((math::complex)args_results[1]).R) return 0;
-			return 1;
+			if (((math::complex)args_results[0]).R > ((math::complex)args_results[1]).R) return (math::real)0;
+			return (math::real)1;
 		}
 		case(ObjType::_Nand): {
-			if (args_results[0] + args_results[1] == 0) return 1;
-			return 0;
+			if (args_results[0] + args_results[1] == (math::real)0) return (math::real)1;
+			return (math::real)0;
 		}
 		case(ObjType::_Nor): {
-			if (args_results[0] * args_results[1] == 0) return 1;
-			return 0;
+			if (args_results[0] * args_results[1] == (math::real)0) return (math::real)1;
+			return (math::real)0;
 		}
 		case(ObjType::_Nequal): {
-			if (args_results[0] == args_results[1]) return 1;
-			return 0;
+			if (args_results[0] == args_results[1]) return (math::real)1;
+			return (math::real)0;
 		}
 		case(ObjType::_smallerEQ): {
-			if (((math::complex)args_results[0]).R < ((math::complex)args_results[1]).R || args_results[0] == args_results[1]) return 0;
-			return 1;
+			if (((math::complex)args_results[0]).R < ((math::complex)args_results[1]).R || args_results[0] == args_results[1]) return (math::real)0;
+			return (math::real)1;
 		}
 		case(ObjType::_largerEQ): {
-			if (((math::complex)args_results[0]).R > ((math::complex)args_results[1]).R || args_results[0] == args_results[1]) return 0;
-			return 1;
+			if (((math::complex)args_results[0]).R > ((math::complex)args_results[1]).R || args_results[0] == args_results[1]) return (math::real)0;
+			return (math::real)1;
 		}
 
-		case(ObjType::_root): return math::pow(args_results[1], 1 / args_results[0]);
+		case(ObjType::_root): return math::pow(args_results[1], (math::real)1 / args_results[0]);
 		case(ObjType::_log): return math::ln(args_results[1]) / math::ln(args_results[0]);
 
 		case(ObjType::_fctIntegral): return math::fctIntegral(args_results[0], args_results[1]);
@@ -574,18 +574,18 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 		case(ObjType::_Derivative): {
 			const int n = 256;
 			int var_index = args.size();
-			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1] + 0.5 / n));
+			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1] + (math::real)(0.5 / n)));
 			math::number res = objects[this->arg_indexes[2]].return_value(objects, args, functions);
-			args[var_index].value = args_results[1] - 0.5 / n;
+			args[var_index].value = args_results[1] - (math::real)(0.5 / n);
 			res = res - objects[this->arg_indexes[2]].return_value(objects, args, functions);
 			args.erase(args.begin() + var_index);
-			return res * n;
+			return res * (math::real)n;
 		}
 		case(ObjType::_ForwardDifference): {
 			int var_index = args.size();
 			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
 			math::number res = -objects[this->arg_indexes[2]].return_value(objects, args, functions);
-			args[var_index].value = args_results[1] + 1;
+			args[var_index].value = args_results[1] + (math::real)1;
 			res = res + objects[this->arg_indexes[2]].return_value(objects, args, functions);
 			args.erase(args.begin() + var_index);
 			return res;
@@ -594,23 +594,23 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 			int var_index = args.size();
 			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
 			math::number res = objects[this->arg_indexes[2]].return_value(objects, args, functions);
-			args[var_index].value = args_results[1] - 1;
+			args[var_index].value = args_results[1] - (math::real)1;
 			res = res - objects[this->arg_indexes[2]].return_value(objects, args, functions);
 			args.erase(args.begin() + var_index);
 			return res;
 		}
 		case(ObjType::_If): {
-			if (objects[this->arg_indexes[0]].return_value(objects, args, functions) == 0)
+			if (objects[this->arg_indexes[0]].return_value(objects, args, functions) == (math::real)0)
 				return objects[this->arg_indexes[1]].return_value(objects, args, functions);
 			return objects[this->arg_indexes[2]].return_value(objects, args, functions);
 		}
 
 		case(ObjType::_SumZeta): {
 			int var_index = args.size(), n = 256;
-			args.push_back(Variable(objects[this->arg_indexes[0]].name, 0));
+			args.push_back(Variable(objects[this->arg_indexes[0]].name, (math::real)0));
 
-			math::number res, integ, dx = args_results[1] / n;
-			args[var_index].value = args[var_index].value + dx * 0.5;
+			math::number res, integ, dx = args_results[1] / (math::real)n;
+			args[var_index].value = args[var_index].value + dx * (math::real)0.5;
 			for (int k = 0; k < n; k++) {
 				integ = integ + objects[this->arg_indexes[2]].return_value(objects, args, functions);
 				args[var_index].value = args[var_index].value + dx;
@@ -618,7 +618,7 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 			res = integ * dx;
 
 			args[var_index].value = args_results[1];
-			res = res + objects[this->arg_indexes[2]].return_value(objects, args, functions) * 0.5;
+			res = res + objects[this->arg_indexes[2]].return_value(objects, args, functions) * (math::real)0.5;
 
 			for (int k = 1; k < 20;) {
 				args[var_index].value = args_results[1];
@@ -626,7 +626,7 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 				math::real d = 4294967296, delta = std::exp(-std::log(d) / k);
 				for (int l = 1; l <= k; l++) {
 					args[var_index].value = args[var_index].value - delta;
-					der = der + (1 - 2 * (l % 2)) * math::Binom(k, l) * objects[this->arg_indexes[2]].return_value(objects, args, functions);
+					der = der + (math::real)(1 - 2 * (l % 2)) * math::Binom(k, l) * objects[this->arg_indexes[2]].return_value(objects, args, functions);
 				}
 				res = res - math::zbf(k) * (der * d);
 				k += 2;
@@ -656,7 +656,7 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 				radFract = radius - std::floor(radius);
 
 			if (radius != radius) return radius;
-			if (radius == math::inf) return 0;
+			if (radius == math::inf) return (math::real)0;
 
 			int n = 1;
 			math::number
@@ -667,29 +667,29 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 				step3 = -step * math::exp( angle2),
 				step4 = -step * math::exp(-angle2);
 
-			args[var_index].value = args[var_index].value + 0.5 * (1 - step);
+			args[var_index].value = args[var_index].value + (math::real)0.5 * ((math::real)1 - step);
 			/**/ if (this->type == ObjType::_Sum) {
 				for (int i = 0; i != (long long)radius; i++) {
 					args[var_index].value = args[var_index].value + step;
 					res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step;
 				}
-				if (radFract != 0 || (step != 1 && step != -1)) {
+				if (radFract != 0 || (step != (math::real)1 && step != (math::real)-1)) {
 					math::number breakpoint = args[var_index].value;
 
-					args[var_index].value = breakpoint + 0.5 * (step - step2);
+					args[var_index].value = breakpoint + (math::real)0.5 * (step - step2);
 					for (int k = 0; k < n; k++) {
-						args[var_index].value = args[var_index].value + 0.5 * (step2 + step1);
-						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step1 * 0.5 * (1 - radFract);
-						args[var_index].value = args[var_index].value + 0.5 * (step1 + step2);
-						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step2 * 0.5 * (1 - radFract);
+						args[var_index].value = args[var_index].value + (math::real)0.5 * (step2 + step1);
+						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step1 * (math::real)0.5 * ((math::real)1 - radFract);
+						args[var_index].value = args[var_index].value + (math::real)0.5 * (step1 + step2);
+						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step2 * (math::real)0.5 * ((math::real)1 - radFract);
 					}
 
-					args[var_index].value = breakpoint + 0.5 * (step - step1);
+					args[var_index].value = breakpoint + (math::real)0.5 * (step - step1);
 					for (int k = 0; k < n; k++) {
-						args[var_index].value = args[var_index].value + 0.5 * (step1 + step2);
-						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step2 * 0.5 * (1 - radFract);
-						args[var_index].value = args[var_index].value + 0.5 * (step2 + step1);
-						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step1 * 0.5 * (1 - radFract);
+						args[var_index].value = args[var_index].value + (math::real)0.5 * (step1 + step2);
+						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step2 * (math::real)0.5 * ((math::real)1 - radFract);
+						args[var_index].value = args[var_index].value + (math::real)0.5 * (step2 + step1);
+						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step1 * (math::real)0.5 * ((math::real)1 - radFract);
 					}
 
 
@@ -698,33 +698,33 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 					breakpoint = args[var_index].value;
 
 
-					args[var_index].value = breakpoint + 0.5 * (step - step4);
+					args[var_index].value = breakpoint + (math::real)0.5 * (step - step4);
 					for (int k = 0; k < n; k++) {
-						args[var_index].value = args[var_index].value + 0.5 * (step4 + step3);
-						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step3 * 0.5 * radFract;
-						args[var_index].value = args[var_index].value + 0.5 * (step3 + step4);
-						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step4 * 0.5 * radFract;
+						args[var_index].value = args[var_index].value + (math::real)0.5 * (step4 + step3);
+						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step3 * (math::real)0.5 * radFract;
+						args[var_index].value = args[var_index].value + (math::real)0.5 * (step3 + step4);
+						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step4 * (math::real)0.5 * radFract;
 					}
 
-					args[var_index].value = breakpoint + 0.5 * (step - step3);
+					args[var_index].value = breakpoint + (math::real)0.5 * (step - step3);
 					for (int k = 0; k < n; k++) {
-						args[var_index].value = args[var_index].value + 0.5 * (step3 + step4);
-						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step4 * 0.5 * radFract;
-						args[var_index].value = args[var_index].value + 0.5 * (step4 + step3);
-						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step3 * 0.5 * radFract;
+						args[var_index].value = args[var_index].value + (math::real)0.5 * (step3 + step4);
+						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step4 * (math::real)0.5 * radFract;
+						args[var_index].value = args[var_index].value + (math::real)0.5 * (step4 + step3);
+						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step3 * (math::real)0.5 * radFract;
 					}
 
-					args[var_index].value = args[var_index].value + 0.5 * (step3 - 1);
+					args[var_index].value = args[var_index].value + (math::real)0.5 * (step3 - (math::real)1);
 				}
 				if (repeats < 0) {
 					for (int i = 0; repeats < i; i--) {
 						res = res - objects[this->arg_indexes[3]].return_value(objects, args, functions);
-						args[var_index].value = args[var_index].value - 1;
+						args[var_index].value = args[var_index].value - (math::real)1;
 					}
 				}
 				else {
 					for (int i = 0; i < repeats; i++) {
-						args[var_index].value = args[var_index].value + 1;
+						args[var_index].value = args[var_index].value + (math::real)1;
 						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions);
 					}
 				}
@@ -734,23 +734,23 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 					args[var_index].value = args[var_index].value + step;
 					res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step);
 				}
-				if (radFract != 0 || (step != 1 && step != -1)) {
+				if (radFract != 0 || (step != (math::real)1 && step != (math::real)-1)) {
 					math::number breakpoint = args[var_index].value;
 
-					args[var_index].value = breakpoint + 0.5 * (step - step2);
+					args[var_index].value = breakpoint + (math::real)0.5 * (step - step2);
 					for (int k = 0; k < n; k++) {
-						args[var_index].value = args[var_index].value + 0.5 * (step2 + step1);
-						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step1 * 0.5 * (1 - radFract));
-						args[var_index].value = args[var_index].value + 0.5 * (step1 + step2);
-						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step2 * 0.5 * (1 - radFract));
+						args[var_index].value = args[var_index].value + (math::real)0.5 * (step2 + step1);
+						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step1 * (math::real)0.5 * ((math::real)1 - radFract));
+						args[var_index].value = args[var_index].value + (math::real)0.5 * (step1 + step2);
+						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step2 * (math::real)0.5 * ((math::real)1 - radFract));
 					}
 
-					args[var_index].value = breakpoint + 0.5 * (step - step1);
+					args[var_index].value = breakpoint + (math::real)0.5 * (step - step1);
 					for (int k = 0; k < n; k++) {
-						args[var_index].value = args[var_index].value + 0.5 * (step1 + step2);
-						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step2 * 0.5 * (1 - radFract));
-						args[var_index].value = args[var_index].value + 0.5 * (step2 + step1);
-						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step1 * 0.5 * (1 - radFract));
+						args[var_index].value = args[var_index].value + (math::real)0.5 * (step1 + step2);
+						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step2 * (math::real)0.5 * ((math::real)1 - radFract));
+						args[var_index].value = args[var_index].value + (math::real)0.5 * (step2 + step1);
+						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step1 * (math::real)0.5 * ((math::real)1 - radFract));
 					}
 
 
@@ -759,33 +759,33 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 					breakpoint = args[var_index].value;
 
 
-					args[var_index].value = breakpoint + 0.5 * (step - step4);
+					args[var_index].value = breakpoint + (math::real)0.5 * (step - step4);
 					for (int k = 0; k < n; k++) {
-						args[var_index].value = args[var_index].value + 0.5 * (step4 + step3);
-						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step3 * 0.5 * radFract);
-						args[var_index].value = args[var_index].value + 0.5 * (step3 + step4);
-						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step4 * 0.5 * radFract);
+						args[var_index].value = args[var_index].value + (math::real)0.5 * (step4 + step3);
+						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step3 * (math::real)0.5 * radFract);
+						args[var_index].value = args[var_index].value + (math::real)0.5 * (step3 + step4);
+						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step4 * (math::real)0.5 * radFract);
 					}
 
-					args[var_index].value = breakpoint + 0.5 * (step - step3);
+					args[var_index].value = breakpoint + (math::real)0.5 * (step - step3);
 					for (int k = 0; k < n; k++) {
-						args[var_index].value = args[var_index].value + 0.5 * (step3 + step4);
-						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step4 * 0.5 * radFract);
-						args[var_index].value = args[var_index].value + 0.5 * (step4 + step3);
-						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step3 * 0.5 * radFract);
+						args[var_index].value = args[var_index].value + (math::real)0.5 * (step3 + step4);
+						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step4 * (math::real)0.5 * radFract);
+						args[var_index].value = args[var_index].value + (math::real)0.5 * (step4 + step3);
+						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step3 * (math::real)0.5 * radFract);
 					}
 
-					args[var_index].value = args[var_index].value + 0.5 * (step3 - 1);
+					args[var_index].value = args[var_index].value + (math::real)0.5 * (step3 - (math::real)1);
 				}
 				if (repeats < 0) {
 					for (int i = 0; repeats < i; i--) {
 						res = res / objects[this->arg_indexes[3]].return_value(objects, args, functions);
-						args[var_index].value = args[var_index].value - 1;
+						args[var_index].value = args[var_index].value - (math::real)1;
 					}
 				}
 				else {
 					for (int i = 0; i < repeats; i++) {
-						args[var_index].value = args[var_index].value + 1;
+						args[var_index].value = args[var_index].value + (math::real)1;
 						res = res * objects[this->arg_indexes[3]].return_value(objects, args, functions);
 					}
 				}
@@ -811,8 +811,8 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
 
 			const int n = 16 * (1 + math::abs(args_results[2] - args_results[1]));
-			math::number res = 0, dx = (args_results[2] - args_results[1]) / n;
-			args[var_index].value = args[var_index].value + dx * 0.5;
+			math::number res = (math::real)0, dx = (args_results[2] - args_results[1]) / (math::real)n;
+			args[var_index].value = args[var_index].value + dx * (math::real)0.5;
 			for (int k = 0; k < n; k++) {
 				res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions);
 				args[var_index].value = args[var_index].value + dx;
@@ -822,16 +822,16 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 			return res * dx;
 		}
 		case(ObjType::_IntegralAlongExp): {
-			if (args_results[1] == args_results[2]) return 0;
+			if (args_results[1] == args_results[2]) return (math::real)0;
 
 			int var_index = args.size();
 			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
 
 			const int n = 512 * (1 + math::abs(math::ln(args_results[2] / args_results[1])));
-			math::number res = 0, dx = (math::ln(args_results[2] / args_results[1])) / n, x = math::ln(args_results[1]) + 0.5 * dx, dt;
+			math::number res = (math::real)0, dx = (math::ln(args_results[2] / args_results[1])) / (math::real)n, x = math::ln(args_results[1]) + (math::real)0.5 * dx, dt;
 			for (int k = 0; k < n; k++) {
 				args[var_index].value = math::exp(x);
-				dt = math::exp(x + 0.5 * dx) - math::exp(x - 0.5 * dx);
+				dt = math::exp(x + (math::real)0.5 * dx) - math::exp(x - (math::real)0.5 * dx);
 				res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * dt;
 				x = x + dx;
 			}
@@ -845,20 +845,20 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
 
 			math::number
-				res = 0,
+				res = (math::real)0,
 				n = objects[this->arg_indexes[2]].return_value(objects, args, functions);
 			math::real
 				iter = ((math::complex)n).R,
 				delta = 1.0 / 4294967296.0,
 				delta_root = std::pow(delta, 1.0 / iter);
-			args[var_index].value = args_results[1] + n * 0.5 * delta_root;
+			args[var_index].value = args_results[1] + n * (math::real)0.5 * delta_root;
 			for (int k = 0; k <= iter; k++) {
-				res = res + (1 - 2 * (k % 2)) * math::Binom(n, k) * objects[this->arg_indexes[3]].return_value(objects, args, functions);
+				res = res + (math::real)(1 - 2 * (k % 2)) * math::Binom(n, (math::real)k) * objects[this->arg_indexes[3]].return_value(objects, args, functions);
 				args[var_index].value = args[var_index].value - delta_root;
 			}
 
 			args.erase(args.begin() + var_index);
-			return res * 4294967296;
+			return res * (math::real)4294967296;
 		}
 		case(ObjType::_ForwardDifference): {
 			int var_index = args.size();
@@ -867,12 +867,12 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 
 			math::real n = ((math::complex)objects[this->arg_indexes[2]].return_value(objects, args, functions)).R;
 			for (int k = 1; k <= n; k++) {
-				args[var_index].value = args[var_index].value + 1;
-				res = res + (1 - 2 * (k % 2)) * math::Binom(n, k) * objects[this->arg_indexes[3]].return_value(objects, args, functions);
+				args[var_index].value = args[var_index].value + (math::real)1;
+				res = res + (math::real)(1 - 2 * (k % 2)) * math::Binom(n, k) * objects[this->arg_indexes[3]].return_value(objects, args, functions);
 			}
 
 			args.erase(args.begin() + var_index);
-			return res * (1 - 2 * ((int)n % 2));
+			return res * (math::real)(1 - 2 * ((int)n % 2));
 		}
 		case(ObjType::_BackwardDifference): {
 			int var_index = args.size();
@@ -881,8 +881,8 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 
 			math::real n = ((math::complex)objects[this->arg_indexes[2]].return_value(objects, args, functions)).R;
 			for (int k = 1; k <= n; k++) {
-				args[var_index].value = args[var_index].value - 1;
-				res = res + (1 - 2 * (k % 2)) * math::Binom(n, k) * objects[this->arg_indexes[3]].return_value(objects, args, functions);
+				args[var_index].value = args[var_index].value - math::complex{1};
+				res = res + (math::real)(1 - 2 * (k % 2)) * math::Binom(n, k) * objects[this->arg_indexes[3]].return_value(objects, args, functions);
 			}
 
 			args.erase(args.begin() + var_index);
@@ -894,7 +894,7 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 		int var_index = args.size();
 		args.push_back(Variable(objects[this->arg_indexes[0]].name));
 
-		std::vector<std::vector<math::number>> matrix(args_results.size() - 3, std::vector<math::number>(args_results.size() - 2, 1));
+		std::vector<std::vector<math::number>> matrix(args_results.size() - 3, std::vector<math::number>(args_results.size() - 2, math::number{1}));
 		for (int i = 0; i < matrix.size(); i++) {
 			for (int j = 1; j < matrix.size(); j++) {
 				for (int k = j; k < matrix.size(); k++) {
@@ -918,7 +918,7 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 		}
 
 		math::number
-			var = 1,
+			var = (math::real)1,
 			res = matrix[0][matrix.size()];
 		for (int i = 1; i < matrix.size(); i++) {
 			var = var * args_results[2];
@@ -930,8 +930,7 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 	}
 
 	if (this->type == ObjType::_rand) {
-		if (args_results.size() == 0) return math::rand(std::chrono::steady_clock::now().time_since_epoch().count() % 4096);
-		return math::rand(0, args_results);
+		return math::rand(std::chrono::steady_clock::now().time_since_epoch().count() % 4096);
 	}
 
 	for (auto arg : args)
@@ -943,7 +942,7 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 				fnc.args[i].value = args_results[i];
 			return fnc.return_value(functions);
 		}
-	return 0;
+	return math::complex{0};
 }
 
 math::number value(std::vector<Object> &objects, std::vector<Variable> &args, std::vector<Function>& functions) {
