@@ -623,7 +623,7 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 			for (int k = 1; k < 20;) {
 				args[var_index].value = args_results[1];
 				math::number der = objects[this->arg_indexes[2]].return_value(objects, args, functions);
-				math::real d = 4294967296, delta = std::exp(-std::log(d) / k);
+				math::real d = 4294967296ll, delta = std::exp(-std::log(d) / k);
 				for (int l = 1; l <= k; l++) {
 					args[var_index].value = args[var_index].value - delta;
 					der = der + (math::real)(1 - 2 * (l % 2)) * math::Binom(k, l) * objects[this->arg_indexes[2]].return_value(objects, args, functions);
@@ -858,7 +858,7 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 			}
 
 			args.erase(args.begin() + var_index);
-			return res * (math::real)4294967296;
+			return res * (math::real)4294967296ll;
 		}
 		case(ObjType::_ForwardDifference): {
 			int var_index = args.size();
