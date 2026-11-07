@@ -23,7 +23,7 @@ struct PrintTaskInProgress : std::optional<Felix::PrintTask>
 
 	void manager_routine()
 	{
-		Felix::PrintTask &task = value();
+		Felix::PrintTask& task = value();
 		aborted = false;
 
 		std::vector<std::jthread> workers;
@@ -31,38 +31,37 @@ struct PrintTaskInProgress : std::optional<Felix::PrintTask>
 		n_workers = std::max<size_t>(1, n_workers);
 		for (size_t i = 0; i != n_workers; ++i) workers.emplace_back(&PrintTaskInProgress::worker_routine, this);
 
-		std::string report;
-		std::string prev_report;
+		std::string report_buf;
 		while (not aborted and not task.done()) {
-			std::swap(prev_report, report);
-			std::ranges::fill(prev_report, ' ');
-			std::cout << '\r' << prev_report << '\r';
-			report = std::format(" render [{:.6f}%]", task.progress() * 100);
-			std::cout << report;
+			auto report = std::format(" render [{:.6f}%]", task.progress() * 100);
+			if (report.size() > report_buf.size()) report_buf.resize(report.size());
+			std::ranges::fill(report_buf, ' ');
+			std::copy(report.begin(), report.end(), report_buf.begin());
+			std::cout << '\r' << report_buf << '\r';
 			std::cout.flush();
-			std::this_thread::sleep_for(std::chrono::milliseconds{100});
+			std::this_thread::sleep_for(std::chrono::milliseconds{ 10 });
 		}
 
 		workers.clear(); // jthread::join
 
-		std::ranges::fill(prev_report, ' ');
-		std::cout << '\r' << prev_report << '\r';
+		std::ranges::fill(report_buf, ' ');
+		std::cout << '\r' << report_buf << '\r';
 
 		if (aborted) {
-			std::cout << " render aborted\n";
+			std::cout << " render aborted\n ";
 			return;
 		}
 
 		auto images = task.images();
 		if (images.empty()) {
-			std::cout << " ----> Empty image list";
+			std::cout << " ----> Empty image list\n ";
 			return;
 		}
 
-		ImageListBinary bin{images};
-		std::ofstream image_file{bin.file_name, std::ios::binary};
+		ImageListBinary bin{ images };
+		std::ofstream image_file{ bin.file_name, std::ios::binary };
 		image_file.write((char*)bin.data(), bin.size());
-		std::cout << std::format(" ----> done (to {})\n", bin.file_name);
+		std::cout << std::format(" ----> done (to {})\n ", bin.file_name);
 	}
 
 	void worker_routine()
@@ -81,17 +80,17 @@ struct CommandResultVisitor
 
 	void operator()(std::monostate)
 	{
-		std::cout << " ----> done";
+		std::cout << " ----> done\n";
 	}
 
 	void operator()(const Felix::ErrorMessage &message)
 	{
-		std::cout << " --X-> failed: " << message.string;
+		std::cout << " --X-> failed: " << message.string << "\n";
 	}
 
 	void operator()(const std::string &res)
 	{
-		std::cout << res;
+		std::cout << res << "\n";
 	}
 
 	void operator()(Felix::PrintTask &print_task)
@@ -115,8 +114,7 @@ int main() {
 			std::visit(CommandResultVisitor{active_print_task}, res);
 		}
 		else {
-			std::cout << " -> " << felix.evaluate(expression);
+			std::cout << " -> " << felix.evaluate(expression) << "\n";
 		}
-		std::cout << "\n\n";
 	}
 }

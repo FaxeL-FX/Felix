@@ -18,6 +18,8 @@ namespace math {
 		return x.toString(digits);
 	}
 
+	extern struct polar;
+
 	//	complex
 	struct complex {
 		real R, i;
@@ -34,6 +36,7 @@ namespace math {
 			this->R = R;
 			this->i = i;
 		}
+		complex(polar x);
 
 		std::string toString(size_t digits = 20) {
 			real R = this->R, i = this->i;
@@ -55,6 +58,42 @@ namespace math {
 	complex operator%(complex, complex);
 	bool operator==(complex, complex);
 	bool operator!=(complex, complex);
+
+
+	struct polar {
+		real radius, angle;
+
+		polar() {
+			this->radius = 0;
+			this->angle = 0;
+		}
+		polar(real x) {
+			if (x < 0) {
+				this->radius = -x;
+				this->angle = pi;
+			}
+			else {
+				this->radius = x;
+				this->angle = 0;
+			}
+		}
+		polar(real radius, real angle) {
+			this->radius = radius;
+			this->angle = angle;
+		}
+		polar(complex x);
+
+		std::string toString(size_t digits = 20) {
+			return complex(*this).toString(digits);
+		}
+	};
+
+	polar operator-(polar);
+	polar operator*(polar, polar);
+	polar operator/(polar, polar);
+	bool operator==(polar, polar);
+	bool operator!=(polar, polar);
+
 
 
 	//	FUNCTIONS
@@ -89,27 +128,6 @@ namespace math {
 	complex sqrt(complex x);
 	complex inv_sqrt(complex x);
 
-	complex sin1(complex x);
-	complex cos1(complex x);
-	complex Binom(complex n, complex k);
-
-	complex fct(complex x);
-	complex gamma(complex x);
-	complex fctIntegral(complex x, complex n);
-	complex Harmonic(complex x);
-	complex zeta(complex x);
-	complex zetaByFct(complex x);
-
-	complex USumN(complex x, complex n);
-
-	complex Integral(complex(*f)(complex), complex a, complex b);
-	complex Integral(complex(*f)(complex), complex(*path)(real));
-	complex Derivative(complex(*f)(complex), complex x);
-
-
-	typedef complex number;
-
-
 	inline complex cosh(complex x) { return (exp(x) + exp(-x)) * (real)0.5; }
 	inline complex sinh(complex x) { return (exp(x) - exp(-x)) * (real)0.5; }
 	inline complex coth(complex x) {
@@ -134,6 +152,19 @@ namespace math {
 	inline complex arccot(complex x) { return  mul_i(arccoth(mul_i(x))); }
 	inline complex arctan(complex x) { return -mul_i(arctanh(mul_i(x))); }
 
+	complex sin1(complex x);
+	complex cos1(complex x);
+	complex Binom(complex n, complex k);
+
+	complex fct(complex x);
+	complex gamma(complex x);
+	complex fctIntegral(complex x, complex n);
+	complex Harmonic(complex x);
+	complex zeta(complex x);
+	complex zetaByFct(complex x);
+
+	complex USumN(complex x, complex n);
+
 	inline complex UIntN(complex x, complex n) {
 		if (n == complex{ -1 }) return ln(x);
 		return pow(x, n + complex{ 1 }) / (n + complex{ 1 });
@@ -147,4 +178,18 @@ namespace math {
 		return res;
 	}
 	inline complex Li(complex x) { return ln(ln(x)) + Ei(ln(x)); }
+
+	complex Integral(complex(*f)(complex), complex a, complex b);
+	complex Integral(complex(*f)(complex), complex(*path)(real));
+	complex Derivative(complex(*f)(complex), complex x);
+
+	// polar
+	polar pow(polar x, polar y);
+	polar exp(polar x);
+	polar ln(polar x);
+	polar sqrt(polar x);
+
+
+
+	typedef complex number;
 }

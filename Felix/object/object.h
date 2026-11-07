@@ -28,7 +28,7 @@ enum ObjType {
 	_Product,
 	_Integral, _Derivative, _IntegralAlongExp,
 	_Polynomial, _Return,
-	_SumZeta, _UndefSumN, _UndefIntegralN,
+	_USum, _UndefSumN, _UInt, _UIntExp, _UndefIntegralN,
 
 	_abs, _inv_abs, _arg, _sign, _Re, _Im, _floor, _ceil, _round, _normalize,
 
@@ -78,6 +78,22 @@ struct Object {
 	ObjType type;
 	std::vector<int> arg_indexes;
 	math::number value;
+
+	math::number f4_Sum(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions);
+	math::number f4_Product(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions);
+	math::number f4_Return(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions);
+	math::number f4_Integral(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions);
+	math::number f4_IntegralAlongExp(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions);
+	math::number f4_Derivative(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions);
+	math::number f4_ForwardDifference(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions);
+	math::number f4_BackwardDifference(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions);
+
+	math::number f3_USum(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions);
+	math::number f3_UInt(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions);
+	math::number f3_UIntExp(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions);
+	math::number f3_Derivative(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions);
+	math::number f3_ForwardDifference(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions);
+	math::number f3_BackwardDifference(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions);
 
 	math::number return_value(std::vector<Object> &objects, std::vector<Variable> &args, std::vector<Function>& functions);
 

@@ -1,4 +1,7 @@
 #include "object.h"
+#include "object.h"
+#include "object.h"
+#include "object.h"
 #include <chrono>
 
 
@@ -62,8 +65,10 @@ ObjType nameToType(std::string token) {
 	if (token == "D" || token == "Derivative")				return ObjType::_Derivative;
 	if (token == "Iexp" || token == "IntegralAlongExp")		return ObjType::_IntegralAlongExp;
 	if (token == "Poly" || token == "Polynomial")			return ObjType::_Polynomial;
-	if (token == "SumZ")									return ObjType::_SumZeta;
+	if (token == "USum")									return ObjType::_USum;
 	if (token == "USumN")									return ObjType::_UndefSumN;
+	if (token == "UInt")									return ObjType::_UInt;
+	if (token == "UIntExp")									return ObjType::_UIntExp;
 	if (token == "UIntN")									return ObjType::_UndefIntegralN;
 
 	if (token == "abs")								return ObjType::_abs;
@@ -154,8 +159,10 @@ static std::string typeToName(ObjType token) {
 	if (token == ObjType::_Derivative) return "D";
 	if (token == ObjType::_IntegralAlongExp) return "Iexp";
 	if (token == ObjType::_Polynomial) return "Poly";
-	if (token == ObjType::_SumZeta) return "SumZ";
+	if (token == ObjType::_USum) return "USum";
 	if (token == ObjType::_UndefSumN) return "USumN";
+	if (token == ObjType::_UInt) return "UInt";
+	if (token == ObjType::_UIntExp) return "UIntExp";
 	if (token == ObjType::_UndefIntegralN) return "UIntN";
 
 	if (token == ObjType::_abs) return "abs";
@@ -457,6 +464,365 @@ std::vector<Object> parse_expr(std::string expr) {
 	return objects;
 }
 
+math::number Object::f4_Sum(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions) {
+	int var_index = args.size();
+	args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
+	math::number
+		res = objects[this->arg_indexes[3]].return_value(objects, args, functions),
+		difference = args_results[2] - args_results[1];
+
+	long long
+		repeats = std::floor(math::Re(difference));
+	math::number
+		diffPart = math::complex(math::Re(difference) - repeats, math::Im(difference)),
+		step = math::normalize(diffPart);
+
+	math::real
+		radius = math::abs(diffPart),
+		radFract = radius - std::floor(radius);
+
+	if (radius != radius) return radius;
+	if (radius == math::inf) return (math::real)0;
+
+	int n = 1;
+	math::number
+		angle1 = math::mul_i((math::number)std::acos(0.5 * radFract / n)),
+		angle2 = math::mul_i((math::number)std::acos(0.5 * (1 - radFract) / n)),
+		step1 = step * (math::number)math::exp(angle1),
+		step2 = step * (math::number)math::exp(-angle1),
+		step3 = -step * (math::number)math::exp(angle2),
+		step4 = -step * (math::number)math::exp(-angle2);
+
+	args[var_index].value = args[var_index].value + (math::real)0.5 * ((math::real)1 - step);
+
+
+	for (int i = 0; i != (long long)radius; i++) {
+		args[var_index].value = args[var_index].value + step;
+		res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step;
+	}
+	if (radFract != 0 || (step != (math::real)1 && step != (math::real)-1)) {
+		math::number breakpoint = args[var_index].value;
+
+		args[var_index].value = breakpoint + (math::real)0.5 * (step - step2);
+		for (int k = 0; k < n; k++) {
+			args[var_index].value = args[var_index].value + (math::real)0.5 * (step2 + step1);
+			res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step1 * (math::real)0.5 * ((math::real)1 - radFract);
+			args[var_index].value = args[var_index].value + (math::real)0.5 * (step1 + step2);
+			res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step2 * (math::real)0.5 * ((math::real)1 - radFract);
+		}
+
+		args[var_index].value = breakpoint + (math::real)0.5 * (step - step1);
+		for (int k = 0; k < n; k++) {
+			args[var_index].value = args[var_index].value + (math::real)0.5 * (step1 + step2);
+			res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step2 * (math::real)0.5 * ((math::real)1 - radFract);
+			args[var_index].value = args[var_index].value + (math::real)0.5 * (step2 + step1);
+			res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step1 * (math::real)0.5 * ((math::real)1 - radFract);
+		}
+
+
+		args[var_index].value = breakpoint + step;
+		res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step * radFract;
+		breakpoint = args[var_index].value;
+
+
+		args[var_index].value = breakpoint + (math::real)0.5 * (step - step4);
+		for (int k = 0; k < n; k++) {
+			args[var_index].value = args[var_index].value + (math::real)0.5 * (step4 + step3);
+			res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step3 * (math::real)0.5 * radFract;
+			args[var_index].value = args[var_index].value + (math::real)0.5 * (step3 + step4);
+			res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step4 * (math::real)0.5 * radFract;
+		}
+
+		args[var_index].value = breakpoint + (math::real)0.5 * (step - step3);
+		for (int k = 0; k < n; k++) {
+			args[var_index].value = args[var_index].value + (math::real)0.5 * (step3 + step4);
+			res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step4 * (math::real)0.5 * radFract;
+			args[var_index].value = args[var_index].value + (math::real)0.5 * (step4 + step3);
+			res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step3 * (math::real)0.5 * radFract;
+		}
+
+		args[var_index].value = args[var_index].value + (math::real)0.5 * (step3 - (math::real)1);
+	}
+	if (repeats < 0) {
+		for (int i = 0; repeats < i; i--) {
+			res = res - objects[this->arg_indexes[3]].return_value(objects, args, functions);
+			args[var_index].value = args[var_index].value - (math::real)1;
+		}
+	}
+	else {
+		for (int i = 0; i < repeats; i++) {
+			args[var_index].value = args[var_index].value + (math::real)1;
+			res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions);
+		}
+	}
+
+
+	args.erase(args.begin() + var_index);
+	return res;
+}
+math::number Object::f4_Product(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions) {
+	int var_index = args.size();
+	args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
+	math::number
+		res = objects[this->arg_indexes[3]].return_value(objects, args, functions),
+		difference = args_results[2] - args_results[1];
+
+	long long
+		repeats = std::floor(math::Re(difference));
+	math::number
+		diffPart = math::complex(math::Re(difference) - repeats, math::Im(difference)),
+		step = math::normalize(diffPart);
+
+	math::real
+		radius = math::abs(diffPart),
+		radFract = radius - std::floor(radius);
+
+	if (radius != radius) return radius;
+	if (radius == math::inf) return (math::real)0;
+
+	int n = 1;
+	math::number
+		angle1 = math::mul_i((math::number)std::acos(0.5 * radFract / n)),
+		angle2 = math::mul_i((math::number)std::acos(0.5 * (1 - radFract) / n)),
+		step1 = step * (math::number)math::exp(angle1),
+		step2 = step * (math::number)math::exp(-angle1),
+		step3 = -step * (math::number)math::exp(angle2),
+		step4 = -step * (math::number)math::exp(-angle2);
+
+	args[var_index].value = args[var_index].value + (math::real)0.5 * ((math::real)1 - step);
+
+
+	for (int i = 0; i < (int)radius; i++) {
+		args[var_index].value = args[var_index].value + step;
+		res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step);
+	}
+	if (radFract != 0 || (step != (math::real)1 && step != (math::real)-1)) {
+		math::number breakpoint = args[var_index].value;
+
+		args[var_index].value = breakpoint + (math::real)0.5 * (step - step2);
+		for (int k = 0; k < n; k++) {
+			args[var_index].value = args[var_index].value + (math::real)0.5 * (step2 + step1);
+			res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step1 * (math::real)0.5 * ((math::real)1 - radFract));
+			args[var_index].value = args[var_index].value + (math::real)0.5 * (step1 + step2);
+			res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step2 * (math::real)0.5 * ((math::real)1 - radFract));
+		}
+
+		args[var_index].value = breakpoint + (math::real)0.5 * (step - step1);
+		for (int k = 0; k < n; k++) {
+			args[var_index].value = args[var_index].value + (math::real)0.5 * (step1 + step2);
+			res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step2 * (math::real)0.5 * ((math::real)1 - radFract));
+			args[var_index].value = args[var_index].value + (math::real)0.5 * (step2 + step1);
+			res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step1 * (math::real)0.5 * ((math::real)1 - radFract));
+		}
+
+
+		args[var_index].value = breakpoint + step;
+		res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step * radFract);
+		breakpoint = args[var_index].value;
+
+
+		args[var_index].value = breakpoint + (math::real)0.5 * (step - step4);
+		for (int k = 0; k < n; k++) {
+			args[var_index].value = args[var_index].value + (math::real)0.5 * (step4 + step3);
+			res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step3 * (math::real)0.5 * radFract);
+			args[var_index].value = args[var_index].value + (math::real)0.5 * (step3 + step4);
+			res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step4 * (math::real)0.5 * radFract);
+		}
+
+		args[var_index].value = breakpoint + (math::real)0.5 * (step - step3);
+		for (int k = 0; k < n; k++) {
+			args[var_index].value = args[var_index].value + (math::real)0.5 * (step3 + step4);
+			res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step4 * (math::real)0.5 * radFract);
+			args[var_index].value = args[var_index].value + (math::real)0.5 * (step4 + step3);
+			res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step3 * (math::real)0.5 * radFract);
+		}
+
+		args[var_index].value = args[var_index].value + (math::real)0.5 * (step3 - (math::real)1);
+	}
+	if (repeats < 0) {
+		for (int i = 0; repeats < i; i--) {
+			res = res / objects[this->arg_indexes[3]].return_value(objects, args, functions);
+			args[var_index].value = args[var_index].value - (math::real)1;
+		}
+	}
+	else {
+		for (int i = 0; i < repeats; i++) {
+			args[var_index].value = args[var_index].value + (math::real)1;
+			res = res * objects[this->arg_indexes[3]].return_value(objects, args, functions);
+		}
+	}
+
+
+	args.erase(args.begin() + var_index);
+	return res;
+}
+math::number Object::f4_Return(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions) {
+	int var_index = args.size();
+	args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
+	int repeats = std::round(((math::complex)args_results[2]).R);
+	for (int i = 0; i < repeats; i++) {
+		args[var_index].value = objects[this->arg_indexes[3]].return_value(objects, args, functions);
+	}
+	math::number res = args[var_index].value;
+	args.erase(args.begin() + var_index);
+	return res;
+}
+math::number Object::f4_Integral(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions) {
+	int var_index = args.size();
+	args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
+
+	const int n = 16 * (1 + math::abs(args_results[2] - args_results[1]));
+	math::number res = (math::real)0, dx = (args_results[2] - args_results[1]) / (math::real)n;
+	args[var_index].value = args[var_index].value + dx * (math::real)0.5;
+	for (int k = 0; k < n; k++) {
+		res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions);
+		args[var_index].value = args[var_index].value + dx;
+	}
+
+	args.erase(args.begin() + var_index);
+	return res * dx;
+}
+math::number Object::f4_IntegralAlongExp(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions) {
+	if (args_results[1] == args_results[2]) return (math::real)0;
+
+	int var_index = args.size();
+	args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
+
+	const int n = 512 * (1 + math::abs(math::ln(args_results[2] / args_results[1])));
+	math::number res = (math::real)0, dx = (math::ln(args_results[2] / args_results[1])) / (math::real)n, x = math::ln(args_results[1]) + (math::real)0.5 * dx, dt;
+	for (int k = 0; k < n; k++) {
+		args[var_index].value = math::exp(x);
+		dt = math::exp(x + (math::real)0.5 * dx) - math::exp(x - (math::real)0.5 * dx);
+		res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * dt;
+		x = x + dx;
+	}
+
+	args.erase(args.begin() + var_index);
+	return res;
+}
+math::number Object::f4_Derivative(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions) {
+	int var_index = args.size();
+	args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
+
+	math::number res, n = args_results[2];
+	if (n == math::number(0.0)) {
+		res = objects[this->arg_indexes[3]].return_value(objects, args, functions);
+	}
+	else {
+		math::real
+			iter = math::abs(n),
+			m = 4096,
+			delta_root = std::pow(m, -1.0 / iter);
+		args[var_index].value = args_results[1] + n * (math::real)0.5 * delta_root;
+		for (int k = 0; k <= iter; k++) {
+			res = res + (math::number)((math::real)(1 - 2 * (k % 2)) * math::Binom(n, (math::real)k)) * objects[this->arg_indexes[3]].return_value(objects, args, functions);
+			args[var_index].value = args[var_index].value - delta_root;
+		}
+		res = res * m;
+	}
+
+	args.erase(args.begin() + var_index);
+	return res;
+}
+math::number Object::f4_ForwardDifference(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions) {
+	int var_index = args.size();
+	args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
+	math::number res = objects[this->arg_indexes[3]].return_value(objects, args, functions);
+
+	math::real n = ((math::complex)objects[this->arg_indexes[2]].return_value(objects, args, functions)).R;
+	for (int k = 1; k <= n; k++) {
+		args[var_index].value = args[var_index].value + (math::real)1;
+		res = res + (math::real)(1 - 2 * (k % 2)) * math::Binom(n, k) * objects[this->arg_indexes[3]].return_value(objects, args, functions);
+	}
+
+	args.erase(args.begin() + var_index);
+	return res * (math::real)(1 - 2 * ((int)n % 2));
+}
+math::number Object::f4_BackwardDifference(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions) {
+	int var_index = args.size();
+	args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
+	math::number res = objects[this->arg_indexes[3]].return_value(objects, args, functions);
+
+	math::real n = ((math::complex)objects[this->arg_indexes[2]].return_value(objects, args, functions)).R;
+	for (int k = 1; k <= n; k++) {
+		args[var_index].value = args[var_index].value - math::complex{ 1 };
+		res = res + (math::real)(1 - 2 * (k % 2)) * math::Binom(n, k) * objects[this->arg_indexes[3]].return_value(objects, args, functions);
+	}
+
+	args.erase(args.begin() + var_index);
+	return res;
+}
+
+math::number Object::f3_USum(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions) {
+	int var_index = args.size();
+	args.push_back(Variable(objects[this->arg_indexes[0]].name, math::number(48.0)));
+
+	math::number a, b, c;
+	for (int k = 0; k < 16; k++) {
+		a = objects[this->arg_indexes[2]].return_value(objects, args, functions);
+		b = args[var_index].value;
+		c = c + math::ln(a) / math::ln(b);
+		args[var_index].value = args[var_index].value + math::number(1.0);
+	}
+	c = math::USumN(math::number(0.0), c / math::number(16.0));
+
+	Object objS(ObjType::_Sum, { this->arg_indexes[0], this->arg_indexes[0], this->arg_indexes[1], this->arg_indexes[2] });
+	args.erase(args.begin() + var_index);
+	return objS.f4_Sum({ 0, math::number(1.0), args_results[1], 0 }, objects, args, functions) + c;
+}
+math::number Object::f3_UInt(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions) {
+	math::number c;
+	Object objS(ObjType::_Sum, arg_indexes);
+	c = objS.f3_USum({ 0, math::number(32.0), 0 }, objects, args, functions);
+	for (int k = 0; k < 10; k++) {
+		Object objD(ObjType::_Derivative, { this->arg_indexes[0], this->arg_indexes[1], this->arg_indexes[0], this->arg_indexes[2] });
+		c = c + math::zbf(k) * objD.f4_Derivative({ 0, math::number(32.0), k, 0 }, objects, args, functions);
+	}
+
+	Object objI(ObjType::_Integral, { this->arg_indexes[0], this->arg_indexes[0], this->arg_indexes[1], this->arg_indexes[2] });
+	return objI.f4_Integral({ 0, math::number(32.0), args_results[1], 0 }, objects, args, functions) + c;
+}
+math::number Object::f3_UIntExp(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions) {
+	math::number c;
+	Object objS(ObjType::_Sum, arg_indexes);
+	c = objS.f3_USum({ 0, math::number(32.0), 0 }, objects, args, functions);
+	for (int k = 0; k < 10; k++) {
+		Object objD(ObjType::_Derivative, { this->arg_indexes[0], this->arg_indexes[1], this->arg_indexes[0], this->arg_indexes[2] });
+		c = c + math::zbf(k) * objD.f4_Derivative({ 0, math::number(32.0), k, 0 }, objects, args, functions);
+	}
+
+	Object objI(ObjType::_Integral, { this->arg_indexes[0], this->arg_indexes[0], this->arg_indexes[1], this->arg_indexes[2] });
+	return objI.f4_IntegralAlongExp({ 0, math::number(32.0), args_results[1], 0 }, objects, args, functions) + c;
+}
+math::number Object::f3_Derivative(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions) {
+	const int n = 256;
+	int var_index = args.size();
+	args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1] + (math::real)(0.5 / n)));
+	math::number res = objects[this->arg_indexes[2]].return_value(objects, args, functions);
+	args[var_index].value = args_results[1] - (math::real)(0.5 / n);
+	res = res - objects[this->arg_indexes[2]].return_value(objects, args, functions);
+	args.erase(args.begin() + var_index);
+	return res * (math::real)n;
+}
+math::number Object::f3_ForwardDifference(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions) {
+	int var_index = args.size();
+	args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
+	math::number res = -objects[this->arg_indexes[2]].return_value(objects, args, functions);
+	args[var_index].value = args_results[1] + (math::real)1;
+	res = res + objects[this->arg_indexes[2]].return_value(objects, args, functions);
+	args.erase(args.begin() + var_index);
+	return res;
+}
+math::number Object::f3_BackwardDifference(std::vector<math::number> args_results, std::vector<Object>& objects, std::vector<Variable>& args, std::vector<Function>& functions) {
+	int var_index = args.size();
+	args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
+	math::number res = objects[this->arg_indexes[2]].return_value(objects, args, functions);
+	args[var_index].value = args_results[1] - (math::real)1;
+	res = res - objects[this->arg_indexes[2]].return_value(objects, args, functions);
+	args.erase(args.begin() + var_index);
+	return res;
+}
+
 math::number Object::return_value(std::vector<Object> &objects, std::vector<Variable> &args, std::vector<Function>& functions) {
 	std::vector<math::number> args_results;
 	for (auto i : this->arg_indexes) args_results.push_back(objects.at(i).return_value(objects, args, functions));
@@ -571,323 +937,29 @@ math::number Object::return_value(std::vector<Object> &objects, std::vector<Vari
 		case(ObjType::_UndefIntegralN): return math::UIntN(args_results[0], args_results[1]);
 	}
 	case(3): switch (this->type) {
-		case(ObjType::_Derivative): {
-			const int n = 256;
-			int var_index = args.size();
-			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1] + (math::real)(0.5 / n)));
-			math::number res = objects[this->arg_indexes[2]].return_value(objects, args, functions);
-			args[var_index].value = args_results[1] - (math::real)(0.5 / n);
-			res = res - objects[this->arg_indexes[2]].return_value(objects, args, functions);
-			args.erase(args.begin() + var_index);
-			return res * (math::real)n;
-		}
-		case(ObjType::_ForwardDifference): {
-			int var_index = args.size();
-			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
-			math::number res = -objects[this->arg_indexes[2]].return_value(objects, args, functions);
-			args[var_index].value = args_results[1] + (math::real)1;
-			res = res + objects[this->arg_indexes[2]].return_value(objects, args, functions);
-			args.erase(args.begin() + var_index);
-			return res;
-		}
-		case(ObjType::_BackwardDifference): {
-			int var_index = args.size();
-			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
-			math::number res = objects[this->arg_indexes[2]].return_value(objects, args, functions);
-			args[var_index].value = args_results[1] - (math::real)1;
-			res = res - objects[this->arg_indexes[2]].return_value(objects, args, functions);
-			args.erase(args.begin() + var_index);
-			return res;
-		}
+		case(ObjType::_Derivative): return f3_Derivative(args_results, objects, args, functions);
+		case(ObjType::_ForwardDifference): return f3_ForwardDifference(args_results, objects, args, functions);
+		case(ObjType::_BackwardDifference): return f3_BackwardDifference(args_results, objects, args, functions);
 		case(ObjType::_If): {
 			if (objects[this->arg_indexes[0]].return_value(objects, args, functions) == (math::real)0)
 				return objects[this->arg_indexes[1]].return_value(objects, args, functions);
 			return objects[this->arg_indexes[2]].return_value(objects, args, functions);
 		}
-
-		case(ObjType::_SumZeta): {
-			int var_index = args.size(), n = 256;
-			args.push_back(Variable(objects[this->arg_indexes[0]].name, (math::real)0));
-
-			math::number res, integ, dx = args_results[1] / (math::real)n;
-			args[var_index].value = args[var_index].value + dx * (math::real)0.5;
-			for (int k = 0; k < n; k++) {
-				integ = integ + objects[this->arg_indexes[2]].return_value(objects, args, functions);
-				args[var_index].value = args[var_index].value + dx;
-			}
-			res = integ * dx;
-
-			args[var_index].value = args_results[1];
-			res = res + objects[this->arg_indexes[2]].return_value(objects, args, functions) * (math::real)0.5;
-
-			for (int k = 1; k < 20;) {
-				args[var_index].value = args_results[1];
-				math::number der = objects[this->arg_indexes[2]].return_value(objects, args, functions);
-				math::real d = 4294967296ll, delta = std::exp(-std::log(d) / k);
-				for (int l = 1; l <= k; l++) {
-					args[var_index].value = args[var_index].value - delta;
-					der = der + (math::real)(1 - 2 * (l % 2)) * math::Binom(k, l) * objects[this->arg_indexes[2]].return_value(objects, args, functions);
-				}
-				res = res - math::zbf(k) * (der * d);
-				k += 2;
-			}
-
-			args.erase(args.begin() + var_index);
-			return res;
-		}
+		case(ObjType::_USum): return f3_USum(args_results, objects, args, functions);
+		case(ObjType::_UInt): return f3_UInt(args_results, objects, args, functions);
+		case(ObjType::_UIntExp): return f3_UIntExp(args_results, objects, args, functions);
 	}
 	case(4): switch (this->type) {
-		case(ObjType::_Sum):
-		case(ObjType::_Product): {
-			int var_index = args.size();
-			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
-			math::number
-				res = objects[this->arg_indexes[3]].return_value(objects, args, functions),
-				difference = args_results[2] - args_results[1];
+		case(ObjType::_Sum): return f4_Sum(args_results, objects, args, functions);
+		case(ObjType::_Product): return f4_Product(args_results, objects, args, functions);
+		case(ObjType::_Return): return f4_Return(args_results, objects, args, functions);
 
-			long long
-				repeats = std::floor(difference.R);
-			math::number
-				diffPart = math::complex(difference.R - repeats, difference.i),
-				step = math::normalize(diffPart);
+		case(ObjType::_Integral): return f4_Integral(args_results, objects, args, functions);
+		case(ObjType::_IntegralAlongExp): return f4_IntegralAlongExp(args_results, objects, args, functions);
 
-			math::real
-				radius = math::abs(diffPart),
-				radFract = radius - std::floor(radius);
-
-			if (radius != radius) return radius;
-			if (radius == math::inf) return (math::real)0;
-
-			int n = 1;
-			math::number
-				angle1 = math::mul_i((math::number)std::acos(0.5 * radFract / n)),
-				angle2 = math::mul_i((math::number)std::acos(0.5 * (1 - radFract) / n)),
-				step1 =  step * math::exp( angle1),
-				step2 =  step * math::exp(-angle1),
-				step3 = -step * math::exp( angle2),
-				step4 = -step * math::exp(-angle2);
-
-			args[var_index].value = args[var_index].value + (math::real)0.5 * ((math::real)1 - step);
-			/**/ if (this->type == ObjType::_Sum) {
-				for (int i = 0; i != (long long)radius; i++) {
-					args[var_index].value = args[var_index].value + step;
-					res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step;
-				}
-				if (radFract != 0 || (step != (math::real)1 && step != (math::real)-1)) {
-					math::number breakpoint = args[var_index].value;
-
-					args[var_index].value = breakpoint + (math::real)0.5 * (step - step2);
-					for (int k = 0; k < n; k++) {
-						args[var_index].value = args[var_index].value + (math::real)0.5 * (step2 + step1);
-						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step1 * (math::real)0.5 * ((math::real)1 - radFract);
-						args[var_index].value = args[var_index].value + (math::real)0.5 * (step1 + step2);
-						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step2 * (math::real)0.5 * ((math::real)1 - radFract);
-					}
-
-					args[var_index].value = breakpoint + (math::real)0.5 * (step - step1);
-					for (int k = 0; k < n; k++) {
-						args[var_index].value = args[var_index].value + (math::real)0.5 * (step1 + step2);
-						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step2 * (math::real)0.5 * ((math::real)1 - radFract);
-						args[var_index].value = args[var_index].value + (math::real)0.5 * (step2 + step1);
-						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step1 * (math::real)0.5 * ((math::real)1 - radFract);
-					}
-
-
-					args[var_index].value = breakpoint + step;
-					res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step * radFract;
-					breakpoint = args[var_index].value;
-
-
-					args[var_index].value = breakpoint + (math::real)0.5 * (step - step4);
-					for (int k = 0; k < n; k++) {
-						args[var_index].value = args[var_index].value + (math::real)0.5 * (step4 + step3);
-						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step3 * (math::real)0.5 * radFract;
-						args[var_index].value = args[var_index].value + (math::real)0.5 * (step3 + step4);
-						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step4 * (math::real)0.5 * radFract;
-					}
-
-					args[var_index].value = breakpoint + (math::real)0.5 * (step - step3);
-					for (int k = 0; k < n; k++) {
-						args[var_index].value = args[var_index].value + (math::real)0.5 * (step3 + step4);
-						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step4 * (math::real)0.5 * radFract;
-						args[var_index].value = args[var_index].value + (math::real)0.5 * (step4 + step3);
-						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * step3 * (math::real)0.5 * radFract;
-					}
-
-					args[var_index].value = args[var_index].value + (math::real)0.5 * (step3 - (math::real)1);
-				}
-				if (repeats < 0) {
-					for (int i = 0; repeats < i; i--) {
-						res = res - objects[this->arg_indexes[3]].return_value(objects, args, functions);
-						args[var_index].value = args[var_index].value - (math::real)1;
-					}
-				}
-				else {
-					for (int i = 0; i < repeats; i++) {
-						args[var_index].value = args[var_index].value + (math::real)1;
-						res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions);
-					}
-				}
-			}
-			else if (this->type == ObjType::_Product) {
-				for (int i = 0; i < (int)radius; i++) {
-					args[var_index].value = args[var_index].value + step;
-					res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step);
-				}
-				if (radFract != 0 || (step != (math::real)1 && step != (math::real)-1)) {
-					math::number breakpoint = args[var_index].value;
-
-					args[var_index].value = breakpoint + (math::real)0.5 * (step - step2);
-					for (int k = 0; k < n; k++) {
-						args[var_index].value = args[var_index].value + (math::real)0.5 * (step2 + step1);
-						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step1 * (math::real)0.5 * ((math::real)1 - radFract));
-						args[var_index].value = args[var_index].value + (math::real)0.5 * (step1 + step2);
-						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step2 * (math::real)0.5 * ((math::real)1 - radFract));
-					}
-
-					args[var_index].value = breakpoint + (math::real)0.5 * (step - step1);
-					for (int k = 0; k < n; k++) {
-						args[var_index].value = args[var_index].value + (math::real)0.5 * (step1 + step2);
-						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step2 * (math::real)0.5 * ((math::real)1 - radFract));
-						args[var_index].value = args[var_index].value + (math::real)0.5 * (step2 + step1);
-						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step1 * (math::real)0.5 * ((math::real)1 - radFract));
-					}
-
-
-					args[var_index].value = breakpoint + step;
-					res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step * radFract);
-					breakpoint = args[var_index].value;
-
-
-					args[var_index].value = breakpoint + (math::real)0.5 * (step - step4);
-					for (int k = 0; k < n; k++) {
-						args[var_index].value = args[var_index].value + (math::real)0.5 * (step4 + step3);
-						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step3 * (math::real)0.5 * radFract);
-						args[var_index].value = args[var_index].value + (math::real)0.5 * (step3 + step4);
-						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step4 * (math::real)0.5 * radFract);
-					}
-
-					args[var_index].value = breakpoint + (math::real)0.5 * (step - step3);
-					for (int k = 0; k < n; k++) {
-						args[var_index].value = args[var_index].value + (math::real)0.5 * (step3 + step4);
-						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step4 * (math::real)0.5 * radFract);
-						args[var_index].value = args[var_index].value + (math::real)0.5 * (step4 + step3);
-						res = res * math::pow(objects[this->arg_indexes[3]].return_value(objects, args, functions), step3 * (math::real)0.5 * radFract);
-					}
-
-					args[var_index].value = args[var_index].value + (math::real)0.5 * (step3 - (math::real)1);
-				}
-				if (repeats < 0) {
-					for (int i = 0; repeats < i; i--) {
-						res = res / objects[this->arg_indexes[3]].return_value(objects, args, functions);
-						args[var_index].value = args[var_index].value - (math::real)1;
-					}
-				}
-				else {
-					for (int i = 0; i < repeats; i++) {
-						args[var_index].value = args[var_index].value + (math::real)1;
-						res = res * objects[this->arg_indexes[3]].return_value(objects, args, functions);
-					}
-				}
-			}
-
-			args.erase(args.begin() + var_index);
-			return res;
-		}
-		case(ObjType::_Return): {
-			int var_index = args.size();
-			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
-			int repeats = std::round(((math::complex)args_results[2]).R);
-			for (int i = 0; i < repeats; i++) {
-				args[var_index].value = objects[this->arg_indexes[3]].return_value(objects, args, functions);
-			}
-			math::number res = args[var_index].value;
-			args.erase(args.begin() + var_index);
-			return res;
-		}
-
-		case(ObjType::_Integral): {
-			int var_index = args.size();
-			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
-
-			const int n = 16 * (1 + math::abs(args_results[2] - args_results[1]));
-			math::number res = (math::real)0, dx = (args_results[2] - args_results[1]) / (math::real)n;
-			args[var_index].value = args[var_index].value + dx * (math::real)0.5;
-			for (int k = 0; k < n; k++) {
-				res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions);
-				args[var_index].value = args[var_index].value + dx;
-			}
-
-			args.erase(args.begin() + var_index);
-			return res * dx;
-		}
-		case(ObjType::_IntegralAlongExp): {
-			if (args_results[1] == args_results[2]) return (math::real)0;
-
-			int var_index = args.size();
-			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
-
-			const int n = 512 * (1 + math::abs(math::ln(args_results[2] / args_results[1])));
-			math::number res = (math::real)0, dx = (math::ln(args_results[2] / args_results[1])) / (math::real)n, x = math::ln(args_results[1]) + (math::real)0.5 * dx, dt;
-			for (int k = 0; k < n; k++) {
-				args[var_index].value = math::exp(x);
-				dt = math::exp(x + (math::real)0.5 * dx) - math::exp(x - (math::real)0.5 * dx);
-				res = res + objects[this->arg_indexes[3]].return_value(objects, args, functions) * dt;
-				x = x + dx;
-			}
-
-			args.erase(args.begin() + var_index);
-			return res;
-		}
-
-		case(ObjType::_Derivative): {
-			int var_index = args.size();
-			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
-
-			math::number
-				res = (math::real)0,
-				n = objects[this->arg_indexes[2]].return_value(objects, args, functions);
-			math::real
-				iter = ((math::complex)n).R,
-				delta = 1.0 / 4294967296.0,
-				delta_root = std::pow(delta, 1.0 / iter);
-			args[var_index].value = args_results[1] + n * (math::real)0.5 * delta_root;
-			for (int k = 0; k <= iter; k++) {
-				res = res + (math::real)(1 - 2 * (k % 2)) * math::Binom(n, (math::real)k) * objects[this->arg_indexes[3]].return_value(objects, args, functions);
-				args[var_index].value = args[var_index].value - delta_root;
-			}
-
-			args.erase(args.begin() + var_index);
-			return res * (math::real)4294967296ll;
-		}
-		case(ObjType::_ForwardDifference): {
-			int var_index = args.size();
-			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
-			math::number res = objects[this->arg_indexes[3]].return_value(objects, args, functions);
-
-			math::real n = ((math::complex)objects[this->arg_indexes[2]].return_value(objects, args, functions)).R;
-			for (int k = 1; k <= n; k++) {
-				args[var_index].value = args[var_index].value + (math::real)1;
-				res = res + (math::real)(1 - 2 * (k % 2)) * math::Binom(n, k) * objects[this->arg_indexes[3]].return_value(objects, args, functions);
-			}
-
-			args.erase(args.begin() + var_index);
-			return res * (math::real)(1 - 2 * ((int)n % 2));
-		}
-		case(ObjType::_BackwardDifference): {
-			int var_index = args.size();
-			args.push_back(Variable(objects[this->arg_indexes[0]].name, args_results[1]));
-			math::number res = objects[this->arg_indexes[3]].return_value(objects, args, functions);
-
-			math::real n = ((math::complex)objects[this->arg_indexes[2]].return_value(objects, args, functions)).R;
-			for (int k = 1; k <= n; k++) {
-				args[var_index].value = args[var_index].value - math::complex{1};
-				res = res + (math::real)(1 - 2 * (k % 2)) * math::Binom(n, k) * objects[this->arg_indexes[3]].return_value(objects, args, functions);
-			}
-
-			args.erase(args.begin() + var_index);
-			return res;
-		}
+		case(ObjType::_Derivative): return f4_Derivative(args_results, objects, args, functions);
+		case(ObjType::_ForwardDifference): return f4_ForwardDifference(args_results, objects, args, functions);
+		case(ObjType::_BackwardDifference): return f4_BackwardDifference(args_results, objects, args, functions);
 	}
 	}
 	if (this->type == ObjType::_Polynomial && args_results.size() > 3) {

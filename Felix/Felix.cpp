@@ -1,4 +1,4 @@
-﻿//	v1.15.4
+﻿//	v1.16
 
 #include "Felix.h"
 #include "math/math.h"
@@ -943,6 +943,7 @@ Felix::CommandResult Felix::run_command(std::string c) {
 
 				response += "\n FOR-Like Functions\n";
 				response += " =>    S{t;begin;end}[f(t)] -> Sum\n";
+				response += " =>         USum{t;x}[f(t)] -> Undefined Sum\n";
 				response += " =>           FD{t;x}[f(t)] -> Forward Difference\n";
 				response += " =>         FD{t;x;n}[f(t)] -> n-th Forward Difference\n";
 				response += " =>           BD{t;x}[f(t)] -> Backward Difference\n";
@@ -950,9 +951,11 @@ Felix::CommandResult Felix::run_command(std::string c) {
 				response += " =>    P{t;begin;end}[f(t)] -> Product\n";
 				response += " =>          R{t;x;n}[f(t)] -> Return\n";
 				response += " =>          I{t;a;b}[f(t)] -> Integral\n";
+				response += " =>       Iexp{t;a;b}[f(t)] -> Integral along exp\n";
+				response += " =>         UInt{t;x}[f(t)] -> Undefined Integral\n";
+				response += " =>      UIntExp{t;x}[f(t)] -> Undefined Integral along exp\n";
 				response += " =>            D{t;x}[f(t)] -> Derivative\n";
 				response += " =>          D{t;x;n}[f(t)] -> n-th Derivative\n";
-				response += " =>       Iexp{t;a;b}[f(t)] -> Integral along exp\n";
 
 				response += "\n Value Functions\n";
 				response += " =>     abs(x) -> absolute value\n";

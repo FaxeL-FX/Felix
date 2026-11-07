@@ -8,6 +8,11 @@ namespace math {
 		i(0, 1);
 
 	//	complex
+	complex::complex(polar x) {
+		this->R = x.radius * std::cos(x.angle);
+		this->i = x.radius * std::sin(x.angle);
+	}
+
 	complex operator+(complex x, complex y) { return complex(x.R + y.R, x.i + y.i); }
 	complex operator-(complex x) { return complex(-x.R, -x.i); }
 	complex operator-(complex x, complex y) { return complex(x.R - y.R, x.i - y.i); }
@@ -33,6 +38,23 @@ namespace math {
 	complex operator%(complex x, complex y) { return x - y * floor(x / y); }
 	bool operator==(complex x, complex y) { return x.R == y.R && x.i == y.i; }
 	bool operator!=(complex x, complex y) { return !(x == y); }
+
+	// polar
+	polar::polar(complex x) {
+		this->radius = abs(x);
+		this->angle = arg(x);
+	}
+
+	polar operator-(polar x) {
+		x.angle = x.angle + pi;
+		return x;
+	}
+	polar operator*(polar x, polar y) { return polar(x.radius * y.radius, x.angle + y.angle); }
+	polar operator/(polar x, polar y) { return polar(x.radius / y.radius, x.angle - y.angle); }
+	bool operator==(polar x, polar y) { return x.radius == y.radius && x.angle == y.angle; }
+	bool operator!=(polar x, polar y) { return !(x == y); }
+
+
 
 	//	FUNCTIONS
 
@@ -326,7 +348,7 @@ namespace math {
 			}
 		}
 		else {
-			return sqrt((real)2 * pi) * exp((x + (real)0.5) * (ln(x + (real)0.5) - (real)1.0));
+			return std::sqrt((real)2 * pi) * exp((x + (real)0.5) * (ln(x + (real)0.5) - (real)1.0));
 		}
 		if (x == (real)0) return res;
 		real n = 128.5;
@@ -422,5 +444,22 @@ namespace math {
 	complex Derivative(complex(*f)(complex), complex x) {
 		const real dx = 1.0 / 4096;
 		return (f(x + dx) - f(x - dx)) / ((real)2 * dx);
+	}
+
+	// polar
+	polar pow(polar x, polar y) {
+		return polar(
+			std::exp(std::log(x.radius) * y.radius * std::cos(y.angle) - x.angle * y.radius * std::sin(y.angle)), 
+			x.angle * y.radius * std::cos(y.angle) + y.radius * std::sin(y.angle) * std::log(x.radius)
+		);
+	}
+	polar exp(polar x) {
+		return exp((complex)x);
+	}
+	polar ln(polar x) {
+		return complex(std::log(x.radius), x.angle);
+	}
+	polar sqrt(polar x) {
+		return polar(std::sqrt(x.radius), x.angle * 0.5);
 	}
 }
